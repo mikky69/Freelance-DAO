@@ -40,3 +40,8 @@ Push & Submit a PR for review.
 📧 Email: mikailu29@gmail.com
 
 🎉 Let’s build the future of freelancing together! 🚀
+
+---
+
+This README provides an **overview, setup guide, and contribution instructions** for developers. Let me know if you need modifications! 🚀
+
