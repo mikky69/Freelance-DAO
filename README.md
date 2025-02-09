@@ -18,8 +18,8 @@
 ### **1️⃣ Clone the Repository**  
 ```bash
 git clone https://github.com/Freelance-DAO/freelance-dao.git
-cd freelance-dao```
-
+cd freelance-dao
+` ``` `
 
 ### **2️⃣ Install Dependencies**
 npm run dev  # Start frontend
