@@ -1,3 +1,6 @@
+
+![FREELANCEDAO](https://github.com/user-attachments/assets/2ea23b16-19cd-40e7-b3dc-38be3a2ac751)
+
 # Freelance DAO  
 
 **Freelance DAO** is a decentralized freelance marketplace built on the **Internet Computer blockchain**, connecting clients and freelancers in a trustless, transparent, and efficient ecosystem.  
