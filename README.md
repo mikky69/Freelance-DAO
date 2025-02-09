@@ -19,3 +19,19 @@
 ```bash
 git clone https://github.com/Freelance-DAO/freelance-dao.git
 cd freelance-dao
+
+### **2️⃣ Install Dependencies**
+npm run dev  # Start frontend
+dfx deploy   # Deploy smart contracts
+
+## 🏗️ Contribution Guidelines
+Fork & Clone the repository.
+Create a Feature Branch (feature/your-feature-name).
+Commit Changes (git commit -m "[feat]: Add new feature").
+Push & Submit a PR for review.
+
+## 📬 Contact & Community
+💬 whatsapp: Join our community https://chat.whatsapp.com/EjnEgSxuxnWH10UGRRe8uw
+🐦 Twitter: Follow us
+📧 Email: mikailu29@gmail.com
+🎉 Let’s build the future of freelancing together! 🚀
