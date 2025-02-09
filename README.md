@@ -22,16 +22,18 @@ cd freelance-dao
 ``` 
 
 ### **2️⃣ Install Dependencies**
+```bash
 npm run dev  # Start frontend
 dfx deploy   # Deploy smart contracts
+```
 
-### ** 🏗️ Contribution Guidelines**
+### 🏗️ Contribution Guidelines
 Fork & Clone the repository.
 Create a Feature Branch (feature/your-feature-name).
 Commit Changes (git commit -m "[feat]: Add new feature").
 Push & Submit a PR for review.
 
-### ** 📬 Contact & Community**
+### 📬 Contact & Community
 💬 whatsapp: Join our community https://chat.whatsapp.com/EjnEgSxuxnWH10UGRRe8uw
 
 
