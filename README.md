@@ -33,6 +33,7 @@ Push & Submit a PR for review.
 
 ### ** 📬 Contact & Community**
 💬 whatsapp: Join our community https://chat.whatsapp.com/EjnEgSxuxnWH10UGRRe8uw
-🐦 Twitter: Follow us
+
+
 📧 Email: mikailu29@gmail.com
 🎉 Let’s build the future of freelancing together! 🚀
