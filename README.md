@@ -20,7 +20,7 @@
 
 ### **1️⃣ Clone the Repository**  
 ```bash
-git clone https://github.com/Freelance-DAO/freelance-dao.git
+git clone https://github.com/mikky69/Freelance-DAO.git
 cd freelance-dao
 ``` 
 
