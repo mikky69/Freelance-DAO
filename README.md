@@ -131,11 +131,11 @@ Open a Pull Request
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🌍 Community
-Discord - Join our community
-Twitter[Twitter](https://www.x.com/Freelance_DAO) - Follow us for updates
-Website - Coming soon
+- Discord - Join our community
+- [Twitter](https://www.x.com/Freelance_DAO) - Follow us for updates
+- Website - Coming soon
 
 ## 🙏 Acknowledgments
-Hedera Hashgraph for their groundbreaking DLT technology
-The open-source community for invaluable tools and libraries
-Early contributors and supporters of FreeLanceDAO
+- Hedera Hashgraph for their groundbreaking DLT technology
+- The open-source community for invaluable tools and libraries
+- Early contributors and supporters of FreeLanceDAO
