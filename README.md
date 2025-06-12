@@ -118,7 +118,7 @@ HTS: Native $FDAO token and stablecoin payments
 HSCS: Smart contracts for escrow and governance
 HFS: Decentralized file storage for credentials and work samples
 
-🤝 Contributing
+## 🤝 Contributing
 We welcome contributions from the Hedera and Web3 communities! Your expertise can help shape the future of decentralized freelancing.
 
 Fork the Project
@@ -127,15 +127,15 @@ Commit your Changes (git commit -m 'Add some AmazingFeature')
 Push to the Branch (git push origin feature/AmazingFeature)
 Open a Pull Request
 
-📄 License
+## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-🌍 Community
+## 🌍 Community
 Discord - Join our community
-Twitter - Follow us for updates
+Twitter[Twitter](https://www.x.com/Freelance_DAO) - Follow us for updates
 Website - Coming soon
 
-🙏 Acknowledgments
+## 🙏 Acknowledgments
 Hedera Hashgraph for their groundbreaking DLT technology
 The open-source community for invaluable tools and libraries
 Early contributors and supporters of FreeLanceDAO
