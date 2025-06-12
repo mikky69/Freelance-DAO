@@ -90,3 +90,49 @@ FreeLanceDAO revolutionizes the freelance economy by leveraging Hedera's distrib
    ```bash
    git clone [https://github.com/mikky69/Freelance-DAO.git](https://github.com/mikky69/Freelance-DAO.git)
    cd Freelance-DAO
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn 
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env.local
+   Update the values in .env.local with your configuration.
+4. Run the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+Open http://localhost:3000 in your browser.
+
+🌐 Why Hedera?
+Enterprise-Grade Performance
+Fast: 10,000+ TPS with 3-5 second finality
+Fair: Asynchronous Byzantine Fault Tolerant (aBFT) security
+Green: Carbon-negative network operations
+Cost-Effective: Predictable micro-fees in USD
+Key Hedera Services Used
+HCS: Immutable audit trails for all platform actions
+HTS: Native $FDAO token and stablecoin payments
+HSCS: Smart contracts for escrow and governance
+HFS: Decentralized file storage for credentials and work samples
+🤝 Contributing
+We welcome contributions from the Hedera and Web3 communities! Your expertise can help shape the future of decentralized freelancing.
+
+Fork the Project
+Create your Feature Branch (git checkout -b feature/AmazingFeature)
+Commit your Changes (git commit -m 'Add some AmazingFeature')
+Push to the Branch (git push origin feature/AmazingFeature)
+Open a Pull Request
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+🌍 Community
+Discord - Join our community
+Twitter - Follow us for updates
+Website - Coming soon
+🙏 Acknowledgments
+Hedera Hashgraph for their groundbreaking DLT technology
+The open-source community for invaluable tools and libraries
+Early contributors and supporters of FreeLanceDAO
