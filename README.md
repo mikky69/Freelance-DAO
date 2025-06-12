@@ -1,4 +1,9 @@
-# FreeLanceDAO
+<div align="center">
+  <img src="freelance-dao.jpg" alt="FreeLanceDAO Logo" width="200" height="200">
+  <h1>FreeLanceDAO</h1>
+</div>
+
+---
 
 A decentralized freelance platform combining Web2 familiarity with Web3 automation and governance.
 
