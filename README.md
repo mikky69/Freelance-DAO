@@ -1,11 +1,12 @@
 <div align="center">
-  <img src="freelance-dao.jpg" alt="FreeLanceDAO Logo" width="200" height="200">
+  <img src="freelance-dao.jpg" alt="FreeLanceDAO Logo" width="120" height="120" style="border-radius: 10px;">
   <h1>FreeLanceDAO</h1>
+  <p><em>Decentralized Freelance Platform on Hedera</em></p>
 </div>
 
 ---
 
-A decentralized freelance platform combining Web2 familiarity with Web3 automation and governance.
+A decentralized freelance platform built on Hedera Hashgraph, combining Web2 familiarity with Hedera's fast, secure, and fair Web3 infrastructure.
 
 ## 🚀 Features
 
@@ -13,9 +14,11 @@ A decentralized freelance platform combining Web2 familiarity with Web3 automati
 - **User Authentication**: Wallet/Email & Social Login
 - **Job Marketplace**: Post, browse, and apply for freelance jobs
 - **Escrow Payment System**: Secure payments via Hadera blockchain
+- **Payment Methods**: $HBAR, $USDC (Hedera Token Service)
 - **Real-time Messaging**: Built-in communication system
 - **Reputation System**: Ratings and reviews for all users
 - **Admin Dashboard**: Platform management and moderation
+- **Token**: $FDAO (HTS Token on Hedera)
 
 ### Future Phases
 - AI Agent Integration
@@ -29,10 +32,11 @@ A decentralized freelance platform combining Web2 familiarity with Web3 automati
 
 - **Frontend**: Next.js, React, Tailwind CSS
 - **Backend**: Node.js, Express
-- **Blockchain**: Hadera, Smart Contracts
-- **Database**: PostgreSQL
-- **Storage**: IPFS
-- **Authentication**: NextAuth.js, Web3Auth
+- **Blockchain**: Hedera Hashgraph, Smart Contracts (Hedera Smart Contract Service)
+- **Database**: PostgreSQL with Hedera Consensus Service for audit trails
+- **Storage**: IPFS with Hedera File Service for metadata anchoring
+- **Authentication**: Hedera DID, NextAuth.js with Hedera Wallet Integration
+- **Tokens**: Hedera Token Service (HTS) for $FDAO and stablecoin payments
 
 ## 🚀 Getting Started
 
@@ -40,7 +44,8 @@ A decentralized freelance platform combining Web2 familiarity with Web3 automati
 - Node.js 18+
 - npm or yarn
 - Git
-- Hadera Testnet Account
+- Hedera Testnet Account
+- HashPack or Blade Wallet (for Hedera wallet integration)
 
 ### Installation
 
@@ -76,9 +81,18 @@ A decentralized freelance platform combining Web2 familiarity with Web3 automati
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🔗 Hedera Integration
+
+FreeLanceDAO leverages Hedera's enterprise-grade blockchain for:
+- Fast, fair, and secure transactions with finality in seconds
+- Low, predictable fees for microtransactions
+- Native tokenization with Hedera Token Service (HTS)
+- Decentralized identity with Hedera DID
+- Carbon-negative network operations
+
 ## 🤝 Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+We welcome contributions from the Hedera and Web3 communities! Your expertise can help shape the future of decentralized freelancing.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
