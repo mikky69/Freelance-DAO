@@ -1,3 +1,5 @@
+"use client";
+
 import Web3Onboarding from "@/components/web3-onboarding"
 
 export default function OnboardingPage() {
