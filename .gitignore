@@ -1,0 +1,28 @@
+# Node.js & Frontend (Next.js)
+node_modules/
+.next/
+out/
+dist/
+.env
+.env.local
+.env.development
+.env.production
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Internet Computer (dfx)
+.dfx/
+canisters/
+*.mo~  # Ignore backup files for Motoko
+
+# Logs & Temp Files
+logs/
+*.log
+*.log.*
+*.swp
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
