@@ -433,6 +433,7 @@ export default function MessagesPage() {
             <div className="md:hidden w-full">{!isMobileConversationOpen ? <ConversationsList /> : <ChatArea />}</div>
           </div>
         </div>
-      )
-    }
-}
+        </div>
+      </ProtectedRoute>
+    )
+  }

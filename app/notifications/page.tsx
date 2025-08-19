@@ -542,6 +542,6 @@ export default function NotificationsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

@@ -483,6 +483,6 @@ export default function EscrowPage() {
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }
