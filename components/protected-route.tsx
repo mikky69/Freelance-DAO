@@ -24,7 +24,7 @@ export function ProtectedRoute({
   requireWallet = false,
   requireAuth = true,
   requiredRole,
-  redirectTo = "/auth/signin",
+  redirectTo = "/auth/signin/freelancer",
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated, isWalletConnected } = useAuth()
   const router = useRouter()
@@ -97,19 +97,44 @@ export function ProtectedRoute({
                 This page contains sensitive information and requires authentication to protect your data.
               </AlertDescription>
             </Alert>
+           
             <div className="space-y-3">
-              <Link href="/auth/signin" className="block">
+              <div className="text-center mb-4">
+                <p className="text-sm text-slate-600 mb-3">Choose your account type:</p>
+              </div>
+              
+              <Link href="/auth/signin/freelancer" className="block">
                 <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
                   <User className="w-4 h-4 mr-2" />
-                  Sign In
+                  Sign In as Freelancer
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
-              <Link href="/auth/signup" className="block">
-                <Button variant="outline" className="w-full">
-                  Create Account
+              
+              <Link href="/auth/signin/client" className="block">
+                <Button variant="outline" className="w-full border-green-200 text-green-700 hover:bg-green-50">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Sign In as Client
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
+              
+              <div className="text-center pt-2">
+                <p className="text-sm text-slate-500">Don't have an account?</p>
+                <div className="flex gap-2 mt-2">
+                  <Link href="/auth/signup/freelancer" className="flex-1">
+                    <Button variant="ghost" size="sm" className="w-full text-blue-600">
+                      Sign up as Freelancer
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signup/client" className="flex-1">
+                    <Button variant="ghost" size="sm" className="w-full text-green-600">
+                      Sign up as Client
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+              
               <Link href="/" className="block">
                 <Button variant="ghost" className="w-full">
                   Back to Home

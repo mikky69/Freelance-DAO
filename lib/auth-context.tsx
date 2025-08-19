@@ -105,10 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // sign in
+  // sign in
   const signIn = async (email: string, password: string, role: "freelancer" | "client"): Promise<boolean> => {
     setIsLoading(true)
     try {
-      const endpoint = role === "client" ? "/api/auth/login-client" : "/api/auth/login-freelancer"
+      const endpoint = role === "client" ? "/api/auth/login/client" : "/api/auth/login/freelancer"
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -160,14 +161,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // sign up
+  // sign up
   const signUp = async (email: string, password: string, name: string, role: "freelancer" | "client"): Promise<boolean> => {
     setIsLoading(true)
     try {
-      const endpoint = role === "client" ? "/api/auth/register-client" : "/api/auth/register-freelancer"
+      const endpoint = role === "client" ? "/api/auth/register/client" : "/api/auth/register/freelancer"
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, fullname: name }),
       })
 
       if (!res.ok) {
