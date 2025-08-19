@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +34,7 @@ import {
   Shield,
   Zap,
   Target,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -203,12 +204,134 @@ const freelancers = [
   },
 ]
 
+interface Freelancer {
+  _id: string;
+  fullname: string;
+  title: string;
+  avatar: string;
+  rating: number;
+  reviewCount: number;
+  hourlyRate: number;
+  location: string;
+  verified: boolean;
+  topRated: boolean;
+  skills: string[];
+  description: string;
+  completedJobs: number;
+  successRate: number;
+  responseTime: string;
+  languages: string[];
+  category: string;
+  availability: string;
+  portfolio: {
+    title: string;
+    description?: string;
+    image: string;
+    url?: string;
+  }[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+  count: number;
+}
+
+const categoryIcons: Record<string, any> = {
+  'all': Globe,
+  'web-dev': Code,
+  'mobile-dev': Smartphone,
+  'design': Palette,
+  'writing': PenTool,
+  'marketing': Megaphone,
+  'data': BarChart,
+  'photography': Camera,
+  'blockchain': Shield,
+  'other': Target,
+};
+
 export default function FreelancersPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [sortBy, setSortBy] = useState("rating")
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedFreelancer, setSelectedFreelancer] = useState<any>(null)
+  const { user } = useAuth();
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Filter states
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [minRate, setMinRate] = useState("");
+  const [maxRate, setMaxRate] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [topRatedOnly, setTopRatedOnly] = useState(false);
+  const [selectedAvailability, setSelectedAvailability] = useState("");
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  // Modal state
+  const [selectedFreelancer, setSelectedFreelancer] = useState<Freelancer | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/freelancers/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(data.categories);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  // Fetch freelancers
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '12',
+        });
+        
+        if (selectedCategory !== 'all') params.append('category', selectedCategory);
+        if (searchTerm) params.append('search', searchTerm);
+        if (minRate) params.append('minRate', minRate);
+        if (maxRate) params.append('maxRate', maxRate);
+        if (verifiedOnly) params.append('verified', 'true');
+        if (topRatedOnly) params.append('topRated', 'true');
+        if (selectedAvailability) params.append('availability', selectedAvailability);
+        
+        const response = await fetch(`/api/freelancers?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch freelancers');
+        
+        const data = await response.json();
+        setFreelancers(data.freelancers);
+        setTotalPages(data.pagination.pages);
+      } catch (err) {
+        setError('Failed to load freelancers. Please try again.');
+        console.error('Error fetching freelancers:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchFreelancers();
+  }, [selectedCategory, searchTerm, minRate, maxRate, verifiedOnly, topRatedOnly, selectedAvailability, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchTerm, minRate, maxRate, verifiedOnly, topRatedOnly, selectedAvailability]);
+
   const { user, isAuthenticated } = useAuth()
 
   const filteredFreelancers = freelancers.filter((freelancer) => {

@@ -4,6 +4,39 @@ export interface IFreelancer extends Document {
   fullname: string;
   email: string;
   password: string;
+  // Profile Information
+  title?: string;
+  avatar?: string;
+  bio?: string;
+  description?: string;
+  location?: string;
+  
+  // Professional Details
+  skills: string[];
+  category?: string;
+  hourlyRate?: number;
+  availability?: string;
+  languages: string[];
+  
+  // Performance Metrics
+  rating: number;
+  reviewCount: number;
+  completedJobs: number;
+  successRate: number;
+  responseTime?: string;
+  
+  // Status Flags
+  verified: boolean;
+  topRated: boolean;
+  
+  // Portfolio
+  portfolio: {
+    title: string;
+    description?: string;
+    image?: string;
+    url?: string;
+  }[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -12,6 +45,13 @@ export interface IClient extends Document {
   fullname: string;
   email: string;
   password: string;
+  // Client-specific fields can be added here
+  company?: string;
+  avatar?: string;
+  location?: string;
+  verified: boolean;
+  rating: number;
+  reviewCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +74,114 @@ const FreelancerSchema = new Schema<IFreelancer>({
     required: [true, 'Password is required'],
     minlength: 6,
   },
+  // Profile Information
+  title: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  avatar: {
+    type: String,
+    default: '/placeholder.svg?height=80&width=80',
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 1000,
+  },
+  location: {
+    type: String,
+    trim: true,
+  },
+  
+  // Professional Details
+  skills: {
+    type: [String],
+    default: [],
+  },
+  category: {
+    type: String,
+    enum: ['web-dev', 'mobile-dev', 'design', 'writing', 'marketing', 'data', 'photography', 'blockchain', 'other'],
+    default: 'other',
+  },
+  hourlyRate: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  availability: {
+    type: String,
+    enum: ['Available now', 'Available in 1 day', 'Available in 2 days', 'Available in 3 days', 'Available in 1 week', 'Not available'],
+    default: 'Available now',
+  },
+  languages: {
+    type: [String],
+    default: ['English'],
+  },
+  
+  // Performance Metrics
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5,
+    default: 0,
+  },
+  reviewCount: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  completedJobs: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  successRate: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+  responseTime: {
+    type: String,
+    default: '24 hours',
+  },
+  
+  // Status Flags
+  verified: {
+    type: Boolean,
+    default: false,
+  },
+  topRated: {
+    type: Boolean,
+    default: false,
+  },
+  
+  // Portfolio
+  portfolio: [{
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    image: {
+      type: String,
+      default: '/placeholder.svg?height=200&width=300',
+    },
+    url: {
+      type: String,
+      trim: true,
+    },
+  }],
 }, {
   timestamps: true,
 });
@@ -55,6 +203,33 @@ const ClientSchema = new Schema<IClient>({
     type: String,
     required: [true, 'Password is required'],
     minlength: 6,
+  },
+  company: {
+    type: String,
+    trim: true,
+  },
+  avatar: {
+    type: String,
+    default: '/placeholder.svg?height=80&width=80',
+  },
+  location: {
+    type: String,
+    trim: true,
+  },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5,
+    default: 0,
+  },
+  reviewCount: {
+    type: Number,
+    min: 0,
+    default: 0,
   },
 }, {
   timestamps: true,
