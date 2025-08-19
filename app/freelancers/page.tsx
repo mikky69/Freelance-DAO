@@ -251,7 +251,7 @@ const categoryIcons: Record<string, any> = {
 };
 
 export default function FreelancersPage() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,11 +260,13 @@ export default function FreelancersPage() {
   // Filter states
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [minRate, setMinRate] = useState("");
   const [maxRate, setMaxRate] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [topRatedOnly, setTopRatedOnly] = useState(false);
   const [selectedAvailability, setSelectedAvailability] = useState("");
+  const [sortBy, setSortBy] = useState("rating");
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -273,6 +275,7 @@ export default function FreelancersPage() {
   // Modal state
   const [selectedFreelancer, setSelectedFreelancer] = useState<Freelancer | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch categories
   useEffect(() => {
@@ -332,13 +335,40 @@ export default function FreelancersPage() {
     setCurrentPage(1);
   }, [selectedCategory, searchTerm, minRate, maxRate, verifiedOnly, topRatedOnly, selectedAvailability]);
 
-  const { user, isAuthenticated } = useAuth()
+  // Remove the entire mock freelancers array (lines 54-205)
+
+interface Freelancer {
+  _id: string;
+  fullname: string;
+  title: string;
+  avatar: string;
+  rating: number;
+  reviewCount: number;
+  hourlyRate: number;
+  location: string;
+  verified: boolean;
+  topRated: boolean;
+  skills: string[];
+  description: string;
+  completedJobs: number;
+  successRate: number;
+  responseTime: string;
+  languages: string[];
+  category: string;
+  availability: string;
+  portfolio: {
+    title: string;
+    description?: string;
+    image: string;
+    url?: string;
+  }[];
+}
 
   const filteredFreelancers = freelancers.filter((freelancer) => {
     const matchesSearch =
-      freelancer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      freelancer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      freelancer.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
+      freelancer.fullname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      freelancer.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      freelancer.skills?.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const matchesCategory = selectedCategory === "all" || freelancer.category === selectedCategory
 
@@ -354,7 +384,7 @@ export default function FreelancersPage() {
       case "price-high":
         return b.hourlyRate - a.hourlyRate
       case "reviews":
-        return b.reviews - a.reviews
+        return b.reviewCount - a.reviewCount
       default:
         return 0
     }
@@ -506,7 +536,7 @@ export default function FreelancersPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedFreelancers.map((freelancer) => (
               <Card
-                key={freelancer.id}
+                key={freelancer._id}
                 className="group hover:shadow-xl transition-all duration-300 border-slate-200 hover:border-blue-300"
               >
                 <CardHeader className="pb-4">
@@ -514,9 +544,9 @@ export default function FreelancersPage() {
                     <div className="flex items-center space-x-3">
                       <div className="relative">
                         <Avatar className="w-16 h-16 ring-2 ring-blue-100">
-                          <AvatarImage src={freelancer.avatar || "/placeholder.svg"} alt={freelancer.name} />
+                          <AvatarImage src={freelancer.avatar || "/placeholder.svg"} alt={freelancer.fullname} />
                           <AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold text-lg">
-                            {freelancer.name
+                            {freelancer.fullname
                               .split(" ")
                               .map((n) => n[0])
                               .join("")}
@@ -531,7 +561,7 @@ export default function FreelancersPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                            {freelancer.name}
+                            {freelancer.fullname}
                           </h3>
                           {freelancer.topRated && (
                             <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs">
@@ -545,7 +575,7 @@ export default function FreelancersPage() {
                           <div className="flex items-center space-x-1">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />
                             <span className="text-sm font-medium text-slate-700">{freelancer.rating}</span>
-                            <span className="text-sm text-slate-500">({freelancer.reviews})</span>
+                            <span className="text-sm text-slate-500">({freelancer.reviewCount})</span>
                           </div>
                           <div className="flex items-center space-x-1 text-sm text-slate-500">
                             <MapPin className="w-3 h-3" />
@@ -714,7 +744,7 @@ export default function FreelancersPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <DialogTitle className="text-2xl">{selectedFreelancer.name}</DialogTitle>
+                      <DialogTitle className="text-2xl">{selectedFreelancer.fullname}</DialogTitle>
                       {selectedFreelancer.topRated && (
                         <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900">
                           <Award className="w-4 h-4 mr-1" />
