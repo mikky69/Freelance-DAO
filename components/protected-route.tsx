@@ -8,15 +8,24 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Lock, Wallet, User, ArrowRight, Shield, Zap, Briefcase, Bot } from "lucide-react"
+import { Loader2, Lock, Wallet, User, ArrowRight, Shield, Zap, Briefcase, Bot, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import ProfileCompletion from "@/components/profile-completion"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   requireWallet?: boolean
   requireAuth?: boolean
   requiredRole?: "freelancer" | "client" | "admin"
+  requireCompleteProfile?: boolean
   redirectTo?: string
+}
+
+interface ProfileCompletionStatus {
+  isComplete: boolean
+  completionPercentage: number
+  missingFields: string[]
+  requiredFields: string[]
 }
 
 export function ProtectedRoute({
@@ -24,33 +33,65 @@ export function ProtectedRoute({
   requireWallet = false,
   requireAuth = true,
   requiredRole,
+  requireCompleteProfile = false,
   redirectTo = "/auth/signin/freelancer",
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated, isWalletConnected } = useAuth()
   const router = useRouter()
   const [showContent, setShowContent] = useState(false)
+  const [profileStatus, setProfileStatus] = useState<ProfileCompletionStatus | null>(null)
+  const [checkingProfile, setCheckingProfile] = useState(false)
+
+  // Check profile completion status
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      if (!requireCompleteProfile || !isAuthenticated || !user) return
+      
+      setCheckingProfile(true)
+      try {
+        const response = await fetch('/api/profile/completion', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('freelancedao_token')}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setProfileStatus(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to check profile completion:', error)
+      } finally {
+        setCheckingProfile(false)
+      }
+    }
+
+    checkProfileCompletion()
+  }, [requireCompleteProfile, isAuthenticated, user])
 
   useEffect(() => {
     if (!isLoading) {
       if (requireAuth && !isAuthenticated) {
-        // Redirect to sign in if authentication is required
         router.push(redirectTo)
         return
       }
 
       if (requiredRole && isAuthenticated && user?.role !== requiredRole) {
-        // User doesn't have the required role
         setShowContent(false)
         return
       }
 
       if (requireWallet && isAuthenticated && !isWalletConnected) {
-        // Show wallet connection prompt if wallet is required
         setShowContent(false)
         return
       }
 
-      if (isAuthenticated && (!requiredRole || user?.role === requiredRole) && (!requireWallet || isWalletConnected)) {
+      if (requireCompleteProfile && isAuthenticated && profileStatus && !profileStatus.isComplete) {
+        setShowContent(false)
+        return
+      }
+
+      if (isAuthenticated && (!requiredRole || user?.role === requiredRole) && (!requireWallet || isWalletConnected) && (!requireCompleteProfile || !profileStatus || profileStatus.isComplete)) {
         setShowContent(true)
       }
     }
@@ -61,18 +102,48 @@ export function ProtectedRoute({
     requireAuth,
     requireWallet,
     requiredRole,
+    requireCompleteProfile,
+    profileStatus,
     user?.role,
     router,
     redirectTo,
   ])
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || checkingProfile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Profile completion required
+  if (requireCompleteProfile && isAuthenticated && profileStatus && !profileStatus.isComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Profile Incomplete</h1>
+            <p className="text-slate-600">
+              Please complete your profile to access all platform features
+            </p>
+          </div>
+          
+          <ProfileCompletion
+            missingFields={profileStatus.missingFields}
+            userType={user?.role as 'freelancer' | 'client'}
+            onComplete={() => {
+              setProfileStatus(prev => prev ? { ...prev, isComplete: true } : null)
+              setShowContent(true)
+            }}
+          />
         </div>
       </div>
     )

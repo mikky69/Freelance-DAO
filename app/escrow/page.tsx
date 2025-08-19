@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { useState } from "react"
+import { ProtectedRoute } from "@/components/protected-route"
 
 export default function EscrowPage() {
   const [selectedEscrow, setSelectedEscrow] = useState(0)
@@ -89,24 +90,26 @@ export default function EscrowPage() {
   const currentEscrow = escrowContracts[selectedEscrow]
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Smart Contract Escrow</h1>
-              <p className="text-slate-600">Secure payments powered by Hedera Hashgraph</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                <Shield className="w-4 h-4 mr-1" />
-                Blockchain Secured
-              </Badge>
-              <Button className="bg-blue-500 hover:bg-blue-600">
-                <FileText className="w-4 h-4 mr-2" />
-                View Documentation
-              </Button>
+    <ProtectedRoute requireAuth={true} requireWallet={true} requireCompleteProfile={true}>
+      <div className="min-h-screen bg-slate-50">
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Smart Contract Escrow</h1>
+                <p className="text-slate-600">Secure payments powered by Hedera Hashgraph</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  <Shield className="w-4 h-4 mr-1" />
+                  Blockchain Secured
+                </Badge>
+                <Button className="bg-blue-500 hover:bg-blue-600">
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Documentation
+                </Button>
+              </div>
             </div>
           </div>
         </div>

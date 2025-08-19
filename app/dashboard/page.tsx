@@ -575,7 +575,10 @@ function DashboardContent() {
 
 export default function Dashboard() {
   return (
-    <ProtectedRoute requireAuth={true}>
+    <ProtectedRoute 
+      requireAuth={true}
+      requireCompleteProfile={true}
+    >
       <DashboardContent />
     </ProtectedRoute>
   );

@@ -11,6 +11,7 @@ import { Star, MapPin, Calendar, DollarSign, Award, ExternalLink, Edit, Verified
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 import Link from "next/link"
+import { ProtectedRoute } from "@/components/protected-route"
 
 interface ProfileData {
   user: {
@@ -71,7 +72,7 @@ interface ProfileData {
   }[];
 }
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user: authUser } = useAuth();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,10 +109,8 @@ export default function ProfilePage() {
         setLoading(false);
       }
     };
-    
-    if (authUser) {
-      fetchProfile();
-    }
+
+    fetchProfile();
   }, [authUser]);
 
   if (loading) {
@@ -136,6 +135,8 @@ export default function ProfilePage() {
     );
   }
 
+  if (!profileData) return null;
+
   const { user, stats, jobHistory, reviews } = profileData;
   const isFreelancer = user.userType === 'freelancer';
 
@@ -151,7 +152,7 @@ export default function ProfilePage() {
                 {user.fullname.split(' ').map(n => n[0]).join('').toUpperCase()}
               </AvatarFallback>
             </Avatar>
-
+    
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
@@ -190,7 +191,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-
+    
                 <div className="flex gap-2">
                   <Button variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
                     <Edit className="w-4 h-4 mr-2" />
@@ -204,258 +205,266 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Sidebar */}
-          <div className="space-y-6">
-            {/* Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Star className="w-5 h-5 text-yellow-500 mr-2" />
-                    <span className="font-medium">Rating</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">{(user.rating || 0).toFixed(1)}</div>
-                    <div className="text-sm text-slate-500">{user.reviewCount || 0} reviews</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Award className="w-5 h-5 text-blue-500 mr-2" />
-                    <span className="font-medium">{isFreelancer ? 'Jobs Completed' : 'Jobs Posted'}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">{isFreelancer ? (stats.completedJobs || 0) : (stats.postedJobs || 0)}</div>
-                    <div className="text-sm text-slate-500">
-                      {isFreelancer ? `${user.successRate || 0}% success rate` : `${stats.activeJobs || 0} active`}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <DollarSign className="w-5 h-5 text-green-500 mr-2" />
-                    <span className="font-medium">{isFreelancer ? 'Total Earned' : 'Total Spent'}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">
-                      {isFreelancer ? stats.totalEarnings || 0 : stats.totalSpent || 0} HBAR
-                    </div>
-                    <div className="text-sm text-slate-500">All time</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Skills - Only for freelancers */}
-            {isFreelancer && user.skills && user.skills.length > 0 && (
+    
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Sidebar */}
+            <div className="space-y-6">
+              {/* Stats */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Skills & Expertise</CardTitle>
+                  <CardTitle>Profile Stats</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {user.skills.map((skill, index) => (
-                      <Badge key={index} variant="outline">
-                        {skill}
-                      </Badge>
-                    ))}
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Star className="w-5 h-5 text-yellow-500 mr-2" />
+                      <span className="font-medium">Rating</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">{(user.rating || 0).toFixed(1)}</div>
+                      <div className="text-sm text-slate-500">{user.reviewCount || 0} reviews</div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Languages */}
-            {user.languages && user.languages.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Languages</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {user.languages.map((language, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>{language}</span>
-                        <Badge variant="secondary">Fluent</Badge>
+    
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Award className="w-5 h-5 text-blue-500 mr-2" />
+                      <span className="font-medium">{isFreelancer ? 'Jobs Completed' : 'Jobs Posted'}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">{isFreelancer ? (stats.completedJobs || 0) : (stats.postedJobs || 0)}</div>
+                      <div className="text-sm text-slate-500">
+                        {isFreelancer ? `${user.successRate || 0}% success rate` : `${stats.activeJobs || 0} active`}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+    
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <DollarSign className="w-5 h-5 text-green-500 mr-2" />
+                      <span className="font-medium">{isFreelancer ? 'Total Earned' : 'Total Spent'}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">
+                        {isFreelancer ? stats.totalEarnings || 0 : stats.totalSpent || 0} HBAR
+                      </div>
+                      <div className="text-sm text-slate-500">All time</div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                {/* About */}
+    
+              {/* Skills - Only for freelancers */}
+              {isFreelancer && user.skills && user.skills.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>About Me</CardTitle>
+                    <CardTitle>Skills & Expertise</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-slate-700 leading-relaxed">
-                      {user.description || user.bio || "No description available."}
-                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {user.skills.map((skill, index) => (
+                        <Badge key={index} variant="outline">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
-
-                {/* Hourly Rate - Only for freelancers */}
-                {isFreelancer && user.hourlyRate && (
+              )}
+    
+              {/* Languages */}
+              {user.languages && user.languages.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Languages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {user.languages.map((language, index) => (
+                        <div key={index} className="flex justify-between">
+                          <span>{language}</span>
+                          <Badge variant="secondary">Fluent</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+    
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              <Tabs defaultValue="overview" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
+                </TabsList>
+    
+                <TabsContent value="overview" className="space-y-6">
+                  {/* About */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Hourly Rate</CardTitle>
+                      <CardTitle>About Me</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">
-                        {user.hourlyRate} HBAR/hour
-                      </div>
+                      <p className="text-slate-700 leading-relaxed">
+                        {user.description || user.bio || "No description available."}
+                      </p>
                     </CardContent>
                   </Card>
-                )}
-              </TabsContent>
-
-              <TabsContent value="portfolio" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {user.portfolio && user.portfolio.length > 0 ? (
-                    user.portfolio.map((project, index) => (
-                      <Card key={index} className="hover:shadow-lg transition-shadow">
-                        <div className="aspect-video bg-slate-100 rounded-t-lg">
-                          {project.image && (
-                            <img 
-                              src={project.image} 
-                              alt={project.title}
-                              className="w-full h-full object-cover rounded-t-lg"
-                            />
-                          )}
-                        </div>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            {project.title}
-                            {project.url && (
-                              <Button variant="ghost" size="sm" asChild>
-                                <a href={project.url} target="_blank" rel="noopener noreferrer">
-                                  <ExternalLink className="w-4 h-4" />
-                                </a>
-                              </Button>
-                            )}
-                          </CardTitle>
-                          <CardDescription>{project.description}</CardDescription>
-                        </CardHeader>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="col-span-2 text-center py-8">
-                      <p className="text-slate-600">No portfolio items yet.</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="reviews" className="space-y-6">
-                {reviews.length > 0 ? (
-                  reviews.map((review, index) => (
-                    <Card key={index}>
+    
+                  {/* Hourly Rate - Only for freelancers */}
+                  {isFreelancer && user.hourlyRate && (
+                    <Card>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-lg">{review.client.fullname}</CardTitle>
-                            <CardDescription>{review.project}</CardDescription>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center mb-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating ? "text-yellow-500 fill-current" : "text-slate-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <div className="text-sm text-slate-500">
-                              {new Date(review.date).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
+                        <CardTitle>Hourly Rate</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-slate-700">{review.review}</p>
-                        <div className="flex items-center mt-4 text-sm text-slate-500">
-                          <ThumbsUp className="w-4 h-4 mr-1" />
-                          Helpful review
+                        <div className="text-2xl font-bold text-green-600">
+                          {user.hourlyRate} HBAR/hour
                         </div>
                       </CardContent>
                     </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-slate-600">No reviews yet.</p>
+                  )}
+                </TabsContent>
+    
+                <TabsContent value="portfolio" className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {user.portfolio && user.portfolio.length > 0 ? (
+                      user.portfolio.map((project, index) => (
+                        <Card key={index} className="hover:shadow-lg transition-shadow">
+                          <div className="aspect-video bg-slate-100 rounded-t-lg">
+                            {project.image && (
+                              <img 
+                                src={project.image} 
+                                alt={project.title}
+                                className="w-full h-full object-cover rounded-t-lg"
+                              />
+                            )}
+                          </div>
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              {project.title}
+                              {project.url && (
+                                <Button variant="ghost" size="sm" asChild>
+                                  <a href={project.url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                            </CardTitle>
+                            <CardDescription>{project.description}</CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center py-8">
+                        <p className="text-slate-600">No portfolio items yet.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="history" className="space-y-6">
-                <div className="space-y-4">
-                  {jobHistory.length > 0 ? (
-                    jobHistory.map((job, index) => (
+                </TabsContent>
+    
+                <TabsContent value="reviews" className="space-y-6">
+                  {reviews.length > 0 ? (
+                    reviews.map((review, index) => (
                       <Card key={index}>
-                        <CardContent className="p-6">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-slate-800">{job.title}</h4>
-                              <p className="text-slate-600">
-                                {isFreelancer ? job.client?.fullname : job.freelancer?.fullname}
-                              </p>
-                              <p className="text-sm text-slate-500">
-                                {new Date(job.completedAt || job.postedAt || '').toLocaleDateString()}
-                              </p>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-lg">{review.client.fullname}</CardTitle>
+                              <CardDescription>{review.project}</CardDescription>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <Badge className={`${
-                                job.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                job.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                'bg-yellow-100 text-yellow-700'
-                              }`}>
-                                {job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </Badge>
-                              <div className="text-right">
-                                <div className="font-semibold text-green-600">
-                                  {job.amount} {job.currency}
-                                </div>
+                            <div className="text-right">
+                              <div className="flex items-center mb-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${
+                                      i < review.rating ? "text-yellow-500 fill-current" : "text-slate-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                {new Date(review.date).toLocaleDateString()}
                               </div>
                             </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-slate-700">{review.review}</p>
+                          <div className="flex items-center mt-4 text-sm text-slate-500">
+                            <ThumbsUp className="w-4 h-4 mr-1" />
+                            Helpful review
                           </div>
                         </CardContent>
                       </Card>
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-slate-600">No job history yet.</p>
+                      <p className="text-slate-600">No reviews yet.</p>
                     </div>
                   )}
-                </div>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+    
+                <TabsContent value="history" className="space-y-6">
+                  <div className="space-y-4">
+                    {jobHistory.length > 0 ? (
+                      jobHistory.map((job, index) => (
+                        <Card key={index}>
+                          <CardContent className="p-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-slate-800">{job.title}</h4>
+                                <p className="text-slate-600">
+                                  {isFreelancer ? job.client?.fullname : job.freelancer?.fullname}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {new Date(job.completedAt || job.postedAt || '').toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <Badge className={`${
+                                  job.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  job.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </Badge>
+                                <div className="text-right">
+                                  <div className="font-semibold text-green-600">
+                                    {job.amount} {job.currency}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-slate-600">No job history yet.</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <ProtectedRoute requireAuth={true} requireCompleteProfile={true}>
+      <ProfileContent />
+    </ProtectedRoute>
   )
 }

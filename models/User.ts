@@ -1,5 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Add profile completion interfaces
+export interface ProfileCompletionStatus {
+  isComplete: boolean;
+  completionPercentage: number;
+  missingFields: string[];
+  requiredFields: string[];
+}
+
 export interface IFreelancer extends Document {
   fullname: string;
   email: string;
@@ -39,6 +47,11 @@ export interface IFreelancer extends Document {
   
   createdAt: Date;
   updatedAt: Date;
+  
+  // Profile completion methods
+  getProfileCompletionStatus(): ProfileCompletionStatus;
+  isProfileComplete(): boolean;
+  getMissingProfileFields(): string[];
 }
 
 export interface IClient extends Document {
@@ -54,6 +67,11 @@ export interface IClient extends Document {
   reviewCount: number;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Profile completion methods
+  getProfileCompletionStatus(): ProfileCompletionStatus;
+  isProfileComplete(): boolean;
+  getMissingProfileFields(): string[];
 }
 
 const FreelancerSchema = new Schema<IFreelancer>({
@@ -237,3 +255,93 @@ const ClientSchema = new Schema<IClient>({
 
 export const Freelancer = mongoose.models.Freelancer || mongoose.model<IFreelancer>('Freelancer', FreelancerSchema);
 export const Client = mongoose.models.Client || mongoose.model<IClient>('Client', ClientSchema);
+
+// Add methods to FreelancerSchema
+FreelancerSchema.methods.getProfileCompletionStatus = function(): ProfileCompletionStatus {
+  const requiredFields = [
+    'fullname',
+    'email',
+    'title',
+    'bio',
+    'location',
+    'skills',
+    'category',
+    'hourlyRate'
+  ];
+  
+  const missingFields: string[] = [];
+  
+  requiredFields.forEach(field => {
+    const value = this[field];
+    if (!value || 
+        (typeof value === 'string' && value.trim() === '') ||
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === 'number' && value === 0 && field === 'hourlyRate')) {
+      missingFields.push(field);
+    }
+  });
+  
+  // Additional validation for skills (should have at least 3 skills)
+  if (this.skills && this.skills.length < 3) {
+    if (!missingFields.includes('skills')) {
+      missingFields.push('skills');
+    }
+  }
+  
+  const completionPercentage = Math.round(
+    ((requiredFields.length - missingFields.length) / requiredFields.length) * 100
+  );
+  
+  return {
+    isComplete: missingFields.length === 0,
+    completionPercentage,
+    missingFields,
+    requiredFields
+  };
+};
+
+FreelancerSchema.methods.isProfileComplete = function(): boolean {
+  return this.getProfileCompletionStatus().isComplete;
+};
+
+FreelancerSchema.methods.getMissingProfileFields = function(): string[] {
+  return this.getProfileCompletionStatus().missingFields;
+};
+
+// Add methods to ClientSchema
+ClientSchema.methods.getProfileCompletionStatus = function(): ProfileCompletionStatus {
+  const requiredFields = [
+    'fullname',
+    'email',
+    'company',
+    'location'
+  ];
+  
+  const missingFields: string[] = [];
+  
+  requiredFields.forEach(field => {
+    const value = this[field];
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
+      missingFields.push(field);
+    }
+  });
+  
+  const completionPercentage = Math.round(
+    ((requiredFields.length - missingFields.length) / requiredFields.length) * 100
+  );
+  
+  return {
+    isComplete: missingFields.length === 0,
+    completionPercentage,
+    missingFields,
+    requiredFields
+  };
+};
+
+ClientSchema.methods.isProfileComplete = function(): boolean {
+  return this.getProfileCompletionStatus().isComplete;
+};
+
+ClientSchema.methods.getMissingProfileFields = function(): string[] {
+  return this.getProfileCompletionStatus().missingFields;
+};

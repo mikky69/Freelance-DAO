@@ -24,6 +24,7 @@ import {
   MessageSquare,
 } from "lucide-react"
 import { useState } from "react"
+import { ProtectedRoute } from "@/components/protected-route"
 
 export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState(0)
@@ -390,45 +391,48 @@ export default function MessagesPage() {
   )
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-4 flex-shrink-0">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center">
-              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
-              Messages
-            </h1>
-            {/* Mobile menu trigger */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden">
-                  <Menu className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-80">
+    <ProtectedRoute requireAuth={true} requireCompleteProfile={true}>
+      <div className="min-h-screen bg-slate-50">
+        <div className="h-screen bg-slate-50 flex flex-col">
+          {/* Header */}
+          <div className="bg-white border-b border-slate-200 px-4 py-4 flex-shrink-0">
+            <div className="container mx-auto">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center">
+                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+                  Messages
+                </h1>
+                {/* Mobile menu trigger */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="sm" className="md:hidden">
+                      <Menu className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-80">
+                    <ConversationsList />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+          </div>
+    
+          <div className="flex-1 flex overflow-hidden">
+            {/* Desktop Layout */}
+            <div className="hidden md:flex w-full">
+              {/* Conversations List */}
+              <div className="w-80 border-r border-slate-200">
                 <ConversationsList />
-              </SheetContent>
-            </Sheet>
+              </div>
+    
+              {/* Chat Area */}
+              <ChatArea />
+            </div>
+    
+            {/* Mobile Layout */}
+            <div className="md:hidden w-full">{!isMobileConversationOpen ? <ConversationsList /> : <ChatArea />}</div>
           </div>
         </div>
-      </div>
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Layout */}
-        <div className="hidden md:flex w-full">
-          {/* Conversations List */}
-          <div className="w-80 border-r border-slate-200">
-            <ConversationsList />
-          </div>
-
-          {/* Chat Area */}
-          <ChatArea />
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="md:hidden w-full">{!isMobileConversationOpen ? <ConversationsList /> : <ChatArea />}</div>
-      </div>
-    </div>
-  )
+      )
+    }
 }

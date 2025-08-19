@@ -114,7 +114,7 @@ export default function AIAgentDashboard() {
   }
 
   return (
-    <ProtectedRoute requireAuth={true} requiredRole="freelancer">
+    <ProtectedRoute requireAuth={true} requiredRole="freelancer" requireCompleteProfile={true}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {/* Enhanced Header with Visual Elements */}
         <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white overflow-hidden">

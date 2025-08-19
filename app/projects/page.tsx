@@ -757,7 +757,7 @@ function ProjectsContent() {
 
 export default function ProjectsPage() {
   return (
-    <ProtectedRoute requireAuth={true} requiredRole="client">
+    <ProtectedRoute requireAuth={true} requiredRole="client" requireCompleteProfile={true}>
       <ProjectsContent />
     </ProtectedRoute>
   )
