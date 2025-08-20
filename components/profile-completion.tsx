@@ -18,6 +18,7 @@ import { toast } from "sonner"
 interface ProfileCompletionStepsProps {
   onComplete?: () => void
   userType: "freelancer" | "client"
+  missingFields?: string[]
 }
 
 interface StepData {
@@ -73,9 +74,12 @@ const experienceLevels = [
 ]
 
 const availabilityOptions = [
-  { value: "full-time", label: "Full-time" },
-  { value: "part-time", label: "Part-time" },
-  { value: "occasional", label: "Occasional" },
+  { value: "Available now", label: "Available now" },
+  { value: "Available in 1 day", label: "Available in 1 day" },
+  { value: "Available in 2 days", label: "Available in 2 days" },
+  { value: "Available in 3 days", label: "Available in 3 days" },
+  { value: "Available in 1 week", label: "Available in 1 week" },
+  { value: "Not available", label: "Not available" },
 ]
 
 const languages = [
@@ -257,8 +261,10 @@ export default function ProfileCompletionSteps({ onComplete, userType }: Profile
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      const updatedProfile = {
-        ...user?.profile,
+      // Send flat structure matching User model instead of nested profile object
+      const updateData = {
+        fullname: formData.fullname,
+        email: formData.email,
         title: formData.title,
         bio: formData.bio,
         location: formData.location,
@@ -272,16 +278,16 @@ export default function ProfileCompletionSteps({ onComplete, userType }: Profile
         skills: userType === "freelancer" ? skills : undefined,
         languages: selectedLanguages,
       }
-
-      updateUser({
-        name: formData.fullname,
-        email: formData.email,
-        profile: updatedProfile,
-      })
-
-      toast.success("Profile completed successfully!")
-      onComplete?.()
+  
+      const success = await updateUser(updateData)
+  
+      if (success) {
+        toast.success("Profile completed successfully!")
+        onComplete?.()
+      }
+      // Error handling is done in updateUser method
     } catch (error) {
+      console.error("Profile completion error:", error)
       toast.error("Failed to complete profile. Please try again.")
     } finally {
       setIsSubmitting(false)

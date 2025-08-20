@@ -36,7 +36,7 @@ interface AuthContextType {
   signOut: () => void
   connectWallet: (address: string) => void
   disconnectWallet: () => void
-  updateUser: (updates: Partial<User>) => void
+  updateUser: (updates: Partial<User>) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -105,7 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // sign in
-  // sign in
   const signIn = async (email: string, password: string, role: "freelancer" | "client"): Promise<boolean> => {
     setIsLoading(true)
     try {
@@ -140,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userData = {
           id: data.clientId || data.freelancerId || `user_${Date.now()}`,
           email,
-          name: data.fullname || data.name || email, // Use actual name from API response
+          name: role === "freelancer" ? "Freelancer" : "Client",
           isVerified: false,
           accountType: role,
           role,
@@ -160,7 +159,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // sign up
   // sign up
   const signUp = async (
     email: string,
@@ -240,11 +238,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates }
+  const updateUser = async (updates: Partial<User>): Promise<boolean> => {
+    if (!user) return false
+  
+    try {
+      setIsLoading(true)
+  
+      // Make API call to update profile in database
+      const response = await authFetch(`${API_URL}/api/profile`, {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      })
+  
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to update profile" }))
+        toast.error(error.message || "Failed to update profile")
+        return false
+      }
+  
+      const result = await response.json()
+  
+      // Update local state with the response from server
+      const updatedUser = { ...user, ...result.user }
       setUser(updatedUser)
       localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
+  
+      return true
+    } catch (error) {
+      console.error("updateUser error:", error)
+      toast.error("Failed to update profile. Please try again.")
+      return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
