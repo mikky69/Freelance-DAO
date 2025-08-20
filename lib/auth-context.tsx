@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userData = {
           id: data.clientId || data.freelancerId || `user_${Date.now()}`,
           email,
-          name: role === "freelancer" ? "Freelancer" : "Client",
+          name: data.fullname || data.name || email, // Use actual name from API response
           isVerified: false,
           accountType: role,
           role,
@@ -162,7 +162,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // sign up
   // sign up
-  const signUp = async (email: string, password: string, name: string, role: "freelancer" | "client"): Promise<boolean> => {
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string,
+    role: "freelancer" | "client",
+  ): Promise<boolean> => {
     setIsLoading(true)
     try {
       const endpoint = role === "client" ? "/api/auth/register/client" : "/api/auth/register/freelancer"
@@ -269,4 +274,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
-                             }
+}
