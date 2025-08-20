@@ -421,17 +421,20 @@ interface Freelancer {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center space-x-2">
-                          <category.icon className="w-4 h-4" />
-                          <span>{category.name}</span>
-                          <Badge variant="secondary" className="ml-auto">
-                            {category.count}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {categories.map((category) => {
+                      const IconComponent = categoryIcons[category.id] || Target;
+                      return (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center space-x-2">
+                            <IconComponent className="w-4 h-4" />
+                            <span>{category.name}</span>
+                            <Badge variant="secondary" className="ml-auto">
+                              {category.count}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <Button
@@ -476,24 +479,27 @@ interface Freelancer {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-slate-800 mb-8">Browse by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {categories.slice(1).map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                className={`h-auto p-4 flex flex-col items-center space-y-2 transition-all duration-200 ${
-                  selectedCategory === category.id
-                    ? "bg-blue-500 text-white scale-105 shadow-lg"
-                    : "hover:bg-blue-50 hover:border-blue-300"
-                }`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <category.icon className="w-6 h-6" />
-                <div className="text-center">
-                  <div className="font-medium text-sm">{category.name}</div>
-                  <div className="text-xs opacity-75">{category.count} freelancers</div>
-                </div>
-              </Button>
-            ))}
+            {categories.slice(1).map((category) => {
+              const IconComponent = categoryIcons[category.id] || Target;
+              return (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  className={`h-auto p-4 flex flex-col items-center space-y-2 transition-all duration-200 ${
+                    selectedCategory === category.id
+                      ? "bg-blue-500 text-white scale-105 shadow-lg"
+                      : "hover:bg-blue-50 hover:border-blue-300"
+                  }`}
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <IconComponent className="w-6 h-6" />
+                  <div className="text-center">
+                    <div className="font-medium text-sm">{category.name}</div>
+                    <div className="text-xs opacity-75">{category.count} freelancers</div>
+                  </div>
+                </Button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -591,7 +597,7 @@ interface Freelancer {
                   <p className="text-slate-600 text-sm line-clamp-2 leading-relaxed">{freelancer.description}</p>
 
                   <div className="flex flex-wrap gap-2">
-                    {freelancer.skills.slice(0, 4).map((skill, index) => (
+                    {(freelancer.skills || []).slice(0, 4).map((skill, index) => (
                       <Badge
                         key={index}
                         variant="secondary"
@@ -600,9 +606,9 @@ interface Freelancer {
                         {skill}
                       </Badge>
                     ))}
-                    {freelancer.skills.length > 4 && (
+                    {(freelancer.skills?.length || 0) > 4 && (
                       <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
-                        +{freelancer.skills.length - 4} more
+                        +{(freelancer.skills?.length || 0) - 4} more
                       </Badge>
                     )}
                   </div>
