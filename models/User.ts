@@ -58,10 +58,14 @@ export interface IClient extends Document {
   fullname: string
   email: string
   password: string
-  // Client-specific fields can be added here
+  // Client-specific fields
   company?: string
+  bio?: string
   avatar?: string
   location?: string
+  languages?: string[]
+  hiringNeeds?: string // Add this field
+  budgetPreference?: string // Add this field
   verified: boolean
   rating: number
   reviewCount: number
@@ -239,11 +243,30 @@ const ClientSchema = new Schema<IClient>(
       type: String,
       trim: true,
     },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+    },
     avatar: {
       type: String,
       default: "/placeholder.svg?height=80&width=80",
     },
     location: {
+      type: String,
+      trim: true,
+    },
+    languages: {
+      type: [String],
+      default: ["English"],
+    },
+    hiringNeeds: {
+      // Add this field
+      type: String,
+      trim: true,
+    },
+    budgetPreference: {
+      // Add this field
       type: String,
       trim: true,
     },
@@ -267,9 +290,6 @@ const ClientSchema = new Schema<IClient>(
     timestamps: true,
   },
 )
-
-export const Freelancer = mongoose.models.Freelancer || mongoose.model<IFreelancer>("Freelancer", FreelancerSchema)
-export const Client = mongoose.models.Client || mongoose.model<IClient>("Client", ClientSchema)
 
 // Add methods to FreelancerSchema
 FreelancerSchema.methods.getProfileCompletionStatus = function (): ProfileCompletionStatus {
@@ -318,7 +338,7 @@ FreelancerSchema.methods.getMissingProfileFields = function (): string[] {
 
 // Add methods to ClientSchema
 ClientSchema.methods.getProfileCompletionStatus = function (): ProfileCompletionStatus {
-  const requiredFields = ["fullname", "email", "company", "location"]
+  const requiredFields = ["fullname", "email", "company", "bio", "location", "hiringNeeds", "budgetPreference"]
 
   const missingFields: string[] = []
 
@@ -348,3 +368,6 @@ ClientSchema.methods.isProfileComplete = function (): boolean {
 ClientSchema.methods.getMissingProfileFields = function (): string[] {
   return this.getProfileCompletionStatus().missingFields
 }
+
+export const Freelancer = mongoose.models.Freelancer || mongoose.model<IFreelancer>("Freelancer", FreelancerSchema)
+export const Client = mongoose.models.Client || mongoose.model<IClient>("Client", ClientSchema)
