@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
 import { Freelancer, Client } from '@/models/User';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,8 +33,18 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
     });
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: freelancer._id, email: freelancer.email },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
     return NextResponse.json(
-      { message: 'Freelancer registered successfully' },
+      { 
+        message: 'Freelancer registered successfully',
+        token
+      },
       { status: 201 }
     );
   } catch (error) {

@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb"
 import { Freelancer, Client } from "@/models/User"
 import jwt from "jsonwebtoken"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
+const JWT_SECRET = process.env.JWT_SECRET || "supersecret_jwt_key"
 
 export async function GET(request: NextRequest) {
   try {
