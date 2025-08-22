@@ -733,10 +733,10 @@ interface Freelancer {
                     <Avatar className="w-20 h-20 ring-4 ring-blue-100">
                       <AvatarImage
                         src={selectedFreelancer.avatar || "/placeholder.svg"}
-                        alt={selectedFreelancer.name}
+                        alt={selectedFreelancer.fullname}
                       />
                       <AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold text-xl">
-                        {selectedFreelancer.name
+                        {selectedFreelancer.fullname
                           .split(" ")
                           .map((n: string) => n[0])
                           .join("")}
