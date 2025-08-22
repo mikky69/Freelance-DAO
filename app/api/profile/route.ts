@@ -178,6 +178,7 @@ export async function PUT(request: NextRequest) {
           availability: updateData.availability,
           skills: updateData.skills,
           languages: updateData.languages,
+          avatar: updateData.avatar,
         }).filter(([_, value]) => value !== undefined),
       )
 
@@ -206,6 +207,7 @@ export async function PUT(request: NextRequest) {
           languages: updateData.languages,
           hiringNeeds: updateData.hiringNeeds,
           budgetPreference: updateData.budgetPreference,
+          avatar: updateData.avatar, // Add avatar field
         }).filter(([_, value]) => value !== undefined),
       )
 
@@ -232,10 +234,12 @@ export async function PUT(request: NextRequest) {
       id: updatedUser._id.toString(),
       email: updatedUser.email,
       name: updatedUser.fullname,
+      fullname: updatedUser.fullname,
       avatar: updatedUser.avatar,
       isVerified: updatedUser.verified || false,
       accountType: userRole,
       role: userRole,
+      userType: userRole,
       // Include all profile fields directly on user object for compatibility
       title: updatedUser.title,
       skills: updatedUser.skills,
@@ -249,21 +253,7 @@ export async function PUT(request: NextRequest) {
       languages: updatedUser.languages,
       hiringNeeds: updatedUser.hiringNeeds,
       budgetPreference: updatedUser.budgetPreference,
-      // Also include nested profile object for backward compatibility
-      profile: {
-        title: updatedUser.title,
-        skills: updatedUser.skills,
-        hourlyRate: updatedUser.hourlyRate,
-        company: updatedUser.company,
-        bio: updatedUser.bio,
-        location: updatedUser.location,
-        category: updatedUser.category,
-        experienceLevel: updatedUser.experienceLevel,
-        availability: updatedUser.availability,
-        languages: updatedUser.languages,
-        hiringNeeds: updatedUser.hiringNeeds,
-        budgetPreference: updatedUser.budgetPreference,
-      },
+      createdAt: updatedUser.createdAt,
     }
 
     return NextResponse.json({

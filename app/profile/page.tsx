@@ -5,113 +5,136 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Star, MapPin, Calendar, DollarSign, Award, ExternalLink, Edit, Verified, Clock, ThumbsUp, Loader2 } from "lucide-react"
+import {
+  Star,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Award,
+  ExternalLink,
+  Edit,
+  Verified,
+  Clock,
+  ThumbsUp,
+  Loader2,
+} from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { toast } from "sonner"
-import Link from "next/link"
 import { ProtectedRoute } from "@/components/protected-route"
+import { EditProfileModal } from "@/components/edit-profile-modal"
 
 interface ProfileData {
   user: {
-    _id: string;
-    fullname: string;
-    email: string;
-    title?: string;
-    avatar?: string;
-    bio?: string;
-    description?: string;
-    location?: string;
-    skills: string[];
-    hourlyRate?: number;
-    rating?: number; // Make this optional
-    reviewCount?: number; // Make this optional
-    completedJobs?: number; // Make this optional
-    successRate?: number; // Make this optional
-    responseTime?: string;
-    verified?: boolean; // Make this optional
-    topRated?: boolean; // Make this optional
-    languages?: string[]; // Make this optional
+    _id: string
+    fullname: string
+    email: string
+    title?: string
+    avatar?: string
+    bio?: string
+    description?: string
+    location?: string
+    skills: string[]
+    hourlyRate?: number
+    rating?: number // Make this optional
+    reviewCount?: number // Make this optional
+    completedJobs?: number // Make this optional
+    successRate?: number // Make this optional
+    responseTime?: string
+    verified?: boolean // Make this optional
+    topRated?: boolean // Make this optional
+    languages?: string[] // Make this optional
     portfolio?: {
-      title: string;
-      description?: string;
-      image?: string;
-      url?: string;
-    }[];
-    userType: 'freelancer' | 'client';
-    createdAt: string;
-  };
+      title: string
+      description?: string
+      image?: string
+      url?: string
+    }[]
+    userType: "freelancer" | "client"
+    createdAt: string
+  }
   stats: {
-    totalEarnings?: number;
-    totalSpent?: number;
-    completedJobs: number;
-    totalProposals?: number;
-    acceptanceRate?: number;
-    postedJobs?: number;
-    activeJobs?: number;
-  };
+    totalEarnings?: number
+    totalSpent?: number
+    completedJobs: number
+    totalProposals?: number
+    acceptanceRate?: number
+    postedJobs?: number
+    activeJobs?: number
+  }
   jobHistory: {
-    id: string;
-    title: string;
-    client?: { fullname: string; avatar?: string };
-    freelancer?: { fullname: string; avatar?: string };
-    amount: number;
-    currency: string;
-    status: string;
-    completedAt?: string;
-    postedAt?: string;
-  }[];
+    id: string
+    title: string
+    client?: { fullname: string; avatar?: string }
+    freelancer?: { fullname: string; avatar?: string }
+    amount: number
+    currency: string
+    status: string
+    completedAt?: string
+    postedAt?: string
+  }[]
   reviews: {
-    id: string;
-    client: { fullname: string; avatar?: string };
-    rating: number;
-    date: string;
-    project: string;
-    review: string;
-  }[];
+    id: string
+    client: { fullname: string; avatar?: string }
+    rating: number
+    date: string
+    project: string
+    review: string
+  }[]
 }
 
 function ProfileContent() {
-  const { user: authUser } = useAuth();
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user: authUser } = useAuth()
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  const handleProfileUpdate = (updatedUser: any) => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        user: {
+          ...profileData.user,
+          ...updatedUser,
+        },
+      })
+    }
+  }
 
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const token = localStorage.getItem('freelancedao_token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-        
-        const response = await fetch('/api/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile data');
-        }
-        
-        const data = await response.json();
-        setProfileData(data);
-      } catch (err) {
-        setError('Failed to load profile data. Please try again.');
-        console.error('Error fetching profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setLoading(true)
+      setError(null)
 
-    fetchProfile();
-  }, [authUser]);
+      try {
+        const token = localStorage.getItem("freelancedao_token")
+        if (!token) {
+          throw new Error("No authentication token found")
+        }
+
+        const response = await fetch("/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile data")
+        }
+
+        const data = await response.json()
+        setProfileData(data)
+      } catch (err) {
+        setError("Failed to load profile data. Please try again.")
+        console.error("Error fetching profile:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [authUser])
 
   if (loading) {
     return (
@@ -121,24 +144,24 @@ function ProfileContent() {
           <p className="text-slate-600">Loading profile...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !profileData) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || 'Profile not found'}</p>
+          <p className="text-red-600 mb-4">{error || "Profile not found"}</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </div>
-    );
+    )
   }
 
-  if (!profileData) return null;
+  if (!profileData) return null
 
-  const { user, stats, jobHistory, reviews } = profileData;
-  const isFreelancer = user.userType === 'freelancer';
+  const { user, stats, jobHistory, reviews } = profileData
+  const isFreelancer = user.userType === "freelancer"
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -149,10 +172,14 @@ function ProfileContent() {
             <Avatar className="w-24 h-24 border-4 border-white">
               <AvatarImage src={user.avatar || "/placeholder.svg?height=96&width=96"} alt="Profile" />
               <AvatarFallback className="text-2xl bg-blue-400 text-white">
-                {user.fullname.split(' ').map(n => n[0]).join('').toUpperCase()}
+                {user.fullname
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
               </AvatarFallback>
             </Avatar>
-    
+
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
@@ -171,7 +198,9 @@ function ProfileContent() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xl text-blue-100 mb-2">{user.title || `${isFreelancer ? 'Freelancer' : 'Client'}`}</p>
+                  <p className="text-xl text-blue-100 mb-2">
+                    {user.title || `${isFreelancer ? "Freelancer" : "Client"}`}
+                  </p>
                   <div className="flex flex-wrap items-center gap-4 text-blue-100">
                     {user.location && (
                       <div className="flex items-center">
@@ -191,13 +220,20 @@ function ProfileContent() {
                     )}
                   </div>
                 </div>
-    
+
                 <div className="flex gap-2">
-                  <Button variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
+                  <Button
+                    variant="secondary"
+                    className="bg-white text-blue-600 hover:bg-blue-50"
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
-                  <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+                  <Button
+                    variant="outline"
+                    className="border-white text-white hover:bg-white hover:text-blue-600 bg-transparent"
+                  >
                     Share Profile
                   </Button>
                 </div>
@@ -205,7 +241,7 @@ function ProfileContent() {
             </div>
           </div>
         </div>
-    
+
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Sidebar */}
@@ -226,24 +262,26 @@ function ProfileContent() {
                       <div className="text-sm text-slate-500">{user.reviewCount || 0} reviews</div>
                     </div>
                   </div>
-    
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Award className="w-5 h-5 text-blue-500 mr-2" />
-                      <span className="font-medium">{isFreelancer ? 'Jobs Completed' : 'Jobs Posted'}</span>
+                      <span className="font-medium">{isFreelancer ? "Jobs Completed" : "Jobs Posted"}</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-lg">{isFreelancer ? (stats.completedJobs || 0) : (stats.postedJobs || 0)}</div>
+                      <div className="font-bold text-lg">
+                        {isFreelancer ? stats.completedJobs || 0 : stats.postedJobs || 0}
+                      </div>
                       <div className="text-sm text-slate-500">
                         {isFreelancer ? `${user.successRate || 0}% success rate` : `${stats.activeJobs || 0} active`}
                       </div>
                     </div>
                   </div>
-    
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <DollarSign className="w-5 h-5 text-green-500 mr-2" />
-                      <span className="font-medium">{isFreelancer ? 'Total Earned' : 'Total Spent'}</span>
+                      <span className="font-medium">{isFreelancer ? "Total Earned" : "Total Spent"}</span>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-lg">
@@ -254,7 +292,7 @@ function ProfileContent() {
                   </div>
                 </CardContent>
               </Card>
-    
+
               {/* Skills - Only for freelancers */}
               {isFreelancer && user.skills && user.skills.length > 0 && (
                 <Card>
@@ -272,7 +310,7 @@ function ProfileContent() {
                   </CardContent>
                 </Card>
               )}
-    
+
               {/* Languages */}
               {user.languages && user.languages.length > 0 && (
                 <Card>
@@ -292,7 +330,7 @@ function ProfileContent() {
                 </Card>
               )}
             </div>
-    
+
             {/* Main Content */}
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="space-y-6">
@@ -302,7 +340,7 @@ function ProfileContent() {
                   <TabsTrigger value="reviews">Reviews</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
-    
+
                 <TabsContent value="overview" className="space-y-6">
                   {/* About */}
                   <Card>
@@ -315,7 +353,7 @@ function ProfileContent() {
                       </p>
                     </CardContent>
                   </Card>
-    
+
                   {/* Hourly Rate - Only for freelancers */}
                   {isFreelancer && user.hourlyRate && (
                     <Card>
@@ -323,14 +361,12 @@ function ProfileContent() {
                         <CardTitle>Hourly Rate</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                          {user.hourlyRate} HBAR/hour
-                        </div>
+                        <div className="text-2xl font-bold text-green-600">{user.hourlyRate} HBAR/hour</div>
                       </CardContent>
                     </Card>
                   )}
                 </TabsContent>
-    
+
                 <TabsContent value="portfolio" className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {user.portfolio && user.portfolio.length > 0 ? (
@@ -338,8 +374,8 @@ function ProfileContent() {
                         <Card key={index} className="hover:shadow-lg transition-shadow">
                           <div className="aspect-video bg-slate-100 rounded-t-lg">
                             {project.image && (
-                              <img 
-                                src={project.image} 
+                              <img
+                                src={project.image || "/placeholder.svg"}
                                 alt={project.title}
                                 className="w-full h-full object-cover rounded-t-lg"
                               />
@@ -367,7 +403,7 @@ function ProfileContent() {
                     )}
                   </div>
                 </TabsContent>
-    
+
                 <TabsContent value="reviews" className="space-y-6">
                   {reviews.length > 0 ? (
                     reviews.map((review, index) => (
@@ -389,9 +425,7 @@ function ProfileContent() {
                                   />
                                 ))}
                               </div>
-                              <div className="text-sm text-slate-500">
-                                {new Date(review.date).toLocaleDateString()}
-                              </div>
+                              <div className="text-sm text-slate-500">{new Date(review.date).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </CardHeader>
@@ -410,7 +444,7 @@ function ProfileContent() {
                     </div>
                   )}
                 </TabsContent>
-    
+
                 <TabsContent value="history" className="space-y-6">
                   <div className="space-y-4">
                     {jobHistory.length > 0 ? (
@@ -424,16 +458,20 @@ function ProfileContent() {
                                   {isFreelancer ? job.client?.fullname : job.freelancer?.fullname}
                                 </p>
                                 <p className="text-sm text-slate-500">
-                                  {new Date(job.completedAt || job.postedAt || '').toLocaleDateString()}
+                                  {new Date(job.completedAt || job.postedAt || "").toLocaleDateString()}
                                 </p>
                               </div>
                               <div className="flex items-center gap-4">
-                                <Badge className={`${
-                                  job.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                  job.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {job.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                <Badge
+                                  className={`${
+                                    job.status === "completed"
+                                      ? "bg-green-100 text-green-700"
+                                      : job.status === "in_progress"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                  }`}
+                                >
+                                  {job.status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                                 </Badge>
                                 <div className="text-right">
                                   <div className="font-semibold text-green-600">
@@ -457,6 +495,12 @@ function ProfileContent() {
           </div>
         </div>
       </div>
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        profileData={profileData.user}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   )
 }
