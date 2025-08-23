@@ -8,6 +8,17 @@ export interface ProfileCompletionStatus {
   requiredFields: string[]
 }
 
+// Add Admin interface
+export interface IAdmin extends Document {
+  fullname: string
+  email: string
+  password: string
+  avatar?: string
+  isFirstAdmin: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface IFreelancer extends Document {
   fullname: string
   email: string
@@ -369,5 +380,40 @@ ClientSchema.methods.getMissingProfileFields = function (): string[] {
   return this.getProfileCompletionStatus().missingFields
 }
 
+// Add Admin Schema
+const AdminSchema = new Schema<IAdmin>(
+  {
+    fullname: {
+      type: String,
+      required: [true, "Full name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: 6,
+    },
+    avatar: {
+      type: String,
+      default: "/placeholder.svg?height=80&width=80",
+    },
+    isFirstAdmin: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+)
+
 export const Freelancer = mongoose.models.Freelancer || mongoose.model<IFreelancer>("Freelancer", FreelancerSchema)
 export const Client = mongoose.models.Client || mongoose.model<IClient>("Client", ClientSchema)
+export const Admin = mongoose.models.Admin || mongoose.model<IAdmin>("Admin", AdminSchema)

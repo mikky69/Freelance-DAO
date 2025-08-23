@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import { Freelancer, Client } from '@/models/User';
+import { Freelancer, Client, Admin } from '@/models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
@@ -18,7 +18,28 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role?: string };
+    
+    // Check if role is specified in token
+    if (decoded.role === 'admin') {
+      const admin = await Admin.findById(decoded.id).select('-password');
+      if (!admin) {
+        return NextResponse.json(
+          { message: 'Admin not found' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json({
+        id: admin._id,
+        email: admin.email,
+        name: admin.fullname,
+        isVerified: true,
+        accountType: 'admin',
+        role: 'admin',
+        avatar: admin.avatar
+      });
+    }
     
     // Try to find user in both collections
     let user = await Freelancer.findById(decoded.id).select('-password');

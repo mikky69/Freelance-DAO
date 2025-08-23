@@ -379,3 +379,33 @@ export function ProtectedRoute({
   // Show protected content
   return showContent ? <>{children}</> : null
 }
+
+export function withAuth(Component: React.ComponentType, allowedRoles?: string[]) {
+  return function AuthenticatedComponent(props: any) {
+    const { user, isLoading, isAuthenticated } = useAuth()
+    const router = useRouter()
+
+    useEffect(() => {
+      if (!isLoading && !isAuthenticated) {
+        router.push('/auth/signin')
+        return
+      }
+
+      // Check if user has required role
+      if (!isLoading && isAuthenticated && allowedRoles && user) {
+        if (!allowedRoles.includes(user.role)) {
+          toast.error('You do not have permission to access this page')
+          if (user.role === 'admin') {
+            router.push('/admin')
+          } else if (user.role === 'client') {
+            router.push('/dashboard/client')
+          } else {
+            router.push('/dashboard/freelancer')
+          }
+        }
+      }
+    }, [isLoading, isAuthenticated, router, user, allowedRoles])
+
+    return Component(props)
+  }
+}

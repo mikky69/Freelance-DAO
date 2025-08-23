@@ -13,8 +13,8 @@ interface User {
   name: string
   avatar?: string
   isVerified: boolean
-  accountType: "freelancer" | "client"
-  role: "freelancer" | "client"
+  accountType: "freelancer" | "client" | "admin"
+  role: "freelancer" | "client" | "admin"
   profile?: {
     title?: string
     skills?: string[]
@@ -31,8 +31,8 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isWalletConnected: boolean
-  signIn: (email: string, password: string, role: "freelancer" | "client") => Promise<boolean>
-  signUp: (email: string, password: string, name: string, role: "freelancer" | "client") => Promise<boolean>
+  signIn: (email: string, password: string, role: "freelancer" | "client" | "admin") => Promise<boolean>
+  signUp: (email: string, password: string, name: string, role: "freelancer" | "client" | "admin", adminToken?: string) => Promise<boolean>
   signOut: () => void
   connectWallet: (address: string) => void
   disconnectWallet: () => void
@@ -105,10 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // sign in
-  const signIn = async (email: string, password: string, role: "freelancer" | "client"): Promise<boolean> => {
+  const signIn = async (email: string, password: string, role: "freelancer" | "client" | "admin"): Promise<boolean> => {
     setIsLoading(true)
     try {
-      const endpoint = role === "client" ? "/api/auth/login/client" : "/api/auth/login/freelancer"
+      let endpoint = "/api/auth/login/freelancer"
+      if (role === "client") endpoint = "/api/auth/login/client"
+      if (role === "admin") endpoint = "/api/auth/login/admin"
+      
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,15 +167,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     name: string,
-    role: "freelancer" | "client",
+    role: "freelancer" | "client" | "admin",
+    adminToken?: string
   ): Promise<boolean> => {
     setIsLoading(true)
     try {
-      const endpoint = role === "client" ? "/api/auth/register/client" : "/api/auth/register/freelancer"
+      let endpoint = "/api/auth/register/freelancer"
+      if (role === "client") endpoint = "/api/auth/register/client"
+      if (role === "admin") endpoint = "/api/auth/register/admin"
+      
+      const body: any = { email, password, fullname: name }
+      
+      // Add adminToken for admin registration if provided
+      if (role === "admin" && adminToken) {
+        body.adminToken = adminToken
+      }
+      
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullname: name }),
+        body: JSON.stringify(body),
       })
 
       if (!res.ok) {
