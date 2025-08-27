@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
@@ -37,6 +40,8 @@ import {
   Trash2,
   Play,
   Pause,
+  Loader2,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -130,10 +135,237 @@ const getPriorityColor = (priority: string) => {
   }
 }
 
+// Edit Project Form Component
+interface EditProjectFormProps {
+  project: Project;
+  onClose: () => void;
+  onUpdate: () => void;
+}
+
+function EditProjectForm({ project, onClose, onUpdate }: EditProjectFormProps) {
+  const [formData, setFormData] = useState({
+    title: project.title,
+    description: project.description,
+    category: project.category,
+    skills: project.skills,
+    budgetMin: project.budget.toString(),
+    budgetMax: '',
+    duration: '',
+    featured: project.status === 'featured',
+    urgent: project.priority === 'high'
+  })
+  const [newSkill, setNewSkill] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const addSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }))
+      setNewSkill('')
+    }
+  }
+
+  const removeSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to edit projects')
+        return
+      }
+
+      const response = await fetch('/api/jobs', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          jobId: project.id,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          skills: formData.skills,
+          budgetMin: parseFloat(formData.budgetMin),
+          budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
+          duration: formData.duration,
+          featured: formData.featured,
+          urgent: formData.urgent
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Project updated successfully')
+        onUpdate()
+      } else {
+        toast.error(data.message || 'Failed to update project')
+      }
+    } catch (error) {
+      console.error('Error updating project:', error)
+      toast.error('An error occurred while updating the project')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="edit-title">Job Title *</Label>
+        <Input
+          id="edit-title"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          placeholder="e.g. Build a responsive website for my startup"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-description">Project Description *</Label>
+        <Textarea
+          id="edit-description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Describe your project in detail..."
+          className="min-h-32"
+          required
+        />
+        <p className="text-sm text-slate-500">
+          Minimum 100 characters. ({formData.description.length}/100)
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-category">Category *</Label>
+        <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="web-development">Web Development</SelectItem>
+            <SelectItem value="mobile-development">Mobile Development</SelectItem>
+            <SelectItem value="design">Design & Creative</SelectItem>
+            <SelectItem value="writing">Writing & Content</SelectItem>
+            <SelectItem value="marketing">Marketing & Sales</SelectItem>
+            <SelectItem value="blockchain">Blockchain & Web3</SelectItem>
+            <SelectItem value="data">Data & Analytics</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-4">
+        <Label>Required Skills</Label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add a skill (e.g. React, Design, Writing)"
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
+            className="flex-1"
+          />
+          <Button type="button" onClick={addSkill} variant="outline">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+        {formData.skills.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {formData.skills.map((skill, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                {skill}
+                <button type="button" onClick={() => removeSkill(skill)} className="ml-1 hover:text-red-500">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-budget-min">Minimum Budget (HBAR) *</Label>
+          <Input
+            id="edit-budget-min"
+            type="number"
+            value={formData.budgetMin}
+            onChange={(e) => setFormData(prev => ({ ...prev, budgetMin: e.target.value }))}
+            placeholder="1000"
+            required
+            min="1"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-budget-max">Maximum Budget (HBAR)</Label>
+          <Input
+            id="edit-budget-max"
+            type="number"
+            value={formData.budgetMax}
+            onChange={(e) => setFormData(prev => ({ ...prev, budgetMax: e.target.value }))}
+            placeholder="5000"
+            min="1"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="edit-featured"
+            checked={formData.featured}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: !!checked }))}
+          />
+          <Label htmlFor="edit-featured">Featured (+100 HBAR)</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="edit-urgent"
+            checked={formData.urgent}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, urgent: !!checked }))}
+          />
+          <Label htmlFor="edit-urgent">Mark as urgent</Label>
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-6">
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Updating...
+            </>
+          ) : (
+            'Update Project'
+          )}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 function ProjectsContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [projectStats, setProjectStats] = useState<ProjectStats>({
     total: 0,
@@ -143,6 +375,7 @@ function ProjectsContent() {
     totalBudget: 0,
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -224,6 +457,43 @@ function ProjectsContent() {
     
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
+
+  // Delete project function
+  const deleteProject = async (projectId: string) => {
+    setIsDeleting(true)
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to delete projects')
+        return
+      }
+
+      const response = await fetch('/api/jobs', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ jobId: projectId })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Project deleted successfully')
+        setDeletingProject(null)
+        // Refresh the projects list
+        fetchProjects()
+      } else {
+        toast.error(data.message || 'Failed to delete project')
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast.error('An error occurred while deleting the project')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -470,10 +740,12 @@ function ProjectsContent() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Project
-                          </DropdownMenuItem>
+                          {user?.role === 'client' && (
+                            <DropdownMenuItem onClick={() => setEditingProject(project)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Project
+                            </DropdownMenuItem>
+                          )}
                           {project.status === "paused" && (
                             <DropdownMenuItem>
                               <Play className="w-4 h-4 mr-2" />
@@ -486,11 +758,18 @@ function ProjectsContent() {
                               Pause Project
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Project
-                          </DropdownMenuItem>
+                          {user?.role === 'client' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => setDeletingProject(project)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Project
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -658,6 +937,63 @@ function ProjectsContent() {
                 )}
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deletingProject} onOpenChange={() => setDeletingProject(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deletingProject?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeletingProject(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deletingProject && deleteProject(deletingProject.id)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Project'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={!!editingProject} onOpenChange={() => setEditingProject(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>
+              Update your project details below.
+            </DialogDescription>
+          </DialogHeader>
+          {editingProject && (
+            <EditProjectForm 
+              project={editingProject} 
+              onClose={() => setEditingProject(null)}
+              onUpdate={() => {
+                setEditingProject(null)
+                fetchProjects()
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>

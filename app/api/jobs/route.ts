@@ -198,3 +198,231 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB();
+    
+    // Get user from token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { message: 'Authorization token required' },
+        { status: 401 }
+      );
+    }
+    
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const userId = decoded.id;
+    
+    // Verify user is a client
+    const client = await Client.findById(userId);
+    if (!client) {
+      return NextResponse.json(
+        { message: 'Only clients can edit jobs' },
+        { status: 403 }
+      );
+    }
+    
+    const {
+      jobId,
+      title,
+      description,
+      category,
+      skills,
+      budgetType,
+      budgetMin,
+      budgetMax,
+      duration,
+      experienceLevel,
+      featured,
+      urgent,
+      useEscrow
+    } = await request.json();
+    
+    // Validate required fields
+    if (!jobId) {
+      return NextResponse.json(
+        { message: 'Job ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Find the job and verify ownership
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return NextResponse.json(
+        { message: 'Job not found' },
+        { status: 404 }
+      );
+    }
+    
+    if (job.client.toString() !== userId) {
+      return NextResponse.json(
+        { message: 'You can only edit your own jobs' },
+        { status: 403 }
+      );
+    }
+    
+    // Validate required fields if provided
+    if (title && !title.trim()) {
+      return NextResponse.json(
+        { message: 'Job title cannot be empty' },
+        { status: 400 }
+      );
+    }
+    
+    if (description && description.trim().length < 100) {
+      return NextResponse.json(
+        { message: 'Description must be at least 100 characters' },
+        { status: 400 }
+      );
+    }
+    
+    if (skills && skills.length === 0) {
+      return NextResponse.json(
+        { message: 'At least one skill is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (budgetMin && budgetMin <= 0) {
+      return NextResponse.json(
+        { message: 'Budget must be greater than 0' },
+        { status: 400 }
+      );
+    }
+    
+    // Map frontend categories to backend enum values
+    const categoryMap: { [key: string]: string } = {
+      'web-development': 'web-dev',
+      'mobile-development': 'mobile-dev',
+      'design': 'design',
+      'writing': 'writing',
+      'marketing': 'marketing',
+      'blockchain': 'blockchain',
+      'data': 'data',
+      'other': 'other'
+    };
+    
+    // Build update object with only provided fields
+    const updateData: any = {};
+    
+    if (title) updateData.title = title.trim();
+    if (description) updateData.description = description.trim();
+    if (category) updateData.category = categoryMap[category] || category;
+    if (skills) updateData.skills = skills.map((skill: string) => skill.trim());
+    if (duration) updateData.duration = duration;
+    if (budgetType || budgetMin || budgetMax) {
+      updateData.budget = {
+        ...job.budget,
+        ...(budgetType && { type: budgetType }),
+        ...(budgetMin && { amount: budgetMax || budgetMin }),
+      };
+    }
+    if (urgent !== undefined) {
+      updateData.urgency = urgent ? 'high' : job.urgency;
+    }
+    if (featured !== undefined) updateData.featured = featured;
+    
+    // Update the job
+    const updatedJob = await Job.findByIdAndUpdate(
+      jobId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    return NextResponse.json(
+      { 
+        message: 'Job updated successfully', 
+        job: {
+          id: updatedJob._id,
+          title: updatedJob.title,
+          status: updatedJob.status,
+          featured: updatedJob.featured
+        }
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Update Job API Error:', error);
+    return NextResponse.json(
+      { message: 'Server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+    
+    // Get user from token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { message: 'Authorization token required' },
+        { status: 401 }
+      );
+    }
+    
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const userId = decoded.id;
+    
+    // Verify user is a client
+    const client = await Client.findById(userId);
+    if (!client) {
+      return NextResponse.json(
+        { message: 'Only clients can delete jobs' },
+        { status: 403 }
+      );
+    }
+    
+    const { jobId } = await request.json();
+    
+    if (!jobId) {
+      return NextResponse.json(
+        { message: 'Job ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Find the job and verify ownership
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return NextResponse.json(
+        { message: 'Job not found' },
+        { status: 404 }
+      );
+    }
+    
+    if (job.client.toString() !== userId) {
+      return NextResponse.json(
+        { message: 'You can only delete your own jobs' },
+        { status: 403 }
+      );
+    }
+    
+    // Check if job has active proposals or is in progress
+    if (job.status === 'in_progress') {
+      return NextResponse.json(
+        { message: 'Cannot delete a job that is in progress' },
+        { status: 400 }
+      );
+    }
+    
+    // Delete the job
+    await Job.findByIdAndDelete(jobId);
+    
+    return NextResponse.json(
+      { message: 'Job deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Delete Job API Error:', error);
+    return NextResponse.json(
+      { message: 'Server error' },
+      { status: 500 }
+    );
+  }
+}
