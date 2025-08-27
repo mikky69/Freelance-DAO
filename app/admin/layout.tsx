@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Shield, Users, Briefcase, DollarSign, BarChart3, Settings, Bell, LogOut, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { ProtectedRoute } from "@/components/protected-route"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <ProtectedRoute requireAuth={true} requiredRole="admin" redirectTo="/auth/signin/admin">
+      <div className="min-h-screen bg-slate-50">
       {/* Admin Navigation */}
       <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
         <div className="container mx-auto px-4 py-4">
@@ -123,7 +125,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      {children}
-    </div>
+        {children}
+      </div>
+    </ProtectedRoute>
   )
 }
