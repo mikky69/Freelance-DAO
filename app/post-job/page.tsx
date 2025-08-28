@@ -9,13 +9,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { DollarSign, Users, FileText, Shield, Plus, X } from "lucide-react"
+import { DollarSign, Users, FileText, Shield, Plus, X, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function PostJobPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    budgetType: "fixed",
+    budgetMin: "",
+    budgetMax: "",
+    duration: "",
+    experienceLevel: "intermediate",
+    featured: false,
+    urgent: false,
+    useEscrow: true
+  })
+  
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDraft, setIsDraft] = useState(false)
 
   const addSkill = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
@@ -26,6 +49,85 @@ export default function PostJobPage() {
 
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter((skill) => skill !== skillToRemove))
+  }
+  
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+  
+  const validateForm = () => {
+    const errors: string[] = []
+    
+    if (!formData.title.trim()) errors.push("Job title is required")
+    if (!formData.description.trim()) errors.push("Job description is required")
+    if (formData.description.trim().length < 100) errors.push("Description must be at least 100 characters")
+    if (!formData.category) errors.push("Category is required")
+    if (skills.length === 0) errors.push("At least one skill is required")
+    if (!formData.budgetMin || parseFloat(formData.budgetMin) <= 0) errors.push("Valid minimum budget is required")
+    if (formData.budgetMax && parseFloat(formData.budgetMax) <= parseFloat(formData.budgetMin)) {
+      errors.push("Maximum budget must be greater than minimum budget")
+    }
+    if (!formData.duration) errors.push("Project duration is required")
+    
+    return errors
+  }
+  
+  const submitJob = async (asDraft = false) => {
+    // Check authentication first
+    if (!user || !user.id) {
+      toast.error('Please log in to post a job')
+      router.push('/auth/signin/client')
+      return
+    }
+    
+    if (!asDraft) {
+      const errors = validateForm()
+      if (errors.length > 0) {
+        toast.error(errors[0])
+        return
+      }
+    }
+    
+    setIsSubmitting(true)
+    setIsDraft(asDraft)
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to post a job')
+        router.push('/auth/signin/client')
+        return
+      }
+      
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          skills,
+          budgetMin: parseFloat(formData.budgetMin),
+          budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast.success(asDraft ? 'Job saved as draft' : 'Job posted successfully!')
+        router.push('/dashboard')
+      } else {
+        toast.error(data.message || 'Failed to post job')
+      }
+    } catch (error) {
+      console.error('Error posting job:', error)
+      toast.error('An error occurred while posting the job')
+    } finally {
+      setIsSubmitting(false)
+      setIsDraft(false)
+    }
   }
 
   return (
@@ -43,7 +145,7 @@ export default function PostJobPage() {
 
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <form className="space-y-8">
+            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); submitJob(false); }}>
               {/* Job Details */}
               <Card>
                 <CardHeader>
@@ -58,8 +160,11 @@ export default function PostJobPage() {
                     <Label htmlFor="title">Job Title *</Label>
                     <Input
                       id="title"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
                       placeholder="e.g. Build a responsive website for my startup"
                       className="text-base"
+                      required
                     />
                     <p className="text-sm text-slate-500">
                       Write a clear, descriptive title that explains what you need done
@@ -68,7 +173,7 @@ export default function PostJobPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
-                    <Select>
+                    <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
@@ -89,10 +194,18 @@ export default function PostJobPage() {
                     <Label htmlFor="description">Project Description *</Label>
                     <Textarea
                       id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
                       placeholder="Describe your project in detail. Include what you want to achieve, any specific requirements, and what success looks like..."
                       className="min-h-32 text-base"
+                      required
                     />
-                    <p className="text-sm text-slate-500">Minimum 100 characters. Be specific about your requirements.</p>
+                    <p className="text-sm text-slate-500">
+                      Minimum 100 characters. Be specific about your requirements. 
+                      <span className="font-medium">
+                        ({formData.description.length}/100)
+                      </span>
+                    </p>
                   </div>
 
                   <div className="space-y-4">
@@ -137,7 +250,7 @@ export default function PostJobPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <Label>Budget Type *</Label>
-                    <RadioGroup defaultValue="fixed" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <RadioGroup value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
                         <RadioGroupItem value="fixed" id="fixed" />
                         <Label htmlFor="fixed" className="flex-1 cursor-pointer">
@@ -158,17 +271,36 @@ export default function PostJobPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="budget-min">Minimum Budget (HBAR) *</Label>
-                      <Input id="budget-min" type="number" placeholder="1000" className="text-base" />
+                      <Input 
+                        id="budget-min" 
+                        type="number" 
+                        value={formData.budgetMin}
+                        onChange={(e) => handleInputChange('budgetMin', e.target.value)}
+                        placeholder="1000" 
+                        className="text-base" 
+                        required
+                        min="1"
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="budget-max">Maximum Budget (HBAR) *</Label>
-                      <Input id="budget-max" type="number" placeholder="5000" className="text-base" />
+                      <Label htmlFor="budget-max">
+                        {formData.budgetType === 'fixed' ? 'Maximum Budget (HBAR)' : 'Maximum Rate (HBAR/hour)'}
+                      </Label>
+                      <Input 
+                        id="budget-max" 
+                        type="number" 
+                        value={formData.budgetMax}
+                        onChange={(e) => handleInputChange('budgetMax', e.target.value)}
+                        placeholder={formData.budgetType === 'fixed' ? '5000' : '100'} 
+                        className="text-base" 
+                        min="1"
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="timeline">Project Duration *</Label>
-                    <Select>
+                    <Select value={formData.duration} onValueChange={(value) => handleInputChange('duration', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select project duration" />
                       </SelectTrigger>
@@ -195,7 +327,7 @@ export default function PostJobPage() {
                   <CardDescription>What level of experience do you need?</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RadioGroup defaultValue="intermediate" className="space-y-4">
+                  <RadioGroup value={formData.experienceLevel} onValueChange={(value) => handleInputChange('experienceLevel', value)} className="space-y-4">
                     <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
                       <RadioGroupItem value="entry" id="entry" />
                       <Label htmlFor="entry" className="flex-1 cursor-pointer">
@@ -232,7 +364,11 @@ export default function PostJobPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="featured" />
+                    <Checkbox 
+                      id="featured" 
+                      checked={formData.featured}
+                      onCheckedChange={(checked) => handleInputChange('featured', checked)}
+                    />
                     <Label htmlFor="featured" className="flex-1">
                       <div className="font-medium">Make this job featured</div>
                       <div className="text-sm text-slate-500">Get more visibility for +100 HBAR</div>
@@ -240,7 +376,11 @@ export default function PostJobPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="urgent" />
+                    <Checkbox 
+                      id="urgent" 
+                      checked={formData.urgent}
+                      onCheckedChange={(checked) => handleInputChange('urgent', checked)}
+                    />
                     <Label htmlFor="urgent" className="flex-1">
                       <div className="font-medium">Mark as urgent</div>
                       <div className="text-sm text-slate-500">Show urgency to attract faster responses</div>
@@ -248,7 +388,11 @@ export default function PostJobPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="escrow" defaultChecked />
+                    <Checkbox 
+                      id="escrow" 
+                      checked={formData.useEscrow}
+                      onCheckedChange={(checked) => handleInputChange('useEscrow', checked)}
+                    />
                     <Label htmlFor="escrow" className="flex-1">
                       <div className="font-medium">Use smart contract escrow</div>
                       <div className="text-sm text-slate-500">Secure payments with blockchain technology</div>
@@ -259,10 +403,36 @@ export default function PostJobPage() {
 
               {/* Submit */}
               <div className="flex flex-col md:flex-row gap-4 pt-6">
-                <Button variant="outline" className="flex-1">
-                  Save as Draft
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => submitJob(true)}
+                  disabled={isSubmitting}
+                >
+                  {isDraft && isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving Draft...
+                    </>
+                  ) : (
+                    'Save as Draft'
+                  )}
                 </Button>
-                <Button className="flex-1 bg-blue-500 hover:bg-blue-600">Post Job</Button>
+                <Button 
+                  type="submit"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  disabled={isSubmitting}
+                >
+                  {!isDraft && isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Posting Job...
+                    </>
+                  ) : (
+                    'Post Job'
+                  )}
+                </Button>
               </div>
             </form>
           </div>

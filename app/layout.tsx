@@ -1,6 +1,8 @@
+"use client"
+
 import type React from "react"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { usePathname } from "next/navigation"
 import "./globals.css"
 import { TopNavigation, BottomNavigation } from "@/components/navigation"
 import { AuthProvider } from "@/lib/auth-context"
@@ -8,12 +10,6 @@ import { Toaster } from "sonner"
 import Image from "next/image"
 
 const inter = Inter({ subsets: ["latin"] })
-
-export const metadata: Metadata = {
-  title: "FreeLanceDAO - Decentralized Freelance Platform",
-  description: "The future of freelancing with Web3 security and Web2 simplicity",
-    generator: 'v0.dev'
-}
 
 function Footer() {
   return (
@@ -120,6 +116,39 @@ function Footer() {
   )
 }
 
+function ConditionalNavigation() {
+  const pathname = usePathname()
+  const isAdminPage = pathname?.startsWith('/admin')
+  
+  if (isAdminPage) {
+    return null
+  }
+  
+  return <TopNavigation />
+}
+
+function ConditionalBottomNavigation() {
+  const pathname = usePathname()
+  const isAdminPage = pathname?.startsWith('/admin')
+  
+  if (isAdminPage) {
+    return null
+  }
+  
+  return <BottomNavigation />
+}
+
+function ConditionalFooter() {
+  const pathname = usePathname()
+  const isAdminPage = pathname?.startsWith('/admin')
+  
+  if (isAdminPage) {
+    return null
+  }
+  
+  return <Footer />
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -129,10 +158,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <TopNavigation />
+          <ConditionalNavigation />
           <main className="pb-20 md:pb-0">{children}</main>
-          <BottomNavigation />
-          <Footer />
+          <ConditionalBottomNavigation />
+          <ConditionalFooter />
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>
