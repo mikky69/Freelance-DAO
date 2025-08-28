@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::{accounts::*, constants::*, errors::ErrorCode, events::*, state::*};
+use crate::{account_structs::*, constants::*, errors::ErrorCode, events::*, state::*};
 
 #[derive(Accounts)]
 #[instruction(choice: VoteChoice)]
@@ -12,7 +12,7 @@ pub struct CastVote<'info> {
     pub dao_config: Account<'info, DaoConfig>,
     #[account(
         mut,
-        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..]],
+        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..], &dao_config.proposal_counter.to_le_bytes()[..]],
         bump = proposal.bump,
         constraint = proposal.state == ProposalState::Active @ ErrorCode::VotingWindowClosed
     )]

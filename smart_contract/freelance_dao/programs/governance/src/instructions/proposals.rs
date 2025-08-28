@@ -1,10 +1,11 @@
 use anchor_lang::prelude::*;
-use crate::{accounts::*, constants::*, errors::ErrorCode, events::*, state::*};
+use crate::{account_structs::*, constants::*, errors::ErrorCode, events::*, state::*};
 
 #[derive(Accounts)]
 #[instruction(kind: ProposalKind, uri: String, title_hash: [u8; 32], window: i64)]
 pub struct CreateProposal<'info> {
     #[account(
+        mut,
         seeds = [DAO_CONFIG_SEED],
         bump = dao_config.bump,
         constraint = !dao_config.paused @ ErrorCode::Paused
@@ -14,7 +15,7 @@ pub struct CreateProposal<'info> {
         init,
         payer = creator,
         space = 8 + 32 + 1 + 32 + 4 + uri.len() + 1 + 8 + 8 + 8 + 8 + 1,
-        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..]],
+        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..], &dao_config.proposal_counter.to_le_bytes()[..]],
         bump
     )]
     pub proposal: Account<'info, Proposal>,
@@ -48,7 +49,7 @@ pub struct FinalizeProposal<'info> {
     pub dao_config: Account<'info, DaoConfig>,
     #[account(
         mut,
-        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..]],
+        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..], &dao_config.proposal_counter.to_le_bytes()[..]],
         bump = proposal.bump,
         constraint = proposal.state == ProposalState::Active @ ErrorCode::VotingWindowClosed
     )]
@@ -65,7 +66,7 @@ pub fn create_proposal(
 ) -> Result<()> {
     require!(uri.len() <= MAX_URI_LENGTH, ErrorCode::UriTooLong);
 
-    let dao_config = &ctx.accounts.dao_config;
+    let dao_config = &mut ctx.accounts.dao_config;
     let proposal = &mut ctx.accounts.proposal;
     let creator_ata = &ctx.accounts.creator_ata;
     let fee_wallet = &ctx.accounts.fee_wallet;
@@ -104,6 +105,9 @@ pub fn create_proposal(
     proposal.tally_yes = 0;
     proposal.tally_no = 0;
     proposal.bump = ctx.bumps.proposal;
+
+    // Increment proposal counter
+    dao_config.proposal_counter += 1;
 
     emit!(ProposalCreated {
         id: proposal.key(),

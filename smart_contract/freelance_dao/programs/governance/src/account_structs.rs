@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use crate::state::*;
 
 #[account]
 pub struct DaoConfig {
@@ -12,7 +13,8 @@ pub struct DaoConfig {
     pub admin: Pubkey,
     pub eligibility_flags: u8, // Bitflags: 1 = premium, 2 = stake
     pub paused: bool,
-    pub bump: [u8; 1],
+    pub proposal_counter: u64,
+    pub bump: u8,
 }
 
 #[account]
@@ -26,7 +28,7 @@ pub struct Proposal {
     pub end_ts: i64,
     pub tally_yes: u64,
     pub tally_no: u64,
-    pub bump: [u8; 1],
+    pub bump: u8,
 }
 
 #[account]
@@ -36,7 +38,7 @@ pub struct VoteRecord {
     pub choice: VoteChoice,
     pub weight: u64,
     pub paid_fee: bool,
-    pub bump: [u8; 1],
+    pub bump: u8,
 }
 
 #[account]
@@ -45,5 +47,5 @@ pub struct Member {
     pub is_premium: bool,
     pub reputation_score: u64, // For Disputes
     pub joined_at: i64,
-    pub bump: [u8; 1],
+    pub bump: u8,
 }

@@ -1,5 +1,3 @@
-use anchor_lang::prelude::*;
-
 pub const DAO_CONFIG_SEED: &[u8] = b"dao_config";
 pub const PROPOSAL_SEED: &[u8] = b"proposal";
 pub const VOTE_SEED: &[u8] = b"vote";

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::{accounts::*, constants::*, errors::ErrorCode};
+use crate::{account_structs::*, constants::*, errors::ErrorCode};
 
 #[derive(Accounts)]
 pub struct SetMemberPremium<'info> {

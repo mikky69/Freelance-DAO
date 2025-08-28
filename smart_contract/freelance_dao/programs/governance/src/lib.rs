@@ -1,16 +1,18 @@
 use anchor_lang::prelude::*;
-use instructions::*;
 
-pub mod accounts;
+pub mod account_structs;
 pub mod constants;
 pub mod errors;
 pub mod events;
 pub mod instructions;
 pub mod state;
 
+pub use account_structs::*;
 pub use constants::*;
-pub use errors::*;
 pub use events::*;
+pub use instructions::{
+    InitDaoConfig, CreateProposal, FinalizeProposal, CastVote, SetMemberPremium, UpdateReputation
+};
 pub use state::*;
 
 declare_id!("FHz9LEX7bDh85GhtdUiHD7RsNKDuZEdD4afU9FiAv9YT");

@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
-use crate::{accounts::*, constants::*, errors::ErrorCode};
+use crate::{account_structs::*, constants::*};
 
 #[derive(Accounts)]
 pub struct InitDaoConfig<'info> {
     #[account(
         init,
         payer = admin,
-        space = 8 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 1,
+        space = 8 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 1,
         seeds = [DAO_CONFIG_SEED],
         bump
     )]
@@ -47,6 +47,7 @@ pub fn init_dao_config(
     dao_config.admin = ctx.accounts.admin.key();
     dao_config.eligibility_flags = eligibility_flags;
     dao_config.paused = false;
+    dao_config.proposal_counter = 0;
     dao_config.bump = ctx.bumps.dao_config;
     Ok(())
 }
