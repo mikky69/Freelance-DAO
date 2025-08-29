@@ -1,86 +1,96 @@
-use anchor_lang::prelude::*;
-use crate::{account_structs::*, constants::*, errors::ErrorCode, events::*, state::*};
+use anchor_lang::{prelude::*, system_program};
+use crate::{state_accounts::{DaoConfig, Proposal, VoteRecord}, errors::ErrorCode, events::VoteCast, state::VoteChoice};
 
 #[derive(Accounts)]
-#[instruction(choice: VoteChoice)]
+#[allow(unexpected_cfgs)] // Suppress cfg warnings
 pub struct CastVote<'info> {
-    #[account(
-        seeds = [DAO_CONFIG_SEED],
-        bump = dao_config.bump,
-        constraint = !dao_config.paused @ ErrorCode::Paused
-    )]
     pub dao_config: Account<'info, DaoConfig>,
-    #[account(
-        mut,
-        seeds = [PROPOSAL_SEED, &dao_config.key().to_bytes()[..], &dao_config.proposal_counter.to_le_bytes()[..]],
-        bump = proposal.bump,
-        constraint = proposal.state == ProposalState::Active @ ErrorCode::VotingWindowClosed
-    )]
+    #[account(mut)]
     pub proposal: Account<'info, Proposal>,
     #[account(
         init_if_needed,
         payer = voter,
-        space = 8 + 32 + 32 + 1 + 8 + 1 + 1,
-        seeds = [VOTE_SEED, &proposal.key().to_bytes()[..], &voter.key().to_bytes()[..]],
+        space = VoteRecord::SPACE,
+        seeds = [b"vote", proposal.key().as_ref(), voter.key().as_ref()],
         bump
     )]
     pub vote_record: Account<'info, VoteRecord>,
     #[account(mut)]
     pub voter: Signer<'info>,
-    #[account(mut, seeds = [TREASURY_SEED], bump)]
-    pub fee_wallet: SystemAccount<'info>,
+    #[account(mut)]
+    pub treasury: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
     pub clock: Sysvar<'info, Clock>,
+    // Placeholder for Staking program CPI
+    // #[account(mut)]
+    // pub staking_program: Program<'info, StakingProgram>,
+    // #[account(mut)]
+    // pub stake_position: Account<'info, StakePosition>,
 }
 
 pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
-    let dao_config = &ctx.accounts.dao_config;
+    if ctx.accounts.dao_config.paused {
+        return Err(ErrorCode::Paused.into());
+    }
+
     let proposal = &mut ctx.accounts.proposal;
+    let now = ctx.accounts.clock.unix_timestamp;
+    if now < proposal.start_ts || now >= proposal.end_ts || proposal.state != crate::state::ProposalState::Active {
+        return Err(ErrorCode::VotingWindowClosed.into());
+    }
+
     let vote_record = &mut ctx.accounts.vote_record;
-    let clock = &ctx.accounts.clock;
+    if vote_record.voter != Pubkey::default() {
+        return Err(ErrorCode::AlreadyVoted.into());
+    }
 
-    require!(
-        clock.unix_timestamp >= proposal.start_ts && clock.unix_timestamp < proposal.end_ts,
-        ErrorCode::VotingWindowClosed
-    );
-
-    // Transfer SOL fee
-    let cpi_accounts = anchor_lang::system_program::Transfer {
-        from: ctx.accounts.voter.to_account_info(),
-        to: ctx.accounts.fee_wallet.to_account_info(),
-    };
-    let cpi_program = ctx.accounts.system_program.to_account_info();
-    anchor_lang::system_program::transfer(
-        CpiContext::new(cpi_program, cpi_accounts),
-        dao_config.vote_fee_lamports,
+    // Transfer SOL vote fee
+    let fee_lamports = ctx.accounts.dao_config.vote_fee_lamports;
+    system_program::transfer(
+        CpiContext::new(
+            ctx.accounts.system_program.to_account_info(),
+            system_program::Transfer {
+                from: ctx.accounts.voter.to_account_info(),
+                to: ctx.accounts.treasury.to_account_info(),
+            },
+        ),
+        fee_lamports,
     )?;
 
-    // Simplified weight: default to 1 (CPI to Staking TBD)
-    let weight = 1;
+    // Vote weight: Default to 1; later add staking CPI
+    let weight: u64 = 1;
+    // TODO: CPI to Staking program to get staked $FLDAO
+    // Example: weight = 1 + floor(stake_position.amount / dao_config.weight_params)
+    // let stake_position = &ctx.accounts.stake_position;
+    // let weight = 1 + (stake_position.amount / ctx.accounts.dao_config.weight_params);
 
-    // Check for double-voting
-    require!(!vote_record.paid_fee, ErrorCode::AlreadyVoted);
-
-    // Update vote record
     vote_record.proposal = proposal.key();
     vote_record.voter = ctx.accounts.voter.key();
-    vote_record.choice = choice.clone();
+    vote_record.choice = choice;
     vote_record.weight = weight;
     vote_record.paid_fee = true;
-    vote_record.bump = ctx.bumps.vote_record;
+    vote_record.bump = [ctx.bumps.vote_record];
 
-    // Update proposal tallies
+    // FIX: Add overflow protection for vote tallies
     match choice {
-        VoteChoice::Yes => proposal.tally_yes += weight,
-        VoteChoice::No => proposal.tally_no += weight,
+        VoteChoice::Yes => {
+            proposal.tally_yes = proposal.tally_yes
+                .checked_add(weight)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
+        },
+        VoteChoice::No => {
+            proposal.tally_no = proposal.tally_no
+                .checked_add(weight)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
+        },
     }
 
     emit!(VoteCast {
         id: proposal.key(),
         voter: vote_record.voter,
-        choice,
-        weight,
+        choice: vote_record.choice,
+        weight: vote_record.weight,
     });
 
     Ok(())

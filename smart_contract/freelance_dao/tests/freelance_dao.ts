@@ -6,7 +6,7 @@ describe("freelance_dao", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
-  const program = anchor.workspace.FreelanceDao as Program<FreelanceDao>;
+  const program = anchor.workspace.freelanceDao as Program<FreelanceDao>;
 
   it("Is initialized!", async () => {
     // Add your test here.
