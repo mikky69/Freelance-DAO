@@ -8,7 +8,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("AWjkpXxFvctC17BN9f8XWFFSvwmkdr15B1LNqqh9gHeu");
+declare_id!("FXrY4VRkPRYzmZCEKoZ9EpBmMarK1QbnVKNU1ygdisbk");
 
 #[allow(unexpected_cfgs)] // Suppress cfg warnings
 #[program]
