@@ -75,11 +75,17 @@ interface Job {
   id: string
   title: string
   client: string
+  clientCompany: string
   budget: string
   status: string
   proposals: number
   created: string
   flagged: boolean
+  category: string
+  skills: string[]
+  description: string
+  duration: string
+  urgency: string
 }
 
 export default function AdminDashboard() {
@@ -167,7 +173,7 @@ export default function AdminDashboard() {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('freelancedao_token')
-      const response = await fetch('/api/admin/jobs?limit=5', {
+      const response = await fetch('/api/admin/jobs?status=draft&limit=10', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -184,6 +190,31 @@ export default function AdminDashboard() {
       toast.error('Error loading jobs')
     } finally {
       setLoading(prev => ({ ...prev, jobs: false }))
+    }
+  }
+
+  const handleJobAction = async (jobId: string, action: 'approve' | 'reject', reason?: string) => {
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      const response = await fetch('/api/admin/jobs', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ jobId, action, reason })
+      })
+      
+      if (response.ok) {
+        toast.success(`Job ${action}d successfully`)
+        // Refresh jobs list
+        fetchJobs()
+      } else {
+        toast.error(`Failed to ${action} job`)
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing job:`, error)
+      toast.error(`Error ${action}ing job`)
     }
   }
 
@@ -540,14 +571,128 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Briefcase className="w-5 h-5 mr-2 text-purple-500" />
-                Job Monitoring
+                Job Approval
               </CardTitle>
-              <CardDescription>Track and manage platform jobs</CardDescription>
+              <CardDescription>Review and approve draft jobs submitted by clients</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-center py-8 text-slate-500">Job monitoring data will be displayed here</p>
-              </div>
+              {loading.jobs ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <Skeleton className="h-5 w-16" />
+                            <Skeleton className="h-5 w-20" />
+                          </div>
+                          <Skeleton className="h-6 w-3/4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : jobs.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Briefcase className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                  <p>No draft jobs pending approval</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {jobs.map((job, index) => (
+                    <Card key={index} className="border-l-4 border-l-orange-500">
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {job.id}
+                                </Badge>
+                                <Badge className="bg-orange-100 text-orange-700">
+                                  {job.status}
+                                </Badge>
+                                <Badge variant="secondary">{job.category}</Badge>
+                                {job.urgency === 'high' && (
+                                  <Badge className="bg-red-100 text-red-700">High Priority</Badge>
+                                )}
+                              </div>
+                              <h4 className="font-semibold text-slate-800 text-lg mb-2">{job.title}</h4>
+                              <p className="text-sm text-slate-600 mb-3 line-clamp-2">{job.description}</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="font-medium text-slate-700">Client:</span>
+                                  <div className="flex items-center mt-1">
+                                    <Avatar className="w-6 h-6 mr-2">
+                                      <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
+                                        {job.client[0]}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div>{job.client}</div>
+                                      {job.clientCompany && (
+                                        <div className="text-xs text-slate-500">{job.clientCompany}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-slate-700">Budget:</span>
+                                  <div className="text-green-600 font-semibold mt-1">{job.budget}</div>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-slate-700">Duration:</span>
+                                  <div className="mt-1">{job.duration}</div>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-slate-700">Skills:</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {job.skills.slice(0, 3).map((skill, idx) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                    {job.skills.length > 3 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{job.skills.length - 3} more
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <div className="text-sm text-slate-500 text-right">
+                                Posted {job.created}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleJobAction(job.id, 'reject')}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Reject
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-500 hover:bg-green-600"
+                                  onClick={() => handleJobAction(job.id, 'approve')}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Approve
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
