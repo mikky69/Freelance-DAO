@@ -34,151 +34,51 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/auth-context"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Job {
-  id: string
+  _id: string
   title: string
   description: string
-  budget: string
-  budgetType: "fixed" | "hourly"
+  budget: {
+    amount: number
+    currency: string
+    type: "fixed" | "hourly"
+  }
   duration: string
   skills: string[]
   client: {
-    name: string
-    avatar: string
-    rating: number
-    reviewCount: number
-    location: string
-    verified: boolean
+    fullname: string
+    avatar?: string
+    rating?: number
+    reviewCount?: number
+    verified?: boolean
   }
-  postedAt: string
-  proposals: number
+  createdAt: string
+  proposals: any[]
   category: string
   urgency: "low" | "medium" | "high"
   featured: boolean
 }
 
-const mockJobs: Job[] = [
-  {
-    id: "1",
-    title: "Full-Stack Web Application Development",
-    description:
-      "Looking for an experienced full-stack developer to build a modern web application using React, Node.js, and PostgreSQL. The project includes user authentication, real-time features, and payment integration.",
-    budget: "2500-5000",
-    budgetType: "fixed",
-    duration: "2-3 months",
-    skills: ["React", "Node.js", "PostgreSQL", "TypeScript", "AWS"],
-    client: {
-      name: "TechCorp Solutions",
-      avatar: "/placeholder.svg?height=40&width=40",
-      rating: 4.8,
-      reviewCount: 23,
-      location: "San Francisco, CA",
-      verified: true,
-    },
-    postedAt: "2 hours ago",
-    proposals: 12,
-    category: "Web Development",
-    urgency: "high",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Mobile App UI/UX Design",
-    description:
-      "Need a talented designer to create modern, user-friendly interfaces for our mobile application. Experience with Figma and mobile design patterns required.",
-    budget: "50-75",
-    budgetType: "hourly",
-    duration: "1 month",
-    skills: ["UI/UX Design", "Figma", "Mobile Design", "Prototyping"],
-    client: {
-      name: "StartupXYZ",
-      avatar: "/placeholder.svg?height=40&width=40",
-      rating: 4.6,
-      reviewCount: 15,
-      location: "New York, NY",
-      verified: true,
-    },
-    postedAt: "5 hours ago",
-    proposals: 8,
-    category: "Design",
-    urgency: "medium",
-    featured: false,
-  },
-  {
-    id: "3",
-    title: "Content Writing for Tech Blog",
-    description:
-      "Seeking experienced tech writers to create engaging blog posts about emerging technologies, AI, and software development trends.",
-    budget: "25-40",
-    budgetType: "hourly",
-    duration: "Ongoing",
-    skills: ["Content Writing", "Technical Writing", "SEO", "Research"],
-    client: {
-      name: "Digital Media Co",
-      avatar: "/placeholder.svg?height=40&width=40",
-      rating: 4.9,
-      reviewCount: 31,
-      location: "Remote",
-      verified: true,
-    },
-    postedAt: "1 day ago",
-    proposals: 25,
-    category: "Writing",
-    urgency: "low",
-    featured: false,
-  },
-  {
-    id: "4",
-    title: "Smart Contract Development on Hedera",
-    description:
-      "Looking for a blockchain developer experienced with Hedera Hashgraph to develop and deploy smart contracts for our DeFi platform.",
-    budget: "3000-8000",
-    budgetType: "fixed",
-    duration: "1-2 months",
-    skills: ["Solidity", "Hedera", "Smart Contracts", "DeFi", "Web3"],
-    client: {
-      name: "CryptoFinance Ltd",
-      avatar: "/placeholder.svg?height=40&width=40",
-      rating: 4.7,
-      reviewCount: 18,
-      location: "London, UK",
-      verified: true,
-    },
-    postedAt: "3 hours ago",
-    proposals: 6,
-    category: "Blockchain",
-    urgency: "high",
-    featured: true,
-  },
-  {
-    id: "5",
-    title: "Digital Marketing Campaign Management",
-    description:
-      "Need a digital marketing expert to manage our social media campaigns, create content, and optimize our online presence across multiple platforms.",
-    budget: "1500-3000",
-    budgetType: "fixed",
-    duration: "3 months",
-    skills: ["Digital Marketing", "Social Media", "Content Creation", "Analytics"],
-    client: {
-      name: "E-commerce Plus",
-      avatar: "/placeholder.svg?height=40&width=40",
-      rating: 4.5,
-      reviewCount: 12,
-      location: "Austin, TX",
-      verified: false,
-    },
-    postedAt: "6 hours ago",
-    proposals: 18,
-    category: "Marketing",
-    urgency: "medium",
-    featured: false,
-  },
-]
+// Job categories mapping
+const categoryMap: { [key: string]: string } = {
+  'web-dev': 'Web Development',
+  'mobile-dev': 'Mobile Development', 
+  'design': 'Design',
+  'writing': 'Writing',
+  'marketing': 'Marketing',
+  'blockchain': 'Blockchain',
+  'data': 'Data Science',
+  'photography': 'Photography',
+  'other': 'Other'
+}
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>(mockJobs)
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(mockJobs)
+  const { user } = useAuth()
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedBudgetType, setSelectedBudgetType] = useState("all")
@@ -190,44 +90,137 @@ export default function JobsPage() {
   const [proposalBudget, setProposalBudget] = useState("")
   const [proposalTimeline, setProposalTimeline] = useState("")
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    pages: 0
+  })
+  const [stats, setStats] = useState({
+    activeClients: 0,
+    totalPaid: 0,
+    totalJobs: 0
+  })
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
 
   const categories = ["all", "Web Development", "Design", "Writing", "Marketing", "Blockchain", "Mobile Development"]
   const budgetTypes = ["all", "fixed", "hourly"]
   const urgencyLevels = ["all", "low", "medium", "high"]
 
+  // Fetch platform statistics
+  const fetchStats = async () => {
+    try {
+      setIsLoadingStats(true)
+      const response = await fetch('/api/platform/stats')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats')
+      }
+      
+      const data = await response.json()
+      setStats({
+        activeClients: data.stats.totalClients || 0,
+        totalPaid: data.stats.totalVolume || 0,
+        totalJobs: data.stats.totalJobs || 0
+      })
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+      // Keep default values on error
+    } finally {
+      setIsLoadingStats(false)
+    }
+  }
+
+  // Fetch jobs from API
+  const fetchJobs = async () => {
+    try {
+      setIsLoading(true)
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      })
+      
+      if (selectedCategory !== 'all') {
+        // Map display category to backend category
+        const backendCategory = Object.keys(categoryMap).find(
+          key => categoryMap[key] === selectedCategory
+        )
+        if (backendCategory) {
+          params.append('category', backendCategory)
+        }
+      }
+      
+      if (selectedBudgetType !== 'all') {
+        params.append('budgetType', selectedBudgetType)
+      }
+      
+      if (selectedUrgency !== 'all') {
+        params.append('urgency', selectedUrgency)
+      }
+      
+      if (showFeaturedOnly) {
+        params.append('featured', 'true')
+      }
+      
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim())
+      }
+
+      const response = await fetch(`/api/jobs?${params}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobs')
+      }
+      
+      const data = await response.json()
+      setJobs(data.jobs || [])
+      setPagination(data.pagination || {
+        page: 1,
+        limit: 12,
+        total: 0,
+        pages: 0
+      })
+    } catch (error) {
+      console.error('Error fetching jobs:', error)
+      toast.error('Failed to load jobs')
+      setJobs([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs()
+    fetchStats()
+  }, [pagination.page, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly])
+  
+  // Fetch stats on component mount
+  useEffect(() => {
+    fetchStats()
+  }, [])
+  
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (pagination.page === 1) {
+        fetchJobs()
+      } else {
+        setPagination(prev => ({ ...prev, page: 1 }))
+      }
+    }, 500)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
+
   useEffect(() => {
     filterJobs()
-  }, [searchTerm, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly, jobs])
+  }, [jobs])
 
   const filterJobs = () => {
-    let filtered = jobs
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (job) =>
-          job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())),
-      )
-    }
-
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((job) => job.category === selectedCategory)
-    }
-
-    if (selectedBudgetType !== "all") {
-      filtered = filtered.filter((job) => job.budgetType === selectedBudgetType)
-    }
-
-    if (selectedUrgency !== "all") {
-      filtered = filtered.filter((job) => job.urgency === selectedUrgency)
-    }
-
-    if (showFeaturedOnly) {
-      filtered = filtered.filter((job) => job.featured)
-    }
-
-    setFilteredJobs(filtered)
+    // Since API handles most filtering, we just set the jobs directly
+    // This function is kept for any additional client-side filtering if needed
+    setFilteredJobs(jobs)
   }
 
   const toggleSaveJob = (jobId: string) => {
@@ -300,14 +293,24 @@ export default function JobsPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Users className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-slate-800">1,234</div>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-16 mx-auto mb-2" />
+              ) : (
+                <div className="text-2xl font-bold text-slate-800">{stats.activeClients.toLocaleString()}</div>
+              )}
               <div className="text-sm text-slate-600">Active Clients</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingUp className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-slate-800">$2.5M</div>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-20 mx-auto mb-2" />
+              ) : (
+                <div className="text-2xl font-bold text-slate-800">
+                  {stats.totalPaid.toLocaleString()} HBAR
+                </div>
+              )}
               <div className="text-sm text-slate-600">Total Paid</div>
             </CardContent>
           </Card>
@@ -411,7 +414,36 @@ export default function JobsPage() {
           {/* Jobs List */}
           <div className="lg:col-span-3">
             <div className="space-y-6">
-              {filteredJobs.length === 0 ? (
+              {isLoading ? (
+                // Loading skeleton
+                <div className="space-y-6">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-6 w-3/4" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-2/3" />
+                            </div>
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Skeleton className="h-6 w-16" />
+                            <Skeleton className="h-6 w-20" />
+                            <Skeleton className="h-6 w-18" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <Skeleton className="h-8 w-32" />
+                            <Skeleton className="h-8 w-24" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredJobs.length === 0 ? (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
@@ -422,7 +454,7 @@ export default function JobsPage() {
               ) : (
                 filteredJobs.map((job) => (
                   <Card
-                    key={job.id}
+                    key={job._id}
                     className={`hover:shadow-lg transition-shadow duration-300 ${job.featured ? "ring-2 ring-blue-200" : ""}`}
                   >
                     <CardContent className="p-6">
@@ -450,7 +482,7 @@ export default function JobsPage() {
                           <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
                             <div className="flex items-center">
                               <DollarSign className="w-4 h-4 mr-1" />
-                              {job.budgetType === "fixed" ? `$${job.budget}` : `$${job.budget}/hr`}
+                              {job.budget.type === "fixed" ? `${job.budget.amount} ${job.budget.currency}` : `${job.budget.amount} ${job.budget.currency}/hr`}
                             </div>
                             <div className="flex items-center">
                               <Clock className="w-4 h-4 mr-1" />
@@ -458,7 +490,11 @@ export default function JobsPage() {
                             </div>
                             <div className="flex items-center">
                               <Users className="w-4 h-4 mr-1" />
-                              {job.proposals} proposals
+                              {job.proposals.length} proposals
+                            </div>
+                            <div className="flex items-center">
+                              <Briefcase className="w-4 h-4 mr-1" />
+                              {categoryMap[job.category] || job.category}
                             </div>
                           </div>
                         </div>
@@ -467,16 +503,18 @@ export default function JobsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleSaveJob(job.id)}
+                            onClick={() => toggleSaveJob(job._id)}
                             className="text-slate-500 hover:text-blue-600"
                           >
-                            {savedJobs.has(job.id) ? (
+                            {savedJobs.has(job._id) ? (
                               <BookmarkCheck className="w-4 h-4" />
                             ) : (
                               <Bookmark className="w-4 h-4" />
                             )}
                           </Button>
-                          <span className="text-xs text-slate-500">{job.postedAt}</span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
 
@@ -485,26 +523,27 @@ export default function JobsPage() {
                         <div className="flex items-center space-x-3">
                           <Avatar className="w-8 h-8">
                             <AvatarImage src={job.client.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{job.client.name[0]}</AvatarFallback>
+                            <AvatarFallback>{job.client.fullname[0]}</AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="flex items-center space-x-2">
-                              <span className="font-medium text-slate-800">{job.client.name}</span>
+                              <span className="font-medium text-slate-800">{job.client.fullname}</span>
                               {job.client.verified && (
                                 <Badge className="bg-green-100 text-green-700 text-xs">Verified</Badge>
                               )}
                             </div>
-                            <div className="flex items-center space-x-2 text-sm text-slate-600">
-                              <div className="flex items-center">
-                                <Star className="w-3 h-3 text-yellow-500 mr-1" />
-                                {job.client.rating} ({job.client.reviewCount} reviews)
-                              </div>
-                              <span>•</span>
-                              <div className="flex items-center">
-                                <MapPin className="w-3 h-3 mr-1" />
-                                {job.client.location}
-                              </div>
-                            </div>
+                            {/* <div className="flex items-center space-x-2 text-sm text-slate-600">
+                              {job.client.rating && (
+                                <>
+                                  <div className="flex items-center">
+                                    <Star className="w-3 h-3 text-yellow-500 mr-1" />
+                                    {job.client.rating} ({job.client.reviewCount || 0} reviews)
+                                  </div>
+                                  <span>•</span>
+                                </>
+                              )}
+                              <span>Client since {new Date(job.createdAt).getFullYear()}</span>
+                            </div> */}
                           </div>
                         </div>
 
@@ -526,9 +565,9 @@ export default function JobsPage() {
                                 <div className="bg-slate-50 p-4 rounded-lg">
                                   <h4 className="font-medium text-slate-800 mb-2">{selectedJob.title}</h4>
                                   <div className="flex items-center space-x-4 text-sm text-slate-600">
-                                    <span>Budget: ${selectedJob.budget}</span>
+                                    <span>Budget: {selectedJob.budget.amount} {selectedJob.budget.currency}</span>
                                     <span>Duration: {selectedJob.duration}</span>
-                                    <span>{selectedJob.proposals} proposals</span>
+                                    <span>{selectedJob.proposals.length} proposals</span>
                                   </div>
                                 </div>
                               )}
