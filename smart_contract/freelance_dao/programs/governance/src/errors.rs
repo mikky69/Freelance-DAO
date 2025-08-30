@@ -1,26 +1,55 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-#[derive(PartialEq)]
 pub enum ErrorCode {
-    #[msg("Only admin can call this instruction")]
-    Unauthorized = 6000,
-    #[msg("Insufficient USDC or SOL fees")]
-    InsufficientFees = 6001,
-    #[msg("Voting window is closed or not started")]
-    VotingWindowClosed = 6002,
-    #[msg("Voter has already cast a vote")]
-    AlreadyVoted = 6003,
-    #[msg("Program is paused")]
-    Paused = 6004,
-    #[msg("Voting window duration is invalid")]
-    InvalidWindow = 6005,
+    #[msg("Unauthorized access")]
+    Unauthorized,
+    #[msg("Invalid instruction data")]
+    InvalidInstructionData,
+    #[msg("Proposal voting period has ended")]
+    VotingPeriodEnded,
+    #[msg("Proposal voting period has not ended")]
+    VotingPeriodNotEnded,
+    #[msg("Already voted on this proposal")]
+    AlreadyVoted,
+    #[msg("Proposal has not succeeded")]
+    ProposalNotSucceeded,
+    #[msg("Proposal already executed")]
+    AlreadyExecuted,
+    #[msg("Proposal not executed yet")]
+    NotExecuted,
+    #[msg("Execution delay period not met")]
+    ExecutionDelayNotMet,
+    #[msg("Insufficient voting power")]
+    InsufficientVotingPower,
+    #[msg("Invalid proposal type")]
+    InvalidProposalType,
+    #[msg("Invalid voting period")]
+    InvalidVotingPeriod,
+    #[msg("Member not found")]
+    MemberNotFound,
+    #[msg("Not a premium member")]
+    NotPremiumMember,
+    #[msg("Insufficient funds")]
+    InsufficientFunds,
+    #[msg("Invalid window or time parameter")]
+    InvalidWindow,
+    #[msg("Invalid treasury account")]
+    InvalidTreasury,
+    #[msg("DAO operations are paused")]
+    Paused,
     #[msg("URI too long")]
-    UriTooLong = 6006,
-    #[msg("Proposal not active")]
-    ProposalNotActive = 6007,
-    #[msg("Voting is still active")]
-    VotingStillActive = 6008,
+    UriTooLong,
+    #[msg("Invalid title hash")]
+    InvalidTitleHash,
     #[msg("Arithmetic overflow")]
-    ArithmeticOverflow = 6009,
+    ArithmeticOverflow,
+    #[msg("Proposal not active")]
+    ProposalNotActive,
+    #[msg("Voting window closed")]
+    VotingWindowClosed,
+    #[msg("Voting still active")]
+    VotingStillActive,
+    #[msg("Invalid vote weight")]
+    InvalidVoteWeight,
 }

@@ -437,8 +437,8 @@ describe("governance", () => {
             rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           })
-          .signers([user1])
-          .rpc();
+        .signers([user1])
+        .rpc();
 
         expect.fail("Should have failed when paused");
       } catch (error) {
@@ -490,8 +490,8 @@ describe("governance", () => {
             rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           })
-          .signers([user1])
-          .rpc();
+        .signers([user1])
+        .rpc();
 
         expect.fail("Should have failed with invalid window");
       } catch (error) {
@@ -534,8 +534,8 @@ describe("governance", () => {
             rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           })
-          .signers([user1])
-          .rpc();
+        .signers([user1])
+        .rpc();
 
         expect.fail("Should have failed with URI too long");
       } catch (error) {
@@ -646,8 +646,8 @@ describe("governance", () => {
             rent: anchor.web3.SYSVAR_RENT_PUBKEY,
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           })
-          .signers([user1])
-          .rpc();
+        .signers([user1])
+        .rpc();
 
         expect.fail("Should have failed with already voted");
       } catch (error) {
@@ -703,7 +703,7 @@ describe("governance", () => {
 
       const uri = "https://example.com/proposal/finalize";
       const titleHash = Array.from(anchor.utils.sha256.hash("Finalization Test"));
-      const window = 1;
+      const window = 60;
 
       await program.methods
         .createProposal(
@@ -726,7 +726,7 @@ describe("governance", () => {
         .signers([admin])
         .rpc();
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 65000));
     });
 
     it("Finalizes a proposal after voting period ends", async () => {

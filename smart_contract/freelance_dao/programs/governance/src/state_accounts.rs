@@ -1,3 +1,4 @@
+// UPDATED state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -15,22 +16,14 @@ pub struct DaoConfig {
     pub eligibility_flags: u8,       // 1 byte
     pub paused: bool,                // 1 byte
     pub proposal_count: u64,         // 8 bytes
-    pub weight_params: u64,          // 8 bytes - For vote weight calc (e.g., 1 per X $FLDAO)
-    pub bump: [u8; 1],              // 1 byte
+    pub weight_params: u64,          // 8 bytes
+    pub quorum_threshold: u64,       // 8 bytes - NEW
+    pub approval_threshold: u64,     // 8 bytes - NEW (percentage, e.g., 5100 = 51%)
+    pub bump: u8,                    // 1 byte
 }
 
 impl DaoConfig {
-    // CORRECTED space calculation
-    // Discriminator: 8 bytes
-    // 4 Pubkeys: 32 * 4 = 128 bytes
-    // 5 u64s (light_fee_usdc, major_fee_usdc, vote_fee_lamports, proposal_count, weight_params): 8 * 5 = 40 bytes
-    // 2 i64s (min_vote_duration, max_vote_duration): 8 * 2 = 16 bytes
-    // 1 u8 (eligibility_flags): 1 byte
-    // 1 bool (paused): 1 byte
-    // 1 bump array: 1 byte
-    // Total: 8 + 128 + 40 + 16 + 1 + 1 + 1 = 195 bytes
-    // Add padding for safety: 8 bytes
-    pub const SPACE: usize = 8 + 32 * 4 + 8 * 5 + 8 * 2 + 1 + 1 + 1 + 8;
+    pub const SPACE: usize = 8 + 32 * 4 + 8 * 7 + 1 + 1 + 1 + 8; // Updated for new fields
 }
 
 #[account]
@@ -40,32 +33,22 @@ pub struct Proposal {
     pub id: u64,                     // 8 bytes
     pub kind: crate::state::ProposalKind,  // 1 byte
     pub title_hash: [u8; 32],        // 32 bytes
-    pub uri: String,                 // 4 + uri_len bytes - Max len check in ix
+    pub uri: String,                 // 4 + uri_len bytes
     pub state: crate::state::ProposalState, // 1 byte
     pub start_ts: i64,               // 8 bytes
     pub end_ts: i64,                 // 8 bytes
     pub tally_yes: u64,              // 8 bytes
     pub tally_no: u64,               // 8 bytes
-    pub bump: [u8; 1],              // 1 byte
+    pub total_votes: u64,            // 8 bytes - NEW
+    pub executed: bool,              // 1 byte - NEW
+    pub executed_at: i64,            // 8 bytes - NEW
+    pub bump: u8,                    // 1 byte
 }
 
 impl Proposal {
     pub fn space(uri_len: usize) -> usize {
-        // CORRECTED space calculation
-        // Discriminator: 8 bytes
-        // creator (Pubkey): 32 bytes
-        // id (u64): 8 bytes
-        // kind (enum): 1 byte
-        // title_hash: 32 bytes
-        // uri (String): 4 (length prefix) + uri_len bytes
-        // state (enum): 1 byte
-        // start_ts (i64): 8 bytes
-        // end_ts (i64): 8 bytes
-        // tally_yes (u64): 8 bytes
-        // tally_no (u64): 8 bytes
-        // bump: 1 byte
-        // Padding for safety: 8 bytes
-        8 + 32 + 8 + 1 + 32 + 4 + uri_len + 1 + 8 + 8 + 8 + 8 + 1 + 8
+        // Updated for new fields
+        8 + 32 + 8 + 1 + 32 + (4 + uri_len) + 1 + 8 + 8 + 8 + 8 + 8 + 1 + 8 + 1 + 8
     }
 }
 
@@ -77,18 +60,26 @@ pub struct VoteRecord {
     pub choice: crate::state::VoteChoice, // 1 byte
     pub weight: u64,                 // 8 bytes
     pub paid_fee: bool,              // 1 byte
-    pub bump: [u8; 1],              // 1 byte
+    pub timestamp: i64,              // 8 bytes - NEW
+    pub bump: u8,                    // 1 byte
 }
 
 impl VoteRecord {
-    // CORRECTED space calculation
-    // Discriminator: 8 bytes
-    // 2 Pubkeys: 32 * 2 = 64 bytes
-    // choice (enum): 1 byte
-    // weight (u64): 8 bytes
-    // paid_fee (bool): 1 byte
-    // bump: 1 byte
-    // Padding for safety: 8 bytes
-    // Total: 8 + 64 + 1 + 8 + 1 + 1 + 8 = 91 bytes
-    pub const SPACE: usize = 8 + 32 * 2 + 1 + 8 + 1 + 1 + 8;
+    pub const SPACE: usize = 8 + 64 + 1 + 8 + 1 + 8 + 1 + 8; // Updated
+}
+
+// NEW: Member account for premium membership
+#[account]
+#[derive(Default)]
+pub struct Member {
+    pub user: Pubkey,                // 32 bytes
+    pub premium: bool,               // 1 byte
+    pub flags: u8,                   // 1 byte - Custom flags for different membership levels
+    pub joined_at: i64,              // 8 bytes
+    pub updated_at: i64,             // 8 bytes
+    pub bump: u8,                    // 1 byte
+}
+
+impl Member {
+    pub const SPACE: usize = 8 + 32 + 1 + 1 + 8 + 8 + 1 + 8; // 67 bytes
 }
