@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       urgency: urgencyLevel,
       client: userId,
       featured: featured || false,
-      status: 'open'
+      status: 'draft'
     });
     
     // If featured job, deduct payment from client (this would integrate with payment system)
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
     
-    // Build query
+    // Build query - show only open jobs (approved jobs)
     const query: any = { status: 'open' };
     
     if (category && category !== 'all') {

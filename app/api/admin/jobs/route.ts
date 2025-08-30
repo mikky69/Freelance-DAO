@@ -100,6 +100,8 @@ export async function GET(request: NextRequest) {
       
       // Map status for display
       const statusMap: { [key: string]: string } = {
+        'draft': 'Draft',
+        'published': 'Published',
         'open': 'Open',
         'in_progress': 'In Progress',
         'completed': 'Completed',
@@ -194,6 +196,12 @@ export async function PATCH(request: NextRequest) {
     let updateData: any = {};
     
     switch (action) {
+      case 'approve':
+        updateData = { status: 'open', adminNote: reason || 'Approved by admin' };
+        break;
+      case 'reject':
+        updateData = { status: 'cancelled', adminNote: reason || 'Rejected by admin' };
+        break;
       case 'suspend':
         updateData = { status: 'cancelled', adminNote: reason || 'Suspended by admin' };
         break;

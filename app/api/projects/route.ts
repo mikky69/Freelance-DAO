@@ -55,9 +55,10 @@ export async function GET(request: NextRequest) {
       const statusMap: { [key: string]: string } = {
         'active': 'in_progress',
         'completed': 'completed',
+        'open': 'open',
         'in_review': 'in_progress', // Could be a separate field in future
         'paused': 'in_progress', // Could be a separate field in future
-        'draft': 'open'
+        'draft': 'draft'
       };
       query.status = statusMap[status] || status;
     }
@@ -86,7 +87,8 @@ export async function GET(request: NextRequest) {
     const transformedProjects = projects.map((project: any) => {
       // Map backend status to frontend status
       let frontendStatus = 'draft';
-      if (project.status === 'open') frontendStatus = 'draft';
+      if (project.status === 'draft') frontendStatus = 'draft';
+      else if (project.status === 'open') frontendStatus = 'open';
       else if (project.status === 'in_progress') frontendStatus = 'active';
       else if (project.status === 'completed') frontendStatus = 'completed';
       
@@ -134,7 +136,7 @@ export async function GET(request: NextRequest) {
       total: allUserProjects.length,
       active: allUserProjects.filter(p => p.status === 'in_progress').length,
       completed: allUserProjects.filter(p => p.status === 'completed').length,
-      draft: allUserProjects.filter(p => p.status === 'open').length,
+      draft: allUserProjects.filter(p => p.status === 'draft').length,
       totalBudget: allUserProjects.reduce((sum, p) => sum + (p.budget?.amount || 0), 0),
     };
     

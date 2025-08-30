@@ -12,7 +12,7 @@ export interface IJob extends Document {
   category: string;
   duration: string;
   urgency: 'low' | 'medium' | 'high';
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'draft' | 'published' | 'open' | 'in_progress' | 'completed' | 'cancelled';
   client: mongoose.Types.ObjectId;
   freelancer?: mongoose.Types.ObjectId;
   proposals: mongoose.Types.ObjectId[];
@@ -26,6 +26,7 @@ export interface IJob extends Document {
   }[];
   progress: number;
   featured: boolean;
+  adminNote?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,8 +88,8 @@ const JobSchema = new Schema<IJob>({
   },
   status: {
     type: String,
-    enum: ['open', 'in_progress', 'completed', 'cancelled'],
-    default: 'open',
+    enum: ['draft', 'published', 'open', 'in_progress', 'completed', 'cancelled'],
+    default: 'draft',
   },
   client: {
     type: Schema.Types.ObjectId,
@@ -138,6 +139,10 @@ const JobSchema = new Schema<IJob>({
   featured: {
     type: Boolean,
     default: false,
+  },
+  adminNote: {
+    type: String,
+    trim: true,
   },
 }, {
   timestamps: true,
