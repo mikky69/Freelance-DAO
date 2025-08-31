@@ -201,6 +201,27 @@ function DashboardContent() {
     }
   };
 
+  // Separate function to fetch jobs
+  const fetchJobs = async () => {
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      if (!token) return;
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      const jobsResponse = await fetch('/api/dashboard/jobs?status=in_progress', { headers });
+      if (jobsResponse.ok) {
+        const jobsData = await jobsResponse.json();
+        setJobs(jobsData.jobs);
+      }
+    } catch (error) {
+       console.error('Error fetching jobs:', error);
+     }
+   };
+
   const handleNewProposal = async () => {
     if (!proposalForm.title || !proposalForm.description || !proposalForm.budget) {
       toast.error("Please fill in all required fields");
@@ -284,8 +305,9 @@ function DashboardContent() {
       const data = await response.json();
       toast.success(`Proposal ${action} successfully!`);
       
-      // Refresh proposals to show updated status
+      // Refresh proposals and jobs to show updated status
       fetchProposals();
+      fetchJobs();
     } catch (error) {
       console.error('Error updating proposal:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update proposal');
