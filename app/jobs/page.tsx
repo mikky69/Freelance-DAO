@@ -31,6 +31,7 @@ import {
   Users,
   TrendingUp,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -103,10 +104,35 @@ export default function JobsPage() {
     totalJobs: 0
   })
   const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [submittedProposals, setSubmittedProposals] = useState<Set<string>>(new Set())
 
   const categories = ["all", "Web Development", "Design", "Writing", "Marketing", "Blockchain", "Mobile Development"]
   const budgetTypes = ["all", "fixed", "hourly"]
   const urgencyLevels = ["all", "low", "medium", "high"]
+
+  // Fetch user's submitted proposals
+  const fetchUserProposals = async () => {
+    if (!user || user.role !== 'freelancer') return
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) return
+      
+      const response = await fetch('/api/proposals', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const jobIds = new Set(data.proposals.map((proposal: any) => proposal.job._id || proposal.job))
+        setSubmittedProposals(jobIds)
+      }
+    } catch (error) {
+      console.error('Error fetching user proposals:', error)
+    }
+  }
 
   // Fetch platform statistics
   const fetchStats = async () => {
@@ -195,10 +221,16 @@ export default function JobsPage() {
     fetchStats()
   }, [pagination.page, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly])
   
-  // Fetch stats on component mount
+  // Fetch stats and user proposals on component mount
   useEffect(() => {
     fetchStats()
+    fetchUserProposals()
   }, [])
+  
+  // Fetch user proposals when user changes
+  useEffect(() => {
+    fetchUserProposals()
+  }, [user])
   
   // Debounced search effect
   useEffect(() => {
@@ -241,22 +273,64 @@ export default function JobsPage() {
       return
     }
 
+    if (!user) {
+      toast.error("Please log in to submit a proposal")
+      return
+    }
+
     setIsSubmittingProposal(true)
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to submit a proposal')
+        return
+      }
+
+      const response = await fetch('/api/proposals', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jobId: selectedJob._id,
+          title: `Proposal for ${selectedJob.title}`,
+          description: proposalText,
+          budget: {
+            amount: parseFloat(proposalBudget),
+            currency: selectedJob.budget.currency
+          },
+          timeline: proposalTimeline || 'As discussed',
+          milestones: []
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to submit proposal')
+      }
+
+      const data = await response.json()
       toast.success("Proposal submitted successfully!")
+      
+      // Add job to submitted proposals
+      setSubmittedProposals(prev => new Set([...prev, selectedJob._id]))
+      
+      // Reset form
       setSelectedJob(null)
       setProposalText("")
       setProposalBudget("")
       setProposalTimeline("")
+      
+      // Refresh jobs to update proposal count
+      fetchJobs()
+    } catch (error) {
+      console.error('Error submitting proposal:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to submit proposal')
+    } finally {
       setIsSubmittingProposal(false)
-
-      // Update job proposals count
-      setJobs((prevJobs) =>
-        prevJobs.map((job) => (job.id === selectedJob.id ? { ...job, proposals: job.proposals + 1 } : job)),
-      )
-    }, 2000)
+    }
   }
 
   const getUrgencyColor = (urgency: string) => {
@@ -547,95 +621,123 @@ export default function JobsPage() {
                           </div>
                         </div>
 
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button onClick={() => setSelectedJob(job)} className="bg-blue-500 hover:bg-blue-600">
-                              Submit Proposal
+                        {user && user.role === 'freelancer' ? (
+                          submittedProposals.has(job._id) ? (
+                            <Button 
+                              disabled 
+                              className="bg-green-100 text-green-700 cursor-not-allowed border border-green-200"
+                              title="You have already submitted a proposal for this job"
+                            >
+                              ✓ Submitted
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Submit Proposal</DialogTitle>
-                              <DialogDescription>Submit your proposal for "{selectedJob?.title}"</DialogDescription>
-                            </DialogHeader>
+                          ) : (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button onClick={() => setSelectedJob(job)} className="bg-blue-500 hover:bg-blue-600">
+                                  Submit Proposal
+                                </Button>
+                              </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Submit Proposal</DialogTitle>
+                                <DialogDescription>Submit your proposal for "{selectedJob?.title}"</DialogDescription>
+                              </DialogHeader>
 
-                            <div className="space-y-6">
-                              {/* Job Summary */}
-                              {selectedJob && (
-                                <div className="bg-slate-50 p-4 rounded-lg">
-                                  <h4 className="font-medium text-slate-800 mb-2">{selectedJob.title}</h4>
-                                  <div className="flex items-center space-x-4 text-sm text-slate-600">
-                                    <span>Budget: {selectedJob.budget.amount} {selectedJob.budget.currency}</span>
-                                    <span>Duration: {selectedJob.duration}</span>
-                                    <span>{selectedJob.proposals.length} proposals</span>
+                              <div className="space-y-6">
+                                {/* Job Summary */}
+                                {selectedJob && (
+                                  <div className="bg-slate-50 p-4 rounded-lg">
+                                    <h4 className="font-medium text-slate-800 mb-2">{selectedJob.title}</h4>
+                                    <div className="flex items-center space-x-4 text-sm text-slate-600">
+                                      <span>Budget: {selectedJob.budget.amount} {selectedJob.budget.currency}</span>
+                                      <span>Duration: {selectedJob.duration}</span>
+                                      <span>{selectedJob.proposals.length} proposals</span>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
-                              {/* Proposal Form */}
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="proposal">Cover Letter *</Label>
-                                  <Textarea
-                                    id="proposal"
-                                    placeholder="Explain why you're the best fit for this project..."
-                                    value={proposalText}
-                                    onChange={(e) => setProposalText(e.target.value)}
-                                    rows={6}
-                                    className="mt-1"
-                                  />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Proposal Form */}
+                                <div className="space-y-4">
                                   <div>
-                                    <Label htmlFor="budget">Your Bid (HBAR) *</Label>
-                                    <Input
-                                      id="budget"
-                                      type="number"
-                                      placeholder="Enter your bid"
-                                      value={proposalBudget}
-                                      onChange={(e) => setProposalBudget(e.target.value)}
+                                    <Label htmlFor="proposal">Cover Letter *</Label>
+                                    <Textarea
+                                      id="proposal"
+                                      placeholder="Explain why you're the best fit for this project..."
+                                      value={proposalText}
+                                      onChange={(e) => setProposalText(e.target.value)}
+                                      rows={6}
                                       className="mt-1"
                                     />
                                   </div>
-                                  <div>
-                                    <Label htmlFor="timeline">Delivery Timeline</Label>
-                                    <Input
-                                      id="timeline"
-                                      placeholder="e.g., 2 weeks"
-                                      value={proposalTimeline}
-                                      onChange={(e) => setProposalTimeline(e.target.value)}
-                                      className="mt-1"
-                                    />
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label htmlFor="budget">Your Bid ({selectedJob?.budget.currency || 'HBAR'}) *</Label>
+                                      <Input
+                                        id="budget"
+                                        type="number"
+                                        placeholder="Enter your bid"
+                                        value={proposalBudget}
+                                        onChange={(e) => setProposalBudget(e.target.value)}
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="timeline">Timeline</Label>
+                                      <Input
+                                        id="timeline"
+                                        placeholder="e.g., 2 weeks"
+                                        value={proposalTimeline}
+                                        onChange={(e) => setProposalTimeline(e.target.value)}
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="flex justify-end space-x-3 pt-4">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedJob(null)
+                                        setProposalText("")
+                                        setProposalBudget("")
+                                        setProposalTimeline("")
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      onClick={submitProposal}
+                                      disabled={isSubmittingProposal || !proposalText || !proposalBudget}
+                                      className="bg-blue-500 hover:bg-blue-600"
+                                    >
+                                      {isSubmittingProposal ? (
+                                        <>
+                                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                          Submitting...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Send className="w-4 h-4 mr-2" />
+                                          Submit Proposal
+                                        </>
+                                      )}
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
-
-                              <div className="flex justify-end space-x-4">
-                                <Button variant="outline" onClick={() => setSelectedJob(null)}>
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={submitProposal}
-                                  disabled={isSubmittingProposal || !proposalText || !proposalBudget}
-                                  className="bg-blue-500 hover:bg-blue-600"
-                                >
-                                  {isSubmittingProposal ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                      Submitting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Send className="w-4 h-4 mr-2" />
-                                      Submit Proposal
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogContent>
+                           </Dialog>
+                           )
+                        ) : (
+                          <Button 
+                            disabled 
+                            className="bg-slate-300 text-slate-500 cursor-not-allowed"
+                            title={!user ? "Please log in as a freelancer to submit proposals" : "Only freelancers can submit proposals"}
+                          >
+                            {!user ? "Login to Apply" : "Freelancers Only"}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
