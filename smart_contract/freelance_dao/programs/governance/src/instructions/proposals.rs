@@ -1,4 +1,4 @@
-// UPDATED proposals.rs
+// FIXED proposals.rs - Add rent sysvar and fix field names
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::{
@@ -34,7 +34,6 @@ pub struct CreateProposal<'info> {
     pub usdc_treasury: Account<'info, TokenAccount>,
     #[account(mut)]
     pub creator_usdc: Account<'info, TokenAccount>,
-    // Optional member account for fee discounts
     #[account(
         seeds = [b"member", dao_config.key().as_ref(), creator.key().as_ref()],
         bump = member.bump
@@ -43,6 +42,7 @@ pub struct CreateProposal<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>, // ADD THIS LINE
 }
 
 pub fn create_proposal(
@@ -74,7 +74,6 @@ pub fn create_proposal(
         ProposalKind::Major => dao_config.major_fee_usdc,
     };
     
-    // Apply premium member discount (50% off)
     if let Some(member) = &ctx.accounts.member {
         if member.premium {
             fee_amount = fee_amount / 2;

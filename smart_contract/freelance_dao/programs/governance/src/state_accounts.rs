@@ -1,4 +1,3 @@
-// UPDATED state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -17,13 +16,21 @@ pub struct DaoConfig {
     pub paused: bool,                // 1 byte
     pub proposal_count: u64,         // 8 bytes
     pub weight_params: u64,          // 8 bytes
-    pub quorum_threshold: u64,       // 8 bytes - NEW
-    pub approval_threshold: u64,     // 8 bytes - NEW (percentage, e.g., 5100 = 51%)
+    pub quorum_threshold: u64,       // 8 bytes
+    pub approval_threshold: u64,     // 8 bytes
     pub bump: u8,                    // 1 byte
 }
 
 impl DaoConfig {
-    pub const SPACE: usize = 8 + 32 * 4 + 8 * 7 + 1 + 1 + 1 + 8; // Updated for new fields
+    // Increase space to account for potential alignment and safety
+    pub const SPACE: usize = 8 + // discriminator
+        32 * 4 + // 4 pubkeys (usdc_mint, treasury, usdc_treasury, admin)
+        8 * 8 + // 8 u64/i64 fields
+        1 + // eligibility_flags
+        1 + // paused
+        1 + // bump
+        32; // extra padding for safety and alignment
+    // Total: 8 + 128 + 64 + 3 + 32 = 235 bytes
 }
 
 #[account]
@@ -39,16 +46,30 @@ pub struct Proposal {
     pub end_ts: i64,                 // 8 bytes
     pub tally_yes: u64,              // 8 bytes
     pub tally_no: u64,               // 8 bytes
-    pub total_votes: u64,            // 8 bytes - NEW
-    pub executed: bool,              // 1 byte - NEW
-    pub executed_at: i64,            // 8 bytes - NEW
+    pub total_votes: u64,            // 8 bytes
+    pub executed: bool,              // 1 byte
+    pub executed_at: i64,            // 8 bytes
     pub bump: u8,                    // 1 byte
 }
 
 impl Proposal {
     pub fn space(uri_len: usize) -> usize {
-        // Updated for new fields
-        8 + 32 + 8 + 1 + 32 + (4 + uri_len) + 1 + 8 + 8 + 8 + 8 + 8 + 1 + 8 + 1 + 8
+        8 + // discriminator
+        32 + // creator
+        8 + // id
+        1 + // kind
+        32 + // title_hash
+        (4 + uri_len) + // uri (String with length prefix)
+        1 + // state
+        8 + // start_ts
+        8 + // end_ts
+        8 + // tally_yes
+        8 + // tally_no
+        8 + // total_votes
+        1 + // executed
+        8 + // executed_at
+        1 + // bump
+        32 // extra padding for safety
     }
 }
 
@@ -60,26 +81,40 @@ pub struct VoteRecord {
     pub choice: crate::state::VoteChoice, // 1 byte
     pub weight: u64,                 // 8 bytes
     pub paid_fee: bool,              // 1 byte
-    pub timestamp: i64,              // 8 bytes - NEW
+    pub timestamp: i64,              // 8 bytes
     pub bump: u8,                    // 1 byte
 }
 
 impl VoteRecord {
-    pub const SPACE: usize = 8 + 64 + 1 + 8 + 1 + 8 + 1 + 8; // Updated
+    pub const SPACE: usize = 8 + // discriminator
+        32 + // proposal
+        32 + // voter
+        1 + // choice
+        8 + // weight
+        1 + // paid_fee
+        8 + // timestamp
+        1 + // bump
+        16; // padding for safety
 }
 
-// NEW: Member account for premium membership
 #[account]
 #[derive(Default)]
 pub struct Member {
     pub user: Pubkey,                // 32 bytes
     pub premium: bool,               // 1 byte
-    pub flags: u8,                   // 1 byte - Custom flags for different membership levels
+    pub flags: u8,                   // 1 byte
     pub joined_at: i64,              // 8 bytes
     pub updated_at: i64,             // 8 bytes
     pub bump: u8,                    // 1 byte
 }
 
 impl Member {
-    pub const SPACE: usize = 8 + 32 + 1 + 1 + 8 + 8 + 1 + 8; // 67 bytes
+    pub const SPACE: usize = 8 + // discriminator
+        32 + // user
+        1 + // premium
+        1 + // flags
+        8 + // joined_at
+        8 + // updated_at
+        1 + // bump
+        16; // padding for safety
 }

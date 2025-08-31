@@ -1,15 +1,14 @@
 {
-  "name": "governance",
+  "name": "freelance_dao",
   "version": "0.1.0",
-  "description": "Governance smart contract tests",
-  "type": "module",
+  "description": "Smart contract for FreelanceDao",
   "license": "ISC",
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
   },
   "devDependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
+    "@coral-xyz/anchor": "^0.30.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.4",
     "@types/bn.js": "^5.1.0",

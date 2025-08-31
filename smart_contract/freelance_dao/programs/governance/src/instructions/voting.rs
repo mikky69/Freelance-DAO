@@ -1,5 +1,5 @@
-// UPDATED voting.rs
-// ============================================
+
+// FIXED voting.rs - Add rent sysvar
 use anchor_lang::{prelude::*, system_program};
 use crate::{
     state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
@@ -33,7 +33,6 @@ pub struct CastVote<'info> {
     )]
     /// CHECK: This is the SOL treasury PDA validated by address constraint
     pub treasury: UncheckedAccount<'info>,
-    // Optional member account for vote weight bonuses
     #[account(
         seeds = [b"member", dao_config.key().as_ref(), voter.key().as_ref()],
         bump = member.bump
@@ -41,6 +40,7 @@ pub struct CastVote<'info> {
     pub member: Option<Account<'info, Member>>,
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>, // ADD THIS LINE
 }
 
 pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {

@@ -9,9 +9,13 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "declaration": false
   },
   "ts-node": {
-    "esm": false
+    "esm": false,
+    "transpileOnly": true
   }
 }

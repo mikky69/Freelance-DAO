@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer, Mint};
 use crate::{state_accounts::DaoConfig, errors::ErrorCode};
 
 #[derive(Accounts)]
@@ -11,36 +11,47 @@ pub struct InitTreasury<'info> {
         has_one = admin @ ErrorCode::Unauthorized
     )]
     pub dao_config: Account<'info, DaoConfig>,
+    
+    /// CHECK: Treasury PDA for SOL storage - no init needed for SOL treasury
     #[account(
-        init,
-        payer = admin,
-        space = 8,
         seeds = [b"treasury", dao_config.key().as_ref()],
         bump
     )]
-    /// CHECK: This is the SOL treasury PDA
     pub treasury: UncheckedAccount<'info>,
+    
     #[account(
         init,
         payer = admin,
-        token::mint = usdc_mint,
-        token::authority = treasury,
         seeds = [b"usdc_treasury", dao_config.key().as_ref()],
-        bump
+        bump,
+        token::mint = usdc_mint,
+        token::authority = treasury
     )]
     pub usdc_treasury: Account<'info, TokenAccount>,
-    pub usdc_mint: Account<'info, anchor_spl::token::Mint>,
+    
+    pub usdc_mint: Account<'info, Mint>,
+    
     #[account(mut)]
     pub admin: Signer<'info>,
+    
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn init_treasury(ctx: Context<InitTreasury>) -> Result<()> {
     let dao_config = &mut ctx.accounts.dao_config;
-    dao_config.usdc_mint = ctx.accounts.usdc_mint.key();
+    
+    // Update DAO config with treasury information
     dao_config.treasury = ctx.accounts.treasury.key();
     dao_config.usdc_treasury = ctx.accounts.usdc_treasury.key();
+    dao_config.usdc_mint = ctx.accounts.usdc_mint.key();
+    
+    msg!("Treasury initialized successfully");
+    msg!("SOL Treasury: {}", dao_config.treasury);
+    msg!("USDC Treasury: {}", dao_config.usdc_treasury);
+    msg!("USDC Mint: {}", dao_config.usdc_mint);
+    
     Ok(())
 }
 
@@ -52,6 +63,7 @@ pub struct WithdrawTreasury<'info> {
         has_one = admin @ ErrorCode::Unauthorized
     )]
     pub dao_config: Account<'info, DaoConfig>,
+    
     #[account(
         mut,
         seeds = [b"treasury", dao_config.key().as_ref()],
@@ -59,16 +71,20 @@ pub struct WithdrawTreasury<'info> {
     )]
     /// CHECK: This is the SOL treasury PDA
     pub treasury: UncheckedAccount<'info>,
+    
     #[account(
         mut,
         seeds = [b"usdc_treasury", dao_config.key().as_ref()],
         bump
     )]
     pub usdc_treasury: Account<'info, TokenAccount>,
+    
     #[account(mut)]
     pub destination_sol: SystemAccount<'info>,
+    
     #[account(mut)]
     pub destination_usdc: Account<'info, TokenAccount>,
+    
     pub admin: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,

@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
-use crate::{state_accounts::{DaoConfig, Member}, errors::ErrorCode, events::MembershipChanged};
+use crate::{
+    state_accounts::{DaoConfig, Member}, 
+    errors::ErrorCode, 
+    events::MembershipChanged
+};
 
 #[derive(Accounts)]
 #[instruction(user: Pubkey)]
@@ -10,6 +14,7 @@ pub struct ManageMembership<'info> {
         has_one = admin @ ErrorCode::Unauthorized
     )]
     pub dao_config: Account<'info, DaoConfig>,
+    
     #[account(
         init_if_needed,
         payer = admin,
@@ -18,10 +23,13 @@ pub struct ManageMembership<'info> {
         bump
     )]
     pub member: Account<'info, Member>,
+    
     #[account(mut)]
     pub admin: Signer<'info>,
+    
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn set_membership_status(
@@ -34,11 +42,14 @@ pub fn set_membership_status(
     let now = ctx.accounts.clock.unix_timestamp;
     
     let was_premium = member.premium;
+    
+    // Initialize or update member data
     member.user = user;
     member.premium = premium;
     member.flags = flags;
     member.bump = ctx.bumps.member;
     
+    // Set timestamps
     if member.joined_at == 0 {
         member.joined_at = now;
     }
@@ -54,6 +65,9 @@ pub fn set_membership_status(
         timestamp: now,
     });
     
+    msg!("Membership updated for user: {}", user);
+    msg!("Premium: {}, Flags: {}", premium, flags);
+    
     Ok(())
 }
 
@@ -64,11 +78,13 @@ pub struct CheckMembership<'info> {
         bump = dao_config.bump
     )]
     pub dao_config: Account<'info, DaoConfig>,
+    
     #[account(
         seeds = [b"member", dao_config.key().as_ref(), user.key().as_ref()],
         bump = member.bump
     )]
     pub member: Account<'info, Member>,
+    
     pub user: Signer<'info>,
 }
 
