@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Proposal } from '@/models/Proposal';
 import { Job } from '@/models/Job';
-import { Freelancer } from '@/models/User';
+import { Freelancer, Client } from '@/models/User';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -156,14 +156,21 @@ export async function GET(request: NextRequest) {
     
     // Check if user is freelancer or client
     const freelancer = await Freelancer.findById(userId);
+    const client = await Client.findById(userId);
+    
     if (freelancer) {
       // Freelancer can only see their own proposals
       query.freelancer = userId;
-    } else {
+    } else if (client) {
       // Client can see proposals for their jobs
       const clientJobs = await Job.find({ client: userId }).select('_id');
       const jobIds = clientJobs.map(job => job._id);
       query.job = { $in: jobIds };
+    } else {
+      return NextResponse.json(
+        { message: 'User not found' },
+        { status: 404 }
+      );
     }
     
     if (jobId) {
@@ -179,7 +186,14 @@ export async function GET(request: NextRequest) {
     
     // Fetch proposals
     const proposals = await Proposal.find(query)
-      .populate('job', 'title budget duration category')
+      .populate({
+        path: 'job',
+        select: 'title budget duration category client',
+        populate: {
+          path: 'client',
+          select: 'fullname avatar'
+        }
+      })
       .populate('freelancer', 'fullname avatar rating reviewCount')
       .sort({ createdAt: -1 })
       .skip(skip)

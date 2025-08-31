@@ -80,12 +80,19 @@ interface Job {
 interface Proposal {
   _id: string;
   title: string;
+  description: string;
   job: {
+    _id: string;
     title: string;
     client: {
       fullname: string;
       avatar?: string;
     };
+  };
+  freelancer?: {
+    fullname: string;
+    avatar?: string;
+    rating?: number;
   };
   budget: {
     amount: number;
@@ -151,9 +158,9 @@ function DashboardContent() {
         const jobsData = await jobsResponse.json();
         setJobs(jobsData.jobs);
         
-        // Fetch proposals (for freelancers)
-        if (user?.role === 'freelancer') {
-          const proposalsResponse = await fetch('/api/dashboard/proposals', { headers });
+        // Fetch proposals (for both freelancers and clients)
+        if (user?.role === 'freelancer' || user?.role === 'client') {
+          const proposalsResponse = await fetch('/api/proposals', { headers });
           if (!proposalsResponse.ok) throw new Error('Failed to fetch proposals');
           const proposalsData = await proposalsResponse.json();
           setProposals(proposalsData.proposals);
@@ -170,6 +177,29 @@ function DashboardContent() {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Separate function to fetch proposals
+  const fetchProposals = async () => {
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      if (!token) return;
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      if (user?.role === 'freelancer' || user?.role === 'client') {
+        const proposalsResponse = await fetch('/api/proposals', { headers });
+        if (proposalsResponse.ok) {
+          const proposalsData = await proposalsResponse.json();
+          setProposals(proposalsData.proposals);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching proposals:', error);
+    }
+  };
 
   const handleNewProposal = async () => {
     if (!proposalForm.title || !proposalForm.description || !proposalForm.budget) {
@@ -227,6 +257,39 @@ function DashboardContent() {
   const handleViewProposal = (proposal: Proposal) => {
     setSelectedProposal(proposal);
     setShowViewProposal(true);
+  };
+
+  const handleProposalAction = async (proposalId: string, action: 'accepted' | 'rejected') => {
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      if (!token) {
+        toast.error('Please log in to manage proposals');
+        return;
+      }
+
+      const response = await fetch(`/api/proposals/${proposalId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update proposal');
+      }
+
+      const data = await response.json();
+      toast.success(`Proposal ${action} successfully!`);
+      
+      // Refresh proposals to show updated status
+      fetchProposals();
+    } catch (error) {
+      console.error('Error updating proposal:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update proposal');
+    }
   };
 
   if (loading) {
@@ -429,7 +492,8 @@ function DashboardContent() {
         <Tabs defaultValue="active-jobs" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="active-jobs">Active Jobs</TabsTrigger>
-            {user?.role === 'freelancer' && <TabsTrigger value="proposals">Proposals</TabsTrigger>}
+            {user?.role === 'freelancer' && <TabsTrigger value="proposals">My Proposals</TabsTrigger>}
+            {user?.role === 'client' && <TabsTrigger value="proposals">Job Proposals</TabsTrigger>}
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="profile" className="hidden lg:block">
               Profile
@@ -523,20 +587,22 @@ function DashboardContent() {
                       <FileText className="w-12 h-12 mx-auto mb-4 text-slate-400" />
                       <p className="text-slate-600">No proposals found</p>
                       <p className="text-sm text-slate-500 mt-2">
-                        Submit proposals to jobs to see them here
+                        {user?.role === 'freelancer' 
+                          ? 'Submit proposals to jobs to see them here'
+                          : 'No proposals have been submitted to your jobs yet'
+                        }
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
                   proposals.map((proposal) => (
-                    <Card key={proposal._id} className="hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => handleViewProposal(proposal)}>
+                    <Card key={proposal._id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                           <div className="flex-1">
                             <CardTitle className="text-lg text-slate-800">{proposal.title}</CardTitle>
                             <CardDescription className="mt-2">
-                              Job: {proposal.job.title}
+                              {user?.role === 'freelancer' ? `Job: ${proposal.job.title}` : `Freelancer: ${proposal.freelancer?.fullname}`}
                             </CardDescription>
                           </div>
                           <div className="flex flex-col md:items-end gap-2">
@@ -554,10 +620,145 @@ function DashboardContent() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="flex items-center justify-between text-sm text-slate-600">
-                          <span>Submitted: {new Date(proposal.submittedAt).toLocaleDateString()}</span>
-                          <span>Timeline: {proposal.timeline}</span>
+                        <div className="mb-4">
+                          <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                            {proposal.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center justify-between text-sm text-slate-600">
+                            <span>Submitted: {new Date(proposal.submittedAt).toLocaleDateString()}</span>
+                            <span>Timeline: {proposal.timeline}</span>
+                          </div>
                         </div>
+                        
+                        {user?.role === 'client' && proposal.status === 'pending' && (
+                          <div className="flex gap-2 pt-4 border-t">
+                            <Button 
+                              onClick={() => handleProposalAction(proposal._id, 'accepted')}
+                              className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                            >
+                              Accept Proposal
+                            </Button>
+                            <Button 
+                              onClick={() => handleProposalAction(proposal._id, 'rejected')}
+                              variant="outline" 
+                              className="border-red-500 text-red-500 hover:bg-red-50 flex-1"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {user?.role === 'freelancer' && (
+                          <Button 
+                            onClick={() => handleViewProposal(proposal)}
+                            variant="outline" 
+                            className="w-full mt-4"
+                          >
+                            View Details
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          )}
+
+          {user?.role === 'client' && (
+            <TabsContent value="proposals" className="space-y-6">
+              <div className="grid gap-6">
+                {proposals.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <FileText className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                      <p className="text-slate-600">No proposals found</p>
+                      <p className="text-sm text-slate-500 mt-2">
+                        No proposals have been submitted to your jobs yet
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  proposals.map((proposal) => (
+                    <Card key={proposal._id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg text-slate-800">{proposal.job.title}</CardTitle>
+                            <CardDescription className="mt-2">
+                              Freelancer: {proposal.freelancer?.fullname}
+                            </CardDescription>
+                            
+                          </div>
+                          <div className="flex flex-col md:items-end gap-2">
+                            <Badge className={`${
+                              proposal.status === 'pending' ? 'bg-yellow-500' :
+                              proposal.status === 'accepted' ? 'bg-green-500' :
+                              proposal.status === 'rejected' ? 'bg-red-500' : 'bg-gray-500'
+                            } text-white`}>
+                              {proposal.status.replace(/\b\w/g, l => l.toUpperCase())}
+                            </Badge>
+                            <span className="text-lg font-semibold text-green-600">
+                              {proposal.budget.amount} {proposal.budget.currency}
+                            </span>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-4">
+                          <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                            {proposal.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center justify-between text-sm text-slate-600">
+                            <span>Submitted: {new Date(proposal.submittedAt).toLocaleDateString()}</span>
+                            <span>Timeline: {proposal.timeline}</span>
+                          </div>
+                        </div>
+                        
+                        {proposal.milestones && proposal.milestones.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">Proposed Milestones:</h4>
+                            <div className="space-y-2">
+                              {proposal.milestones.map((milestone, index) => (
+                                <div key={index} className="flex justify-between items-center text-sm bg-slate-50 p-2 rounded">
+                                  <span>{milestone.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-slate-600">{milestone.duration}</span>
+                                    <span className="font-medium">{milestone.amount} {proposal.budget.currency}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {proposal.status === 'pending' && (
+                          <div className="flex gap-2 pt-4 border-t">
+                            <Button 
+                              onClick={() => handleProposalAction(proposal._id, 'accepted')}
+                              className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                            >
+                              Accept Proposal
+                            </Button>
+                            <Button 
+                              onClick={() => handleProposalAction(proposal._id, 'rejected')}
+                              variant="outline" 
+                              className="border-red-500 text-red-500 hover:bg-red-50 flex-1"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {proposal.status !== 'pending' && (
+                          <Button 
+                            onClick={() => handleViewProposal(proposal)}
+                            variant="outline" 
+                            className="w-full mt-4"
+                          >
+                            View Details
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ))
