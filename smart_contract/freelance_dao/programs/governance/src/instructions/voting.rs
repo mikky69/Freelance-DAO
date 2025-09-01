@@ -1,5 +1,4 @@
-
-// FIXED voting.rs - Add rent sysvar
+// FIXED voting.rs - Remove invalid stake_position reference
 use anchor_lang::{prelude::*, system_program};
 use crate::{
     state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
@@ -40,7 +39,7 @@ pub struct CastVote<'info> {
     pub member: Option<Account<'info, Member>>,
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
-    pub rent: Sysvar<'info, Rent>, // ADD THIS LINE
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
@@ -90,11 +89,9 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
         }
     }
     
-    // TODO: Add staking CPI for additional weight
-    // if let Some(stake_position) = &ctx.accounts.stake_position {
-    //     let stake_weight = stake_position.amount / ctx.accounts.dao_config.weight_params;
-    //     weight = weight.checked_add(stake_weight).ok_or(ErrorCode::ArithmeticOverflow)?;
-    // }
+    // TODO: When staking program is ready, add staking weight calculation
+    // This will require adding a stake_position account to the struct above
+    // and implementing a CPI call to the staking program to get staked amount
 
     if weight == 0 {
         return Err(ErrorCode::InvalidVoteWeight.into());

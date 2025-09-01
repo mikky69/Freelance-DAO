@@ -1,0 +1,22 @@
+[package]
+name = "staking"
+version = "0.1.0"
+description = "Staking program for Freelance DAO"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "staking"
+
+[features]
+no-entrypoint = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.31.1"
+anchor-spl = "0.31.1"
+governance = { path = "../governance" }
+
+[dev-dependencies]
+anchor-client = "0.31.1"

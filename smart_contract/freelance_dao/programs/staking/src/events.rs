@@ -1,3 +1,4 @@
+// programs/staking/src/events.rs
 use anchor_lang::prelude::*;
 
 #[event]
