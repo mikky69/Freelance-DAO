@@ -51,7 +51,8 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.amount = 0;
         position.accum_points = 0;
         position.created_at = clock.unix_timestamp;
-        position.bump = ctx.bumps.position;
+        position.last_update_ts = clock.unix_timestamp;
+        position.bump = ctx.bumps.position; // Fixed: direct access instead of .get()
     }
     
     // Transfer tokens to vault
@@ -95,7 +96,8 @@ pub struct Unstake<'info> {
     pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
-        has_one = staker @ StakingError::Unauthorized
+        has_one = staker @ StakingError::Unauthorized,
+        has_one = pool @ StakingError::InvalidPool
     )]
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
@@ -122,7 +124,6 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     update_position_points(position, pool, clock.unix_timestamp)?;
     
     // Transfer tokens back to user
-    let pool_key = pool.key();
     let pool_seeds = &[
         b"pool",
         pool.mint.as_ref(),
@@ -167,7 +168,8 @@ pub struct SyncPosition<'info> {
     pub pool: Account<'info, StakePool>,
     #[account(
         mut,
-        has_one = staker @ StakingError::Unauthorized
+        has_one = staker @ StakingError::Unauthorized,
+        has_one = pool @ StakingError::InvalidPool
     )]
     pub position: Account<'info, StakePosition>,
     pub staker: Signer<'info>,

@@ -10,6 +10,14 @@ skip-lint = false
 governance = "7Dkf8iMjbwi3MWxJn8mKvauAgGpnvC6XjEdgKjWxJ2rR"
 staking = "E3vEsZDtfgk1CGpS4u1JnFmYcChqTgDN4HSjcS354RRS"
 
+[[program]]
+name = "governance"
+path = "programs/governance"
+
+[[program]]
+name = "staking"
+path = "programs/staking"
+
 [registry]
 url = "https://api.apr.dev"
 

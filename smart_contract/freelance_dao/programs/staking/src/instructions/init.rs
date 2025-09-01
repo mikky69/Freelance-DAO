@@ -1,8 +1,10 @@
 // programs/staking/src/instructions/init.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Mint};
-use crate::state_accounts::{RewardsConfig, StakePool};
-use crate::errors::StakingError;
+use crate::{
+    state_accounts::{RewardsConfig, StakePool},
+    events::{RewardsConfigInitialized, PoolInitialized},
+};
 
 #[derive(Accounts)]
 pub struct InitRewardsConfig<'info> {
@@ -14,6 +16,18 @@ pub struct InitRewardsConfig<'info> {
         bump
     )]
     pub rewards_config: Account<'info, RewardsConfig>,
+    /// CHECK: This is the mint authority PDA
+    #[account(
+        seeds = [b"mint_authority"],
+        bump
+    )]
+    pub mint_authority: UncheckedAccount<'info>,
+    /// CHECK: This is the treasury PDA
+    #[account(
+        seeds = [b"treasury"],
+        bump
+    )]
+    pub treasury: UncheckedAccount<'info>,
     #[account(mut)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -26,28 +40,30 @@ pub fn init_rewards_config(
     admin: Pubkey,
 ) -> Result<()> {
     let rewards_config = &mut ctx.accounts.rewards_config;
+    let clock = Clock::get()?;
     
     rewards_config.admin = admin;
     rewards_config.fl_dao_mint = fl_dao_mint;
     rewards_config.exchange_rate = exchange_rate;
-    rewards_config.treasury = Pubkey::default(); // Set later
-    rewards_config.mint_authority = Pubkey::default(); // Set later  
+    rewards_config.treasury = ctx.accounts.treasury.key();
+    rewards_config.mint_authority = ctx.accounts.mint_authority.key();
     rewards_config.global_points_issued = 0;
     rewards_config.global_fldao_minted = 0;
     rewards_config.paused = false;
     rewards_config.bump = ctx.bumps.rewards_config;
+    
+    emit!(RewardsConfigInitialized {
+        admin,
+        fl_dao_mint,
+        exchange_rate,
+        timestamp: clock.unix_timestamp,
+    });
     
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct InitPool<'info> {
-    #[account(
-        seeds = [b"rewards_config"],
-        bump = rewards_config.bump,
-        has_one = admin @ StakingError::Unauthorized
-    )]
-    pub rewards_config: Account<'info, RewardsConfig>,
     #[account(
         init,
         payer = admin,
@@ -61,7 +77,7 @@ pub struct InitPool<'info> {
         payer = admin,
         token::mint = mint,
         token::authority = pool,
-        seeds = [b"vault", pool.key().as_ref()],
+        seeds = [b"vault", mint.key().as_ref()],
         bump
     )]
     pub vault: Account<'info, TokenAccount>,
@@ -90,6 +106,14 @@ pub fn init_pool(
     pool.created_at = clock.unix_timestamp;
     pool.paused = false;
     pool.bump = ctx.bumps.pool;
+    
+    emit!(PoolInitialized {
+        pool: pool.key(),
+        mint,
+        is_lp,
+        points_per_token_per_second,
+        timestamp: clock.unix_timestamp,
+    });
     
     Ok(())
 }

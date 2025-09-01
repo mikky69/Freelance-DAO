@@ -1,4 +1,3 @@
-
 // programs/staking/src/lib.rs
 use anchor_lang::prelude::*;
 
@@ -6,20 +5,20 @@ pub mod state_accounts;
 pub mod errors;
 pub mod events;
 pub mod instructions;
-pub mod state;
 pub mod math;
 pub mod constants;
 pub mod utils;
 
 use instructions::*;
 
+// Updated with actual program ID from Anchor.toml
 declare_id!("E3vEsZDtfgk1CGpS4u1JnFmYcChqTgDN4HSjcS354RRS");
 
 #[program]
 pub mod staking {
     use super::*;
 
-    // Initialize rewards system
+    // Initialization functions
     pub fn init_rewards_config(
         ctx: Context<InitRewardsConfig>,
         fl_dao_mint: Pubkey,
@@ -29,7 +28,6 @@ pub mod staking {
         instructions::init::init_rewards_config(ctx, fl_dao_mint, exchange_rate, admin)
     }
 
-    // Pool management
     pub fn init_pool(
         ctx: Context<InitPool>,
         mint: Pubkey,
@@ -39,7 +37,7 @@ pub mod staking {
         instructions::init::init_pool(ctx, mint, is_lp, points_per_token_per_second)
     }
 
-    // Staking operations
+    // Staking functions
     pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         instructions::staking::stake(ctx, amount)
     }
@@ -52,31 +50,22 @@ pub mod staking {
         instructions::staking::sync_position(ctx)
     }
 
-    // Rewards
+    // Rewards functions
     pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64) -> Result<()> {
         instructions::rewards::exchange_points(ctx, points, min_out)
     }
 
     // Admin functions
-    pub fn set_pool_params(
-        ctx: Context<SetPoolParams>,
-        points_per_token_per_second: Option<u64>,
-        paused: Option<bool>,
-    ) -> Result<()> {
-        instructions::admin::set_pool_params(ctx, points_per_token_per_second, paused)
+    pub fn set_pool_params(ctx: Context<SetPoolParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+        instructions::admin::set_pool_params(ctx, rate, paused)
     }
 
-    pub fn set_rewards_params(
-        ctx: Context<SetRewardsParams>,
-        exchange_rate: Option<u64>,
-        paused: Option<bool>,
-    ) -> Result<()> {
-        instructions::admin::set_rewards_params(ctx, exchange_rate, paused)
+    pub fn set_rewards_params(ctx: Context<SetRewardsParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+        instructions::admin::set_rewards_params(ctx, rate, paused)
     }
 
-    // View functions for governance integration
+    // Utility functions
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
     }
 }
-

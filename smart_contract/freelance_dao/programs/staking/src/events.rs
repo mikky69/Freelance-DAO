@@ -36,3 +36,20 @@ pub struct PointsExchanged {
     pub exchange_rate: u64,
     pub timestamp: i64,
 }
+
+#[event]
+pub struct PoolInitialized {
+    pub pool: Pubkey,
+    pub mint: Pubkey,
+    pub is_lp: bool,
+    pub points_per_token_per_second: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct RewardsConfigInitialized {
+    pub admin: Pubkey,
+    pub fl_dao_mint: Pubkey,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
