@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import "./globals.css"
 import { TopNavigation, BottomNavigation } from "@/components/navigation"
 import { AuthProvider } from "@/lib/auth-context"
+import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
 import Image from "next/image"
 
@@ -162,6 +163,7 @@ export default function RootLayout({
           <main className="pb-20 md:pb-0">{children}</main>
           <ConditionalBottomNavigation />
           <ConditionalFooter />
+          <ContractNotification />
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>
