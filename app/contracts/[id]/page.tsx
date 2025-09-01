@@ -15,6 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   FileText,
   CheckCircle,
@@ -25,6 +28,10 @@ import {
   Shield,
   AlertCircle,
   Loader2,
+  Edit,
+  Plus,
+  Trash2,
+  Save,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -106,6 +113,9 @@ function ContractContent() {
   const [signing, setSigning] = useState(false)
   const [escrowing, setEscrowing] = useState(false)
   const [showSignDialog, setShowSignDialog] = useState(false)
+  const [editingMilestones, setEditingMilestones] = useState(false)
+  const [milestones, setMilestones] = useState<any[]>([])
+  const [savingMilestones, setSavingMilestones] = useState(false)
   
   useEffect(() => {
     const fetchContract = async () => {
@@ -130,6 +140,7 @@ function ContractContent() {
         
         const data = await response.json()
         setContract(data.contract)
+        setMilestones(data.contract.milestones || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load contract')
         console.error('Error fetching contract:', err)
@@ -212,6 +223,62 @@ function ContractContent() {
     }
   }
   
+  const handleSaveMilestones = async () => {
+    if (!contract) return
+    
+    setSavingMilestones(true)
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      const response = await fetch(`/api/contracts/${contractId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'update_milestones',
+          milestones: milestones
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update milestones')
+      }
+      
+      toast.success('Milestones updated successfully!')
+      setEditingMilestones(false)
+      
+      // Refresh contract data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error updating milestones:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update milestones')
+    } finally {
+      setSavingMilestones(false)
+    }
+  }
+  
+  const addMilestone = () => {
+    setMilestones([...milestones, {
+      name: '',
+      description: '',
+      amount: 0,
+      duration: '1 week',
+      completed: false
+    }])
+  }
+  
+  const removeMilestone = (index: number) => {
+    setMilestones(milestones.filter((_, i) => i !== index))
+  }
+  
+  const updateMilestone = (index: number, field: string, value: any) => {
+    const updated = [...milestones]
+    updated[index] = { ...updated[index], [field]: value }
+    setMilestones(updated)
+  }
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-500'
@@ -240,6 +307,7 @@ function ContractContent() {
   const canClientSign = isClient && !contract?.signatures.client.signed
   const canClientEscrow = isClient && contract?.signatures.client.signed && !contract?.escrow.funded
   const canFreelancerSign = !isClient && contract?.signatures.client.signed && contract?.escrow.funded && !contract?.signatures.freelancer.signed
+  const canEditMilestones = isClient && (contract?.status === 'draft' || contract?.status === 'pending_client_signature')
   
   if (loading) {
     return (
@@ -348,26 +416,167 @@ function ContractContent() {
             {/* Milestones */}
             <Card>
               <CardHeader>
-                <CardTitle>Project Milestones</CardTitle>
-                <CardDescription>Breakdown of work and payments</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Project Milestones</CardTitle>
+                    <CardDescription>Breakdown of work and payments</CardDescription>
+                  </div>
+                  {canEditMilestones && !editingMilestones && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingMilestones(true)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Milestones
+                    </Button>
+                  )}
+                  {editingMilestones && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingMilestones(false)
+                          setMilestones(contract.milestones || [])
+                        }}
+                        disabled={savingMilestones}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveMilestones}
+                        disabled={savingMilestones}
+                      >
+                        {savingMilestones ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4 mr-2" />
+                        )}
+                        {savingMilestones ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {contract.milestones.map((milestone, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-slate-800">{milestone.name}</h4>
-                        <div className="text-right">
-                          <p className="font-semibold text-green-600">
-                            {milestone.amount} {contract.budget.currency}
-                          </p>
-                          <p className="text-sm text-slate-500">{milestone.duration}</p>
+                {!editingMilestones ? (
+                  <div className="space-y-4">
+                    {contract.milestones.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">
+                        <p>No milestones set yet.</p>
+                        {canEditMilestones && (
+                          <p className="text-sm mt-2">Click "Edit Milestones" to add project deliverables and payments.</p>
+                        )}
+                      </div>
+                    ) : (
+                      contract.milestones.map((milestone, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-medium text-slate-800">{milestone.name}</h4>
+                            <div className="text-right">
+                              <p className="font-semibold text-green-600">
+                                {milestone.amount} {contract.budget.currency}
+                              </p>
+                              <p className="text-sm text-slate-500">{milestone.duration}</p>
+                            </div>
+                          </div>
+                          <p className="text-slate-600 text-sm">{milestone.description}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {milestones.map((milestone, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-medium text-slate-800">Milestone {index + 1}</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMilestone(index)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`milestone-name-${index}`}>Deliverable Name *</Label>
+                            <Input
+                              id={`milestone-name-${index}`}
+                              value={milestone.name}
+                              onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                              placeholder="e.g., Design mockups"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`milestone-amount-${index}`}>Payment Amount *</Label>
+                            <div className="flex">
+                              <Input
+                                id={`milestone-amount-${index}`}
+                                type="number"
+                                value={milestone.amount}
+                                onChange={(e) => updateMilestone(index, 'amount', parseFloat(e.target.value) || 0)}
+                                placeholder="300"
+                              />
+                              <span className="ml-2 px-3 py-2 bg-slate-100 border border-l-0 rounded-r text-sm text-slate-600">
+                                {contract.budget.currency}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`milestone-description-${index}`}>Description</Label>
+                          <Textarea
+                            id={`milestone-description-${index}`}
+                            value={milestone.description}
+                            onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                            placeholder="Detailed description of what will be delivered..."
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`milestone-duration-${index}`}>Estimated Duration</Label>
+                          <Input
+                            id={`milestone-duration-${index}`}
+                            value={milestone.duration}
+                            onChange={(e) => updateMilestone(index, 'duration', e.target.value)}
+                            placeholder="1 week"
+                          />
                         </div>
                       </div>
-                      <p className="text-slate-600 text-sm">{milestone.description}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                    
+                    <Button
+                      variant="outline"
+                      onClick={addMilestone}
+                      className="w-full border-dashed"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Milestone
+                    </Button>
+                    
+                    {milestones.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-slate-600 mb-4">Set up project milestones to break down work and payments</p>
+                        <div className="bg-slate-50 rounded-lg p-4 text-left">
+                          <h4 className="font-medium text-slate-800 mb-2">Example for a $1,000 website project:</h4>
+                          <ul className="space-y-1 text-sm text-slate-600">
+                            <li>• Milestone 1: Design mockups → $300</li>
+                            <li>• Milestone 2: Frontend development → $400</li>
+                            <li>• Milestone 3: Final deployment → $300</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -395,6 +604,75 @@ function ContractContent() {
                 <div>
                   <h4 className="font-medium text-slate-700 mb-2">Penalty Clause</h4>
                   <p className="text-slate-600">{contract.paymentTerms.penaltyClause}</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Rights & Ownership */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Rights & Ownership
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-slate-600">
+                    The freelancer transfers all rights to the deliverables to the client once full payment is released.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-600">
+                    Freelancer retains the right to showcase the work in their portfolio (unless client requests NDA).
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Dispute Resolution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  Dispute Resolution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-slate-600 mb-3">If disagreements arise:</p>
+                  <ol className="list-decimal list-inside space-y-2 text-slate-600">
+                    <li>Client and freelancer attempt to resolve via FreelanceDAO chat.</li>
+                    <li>If unresolved, either party may open a <strong>Dispute Case</strong>.</li>
+                    <li>FreelanceDAO's arbitration process (DAO vote or admin decision) will determine the outcome.</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Termination */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Termination
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-slate-600">
+                    Client may cancel the contract before completion.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-600">
+                    Freelancer may withdraw before starting work.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-600">
+                    If terminated mid-project, payment for completed milestones will still be released.
+                  </p>
                 </div>
               </CardContent>
             </Card>

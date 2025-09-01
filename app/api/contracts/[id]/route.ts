@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
-    const contractId = params.id;
+    const { id: contractId } = await params;
     
     // Find the contract and populate related data
     const contract = await Contract.findById(contractId)
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     
@@ -71,9 +71,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
-    const contractId = params.id;
+    const { id: contractId } = await params;
     
-    const { action, signature } = await request.json();
+    const requestBody = await request.json();
+    const { action, signature, milestones } = requestBody;
     
     // Find the contract
     const contract = await Contract.findById(contractId);
@@ -94,6 +95,40 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     
     // Handle different actions
     switch (action) {
+      case 'update_milestones':
+        // Only client can update milestones and only before signing
+        if (contract.client.toString() !== userId) {
+          return NextResponse.json(
+            { message: 'Only client can update milestones' },
+            { status: 403 }
+          );
+        }
+        
+        if (contract.signatures.client.signed) {
+          return NextResponse.json(
+            { message: 'Cannot update milestones after contract is signed' },
+            { status: 400 }
+          );
+        }
+        
+        if (!milestones || !Array.isArray(milestones)) {
+          return NextResponse.json(
+            { message: 'Invalid milestones data' },
+            { status: 400 }
+          );
+        }
+        
+        contract.milestones = milestones;
+        await contract.save();
+        
+        return NextResponse.json({
+          message: 'Milestones updated successfully',
+          contract: {
+            id: contract._id,
+            milestones: contract.milestones,
+          }
+        });
+        
       case 'sign':
         const isClient = contract.client.toString() === userId;
         const isFreelancer = contract.freelancer.toString() === userId;
