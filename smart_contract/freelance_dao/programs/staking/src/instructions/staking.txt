@@ -1,397 +1,3 @@
-ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_c
-ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ anch
-or build
-   Compiling staking v0.1.0 (/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/programs/staking)
-error: init_if_needed requires that anchor-lang be imported with the init-if-needed cargo feature enabled. Carefully read the init_if_needed docs before using this feature to make sure you know how to protect yourself against re-initialization attacks.
-  --> programs/staking/src/instructions/staking.rs:16:9
-   |
-16 |         init_if_needed,
-   |         ^^^^^^^^^^^^^^
-
-error[E0432]: unresolved import `crate`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^ could not find `__client_accounts_stake` in the crate root
-   |
-   = note: this error originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `custom-heap`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `custom-heap` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: `#[warn(unexpected_cfgs)]` on by default
-   = note: this warning originates in the macro `$crate::custom_heap_default` which comes from the expansion of the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `custom-panic`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `custom-panic` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the macro `$crate::custom_panic_default` which comes from the expansion of the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/init.rs:7:10
-  |
-7 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/init.rs:43:10
-   |
-43 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/staking.rs:90:10
-   |
-90 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-   --> programs/staking/src/instructions/staking.rs:165:10
-    |
-165 | #[derive(Accounts)]
-    |          ^^^^^^^^
-    |
-    = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-    = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-    = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unused import: `utils::update_position_points`
- --> programs/staking/src/instructions/rewards.rs:8:5
-  |
-8 |     utils::update_position_points,
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` on by default
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/rewards.rs:11:10
-   |
-11 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/admin.rs:4:10
-  |
-4 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/admin.rs:17:10
-   |
-17 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/utils.rs:5:10
-  |
-5 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/instructions/staking.rs:31:19
-   |
-31 | pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-   |                   ^^^^^^^^^^^^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required by a bound in `anchor_lang::context::Context`
-  --> src/context.rs:24:1
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/lib.rs:41:23
-   |
-41 |     pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-   |                       ^^^^^^^^^^^^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required by a bound in `anchor_lang::context::Context`
-  --> src/context.rs:24:1
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied in `Context<'_, '_, '_, '_, Stake<'_>>`
-  --> programs/staking/src/instructions/staking.rs:31:19
-   |
-31 | pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-   |                   ^^^^^^^^^^^^^^ unsatisfied trait bound
-   |
-   = note: the full trait has been written to '/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/target/sbpf-solana-solana/release/deps/staking.long-type-4279268720374099989.txt'
-   = help: within `Context<'_, '_, '_, '_, Stake<'_>>`, the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required because it appears within the type `Context<'_, '_, '_, '_, Stake<'_>>`
-  --> src/context.rs:24:12
-   = help: unsized fn params are gated as an unstable feature
-   = note: the full name for the type has been written to '/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/target/sbpf-solana-solana/release/deps/staking.long-type-4279268720374099989.txt'
-   = note: consider using `--verbose` to print the full type name to the console
-help: function arguments must have a statically known size, borrowed types always have a known size
-   |
-31 | pub fn stake(ctx: &Context<Stake>, amount: u64) -> Result<()> {
-   |                   +
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/instructions/staking.rs:54:25
-   |
-54 |         position.bump = ctx.bumps.position;
-   |                         ^^^^^^^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-
-error[E0308]: mismatched types
-  --> programs/staking/src/instructions/rewards.rs:62:53
-   |
-62 | ...b"mint_authority", &[ctx.bumps.mint_authority]];
-   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a fixed size of 14 elements, found one with 1 element
-
-warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: `#[warn(deprecated)]` on by default
-   = note: this warning originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/lib.rs:41:31
-   |
-41 |     pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-   |                               ^^^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-
-error[E0599]: no function or associated item named `try_accounts` found for struct `instructions::staking::Stake` in the current scope
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^ function or associated item not found in `Stake<'_>`
-   |
-  ::: programs/staking/src/instructions/staking.rs:10:1
-   |
-10 | pub struct Stake<'info> {
-   | ----------------------- function or associated item `try_accounts` not found for this struct
-   |
-   = help: items from traits can only be used if the trait is implemented and in scope
-   = note: the following trait defines an item `try_accounts`, perhaps you need to implement it:
-           candidate #1: `anchor_lang::Accounts`
-help: there is a method `try_into` with a similar name, but with different arguments
-  --> /home/runner/work/platform-tools/platform-tools/out/rust/library/core/src/convert/mod.rs:611:5
-   = note: this error originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required by a bound in `anchor_lang::context::Context`
-  --> src/context.rs:24:1
-   = note: this error originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: anchor_lang::Accounts<'_, _>` is not satisfied
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^ unsatisfied trait bound
-   |
-   = help: the trait `anchor_lang::Accounts<'_, _>` is not implemented for `instructions::staking::Stake<'_>`
-   = help: the following other types implement trait `anchor_lang::Accounts<'info, B>`:
-             `AccountLoader<'info, T>` implements `anchor_lang::Accounts<'info, B>`
-             `Box<T>` implements `anchor_lang::Accounts<'info, B>`
-             `CreateNonceAccount<'info>` implements `anchor_lang::Accounts<'info, CreateNonceAccountBumps>`
-             `CreateNonceAccountWithSeed<'info>` implements `anchor_lang::Accounts<'info, CreateNonceAccountWithSeedBumps>`
-             `DefaultAccountStateInitialize<'info>` implements `anchor_lang::Accounts<'info, DefaultAccountStateInitializeBumps>`
-             `DefaultAccountStateUpdate<'info>` implements `anchor_lang::Accounts<'info, DefaultAccountStateUpdateBumps>`
-             `GroupMemberPointerInitialize<'info>` implements `anchor_lang::Accounts<'info, GroupMemberPointerInitializeBumps>`
-             `GroupMemberPointerUpdate<'info>` implements `anchor_lang::Accounts<'info, GroupMemberPointerUpdateBumps>`
-           and 100 others
-note: required by a bound in `anchor_lang::context::Context::<'a, 'b, 'c, 'info, T>::new`
-  --> src/context.rs:57:5
-   = note: this error originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied in `Context<'_, '_, '_, '_, Stake<'_>>`
-  --> programs/staking/src/lib.rs:41:23
-   |
-41 |     pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-   |                       ^^^^^^^^^^^^^^ unsatisfied trait bound
-   |
-   = note: the full trait has been written to '/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/target/sbpf-solana-solana/release/deps/staking.long-type-13854483353094268244.txt'
-   = help: within `Context<'_, '_, '_, '_, Stake<'_>>`, the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required because it appears within the type `Context<'_, '_, '_, '_, Stake<'_>>`
-  --> src/context.rs:24:12
-   = help: unsized fn params are gated as an unstable feature
-   = note: the full name for the type has been written to '/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/target/sbpf-solana-solana/release/deps/staking.long-type-13854483353094268244.txt'
-   = note: consider using `--verbose` to print the full type name to the console
-help: function arguments must have a statically known size, borrowed types always have a known size
-   |
-41 |     pub fn stake(ctx: &Context<Stake>, amount: u64) -> Result<()> {
-   |                       +
-
-error[E0277]: the trait bound `instructions::staking::Stake<'_>: Bumps` is not satisfied
-  --> programs/staking/src/lib.rs:42:38
-   |
-42 |         instructions::staking::stake(ctx, amount)
-   |                                      ^^^ the trait `Bumps` is not implemented for `instructions::staking::Stake<'_>`
-   |
-   = help: the following other types implement trait `Bumps`:
-             CreateNonceAccount<'info>
-             CreateNonceAccountWithSeed<'info>
-             DefaultAccountStateInitialize<'info>
-             DefaultAccountStateUpdate<'info>
-             GroupMemberPointerInitialize<'info>
-             GroupMemberPointerUpdate<'info>
-             GroupPointerInitialize<'info>
-             GroupPointerUpdate<'info>
-           and 87 others
-note: required by a bound in `anchor_lang::context::Context`
-  --> src/context.rs:24:1
-
-warning: unused variable: `pool_key`
-   --> programs/staking/src/instructions/staking.rs:125:9
-    |
-125 |     let pool_key = pool.key();
-    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pool_key`
-    |
-    = note: `#[warn(unused_variables)]` on by default
-
-Some errors have detailed explanations: E0277, E0308, E0432, E0599.
-For more information about an error, try `rustc --explain E0277`.
-warning: `staking` (lib) generated 20 warnings (5 duplicates)
-error: could not compile `staking` (lib) due to 13 previous errors; 20 warnings emitted
-ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ 
-
 use anchor_lang::prelude::*;
 use crate::{state_accounts::{RewardsConfig, StakePool}, errors::StakingError};
 
@@ -448,58 +54,122 @@ pub fn set_rewards_params(ctx: Context<SetRewardsParams>, exchange_rate: Option<
     Ok(())
 }
 
+// programs/staking/src/instructions/init.rs
 use anchor_lang::prelude::*;
-use crate::{state_accounts::{RewardsConfig, StakePool}, errors::StakingError};
+use anchor_spl::token::{Token, TokenAccount, Mint};
+use crate::{
+    state_accounts::{RewardsConfig, StakePool},
+    events::{RewardsConfigInitialized, PoolInitialized},
+};
 
 #[derive(Accounts)]
-pub struct SetPoolParams<'info> {
+pub struct InitRewardsConfig<'info> {
     #[account(
+        init,
+        payer = admin,
+        space = RewardsConfig::SPACE,
         seeds = [b"rewards_config"],
-        bump = rewards_config.bump,
-        has_one = admin @ StakingError::Unauthorized
+        bump
     )]
     pub rewards_config: Account<'info, RewardsConfig>,
+    /// CHECK: This is the mint authority PDA
+    #[account(
+        seeds = [b"mint_authority"],
+        bump
+    )]
+    pub mint_authority: UncheckedAccount<'info>,
+    /// CHECK: This is the treasury PDA
+    #[account(
+        seeds = [b"treasury"],
+        bump
+    )]
+    pub treasury: UncheckedAccount<'info>,
     #[account(mut)]
-    pub pool: Account<'info, StakePool>,
     pub admin: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct SetRewardsParams<'info> {
-    #[account(
-        mut,
-        seeds = [b"rewards_config"],
-        bump = rewards_config.bump,
-        has_one = admin @ StakingError::Unauthorized
-    )]
-    pub rewards_config: Account<'info, RewardsConfig>,
-    pub admin: Signer<'info>,
-}
-
-pub fn set_pool_params(ctx: Context<SetPoolParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
-    let pool = &mut ctx.accounts.pool;
+pub fn init_rewards_config(
+    ctx: Context<InitRewardsConfig>,
+    fl_dao_mint: Pubkey,
+    exchange_rate: u64,
+    admin: Pubkey,
+) -> Result<()> {
+    let rewards_config = &mut ctx.accounts.rewards_config;
+    let clock = Clock::get()?;
     
-    if let Some(new_rate) = rate {
-        pool.points_per_token_per_second = new_rate;
-    }
+    rewards_config.admin = admin;
+    rewards_config.fl_dao_mint = fl_dao_mint;
+    rewards_config.exchange_rate = exchange_rate;
+    rewards_config.treasury = ctx.accounts.treasury.key();
+    rewards_config.mint_authority = ctx.accounts.mint_authority.key();
+    rewards_config.global_points_issued = 0;
+    rewards_config.global_fldao_minted = 0;
+    rewards_config.paused = false;
+    rewards_config.bump = ctx.bumps.rewards_config;
     
-    if let Some(pause_state) = paused {
-        pool.paused = pause_state;
-    }
+    emit!(RewardsConfigInitialized {
+        admin,
+        fl_dao_mint,
+        exchange_rate,
+        timestamp: clock.unix_timestamp,
+    });
     
     Ok(())
 }
 
-pub fn set_rewards_params(ctx: Context<SetRewardsParams>, exchange_rate: Option<u64>, paused: Option<bool>) -> Result<()> {
-    let rewards_config = &mut ctx.accounts.rewards_config;
+#[derive(Accounts)]
+pub struct InitPool<'info> {
+    #[account(
+        init,
+        payer = admin,
+        space = StakePool::SPACE,
+        seeds = [b"pool", mint.key().as_ref()],
+        bump
+    )]
+    pub pool: Account<'info, StakePool>,
+    #[account(
+        init,
+        payer = admin,
+        token::mint = mint,
+        token::authority = pool,
+        seeds = [b"vault", mint.key().as_ref()],
+        bump
+    )]
+    pub vault: Account<'info, TokenAccount>,
+    pub mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+pub fn init_pool(
+    ctx: Context<InitPool>,
+    mint: Pubkey,
+    is_lp: bool,
+    points_per_token_per_second: u64,
+) -> Result<()> {
+    let pool = &mut ctx.accounts.pool;
+    let clock = Clock::get()?;
     
-    if let Some(new_rate) = exchange_rate {
-        rewards_config.exchange_rate = new_rate;
-    }
+    pool.mint = mint;
+    pool.vault = ctx.accounts.vault.key();
+    pool.is_lp = is_lp;
+    pool.points_per_token_per_second = points_per_token_per_second;
+    pool.total_staked = 0;
+    pool.total_points_issued = 0;
+    pool.created_at = clock.unix_timestamp;
+    pool.paused = false;
+    pool.bump = ctx.bumps.pool;
     
-    if let Some(pause_state) = paused {
-        rewards_config.paused = pause_state;
-    }
+    emit!(PoolInitialized {
+        pool: pool.key(),
+        mint,
+        is_lp,
+        points_per_token_per_second,
+        timestamp: clock.unix_timestamp,
+    });
     
     Ok(())
 }
@@ -552,6 +222,7 @@ pub fn points_to_fldao(points: u128, exchange_rate: u64) -> Result<u64> {
     Ok(fldao_amount as u64)
 }
 
+
 // programs/staking/src/instructions/mod.rs
 pub mod init;
 pub mod staking;
@@ -565,6 +236,7 @@ pub use rewards::*;
 pub use admin::*;
 pub use utils::*;
 
+// programs/staking/src/instructions/rewards.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, MintTo, Mint};
 use crate::{
@@ -572,7 +244,6 @@ use crate::{
     errors::StakingError,
     events::PointsExchanged,
     math::points_to_fldao,
-    utils::update_position_points,
 };
 
 #[derive(Accounts)]
@@ -626,7 +297,7 @@ pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64)
         .ok_or(StakingError::MathOverflow)?;
     
     // Mint FL-DAO tokens
-    let mint_authority_seeds = &[b"mint_authority", &[ctx.bumps.mint_authority]];
+    let mint_authority_seeds = &[b"mint_authority".as_ref(), &[ctx.bumps.mint_authority]]; // Fixed: direct access
     
     token::mint_to(
         CpiContext::new_with_signer(
@@ -707,7 +378,8 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.amount = 0;
         position.accum_points = 0;
         position.created_at = clock.unix_timestamp;
-        position.bump = ctx.bumps.position;
+        position.last_update_ts = clock.unix_timestamp;
+        position.bump = ctx.bumps.position; // Fixed: direct access instead of .get()
     }
     
     // Transfer tokens to vault
@@ -751,7 +423,8 @@ pub struct Unstake<'info> {
     pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
-        has_one = staker @ StakingError::Unauthorized
+        has_one = staker @ StakingError::Unauthorized,
+        has_one = pool @ StakingError::InvalidPool
     )]
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
@@ -778,7 +451,6 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     update_position_points(position, pool, clock.unix_timestamp)?;
     
     // Transfer tokens back to user
-    let pool_key = pool.key();
     let pool_seeds = &[
         b"pool",
         pool.mint.as_ref(),
@@ -823,7 +495,8 @@ pub struct SyncPosition<'info> {
     pub pool: Account<'info, StakePool>,
     #[account(
         mut,
-        has_one = staker @ StakingError::Unauthorized
+        has_one = staker @ StakingError::Unauthorized,
+        has_one = pool @ StakingError::InvalidPool
     )]
     pub position: Account<'info, StakePosition>,
     pub staker: Signer<'info>,
@@ -875,6 +548,7 @@ pub const MIN_UNSTAKE_AMOUNT: u64 = 1_000_000; // 1 USDC
 pub const DEFAULT_USDC_DAILY_RATE: u64 = 1_000_000; // 1 point per USDC per day
 pub const DEFAULT_LP_DAILY_RATE: u64 = 1_500_000;   // 1.5x multiplier for LP
 
+
 use anchor_lang::prelude::*;
 
 #[error_code]
@@ -899,6 +573,118 @@ pub enum StakingError {
     PositionNotFound,
     #[msg("Invalid amount")]
     InvalidAmount,
+}
+
+// programs/staking/src/events.rs
+use anchor_lang::prelude::*;
+
+#[event]
+pub struct Staked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub new_total: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct Unstaked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub remaining: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsAccrued {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub delta_points: u128,
+    pub total_points: u128,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsExchanged {
+    pub staker: Pubkey,
+    pub points_burned: u128,
+    pub fldao_minted: u64,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PoolInitialized {
+    pub pool: Pubkey,
+    pub mint: Pubkey,
+    pub is_lp: bool,
+    pub points_per_token_per_second: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct RewardsConfigInitialized {
+    pub admin: Pubkey,
+    pub fl_dao_mint: Pubkey,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+// programs/staking/src/events.rs
+use anchor_lang::prelude::*;
+
+#[event]
+pub struct Staked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub new_total: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct Unstaked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub remaining: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsAccrued {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub delta_points: u128,
+    pub total_points: u128,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsExchanged {
+    pub staker: Pubkey,
+    pub points_burned: u128,
+    pub fldao_minted: u64,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PoolInitialized {
+    pub pool: Pubkey,
+    pub mint: Pubkey,
+    pub is_lp: bool,
+    pub points_per_token_per_second: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct RewardsConfigInitialized {
+    pub admin: Pubkey,
+    pub fl_dao_mint: Pubkey,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
 }
 
 // programs/staking/src/lib.rs
@@ -971,6 +757,61 @@ pub mod staking {
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
     }
+}
+
+// programs/staking/src/math.rs
+use anchor_lang::prelude::*;
+use crate::errors::StakingError;
+
+// Q32.32 fixed point for precise points calculation
+pub const Q32: u64 = 1u64 << 32;
+
+pub fn calculate_points_accrued(
+    amount: u64,
+    rate_per_second: u64,  // Q32.32 format
+    duration_seconds: i64,
+) -> Result<u128> {
+    if duration_seconds < 0 {
+        return Ok(0);
+    }
+    
+    let duration = duration_seconds as u128;
+    let amount_expanded = amount as u128;
+    let rate_expanded = rate_per_second as u128;
+    
+    // points = (amount * rate * duration) / Q32
+    let points = amount_expanded
+        .checked_mul(rate_expanded)
+        .ok_or(StakingError::MathOverflow)?
+        .checked_mul(duration)
+        .ok_or(StakingError::MathOverflow)?
+        .checked_div(Q32 as u128)
+        .ok_or(StakingError::MathOverflow)?;
+        
+    Ok(points)
+}
+
+pub fn points_to_fldao(points: u128, exchange_rate: u64) -> Result<u64> {
+    if exchange_rate == 0 {
+        return Err(StakingError::InvalidExchangeRate.into());
+    }
+    
+    let fldao_amount = points
+        .checked_div(exchange_rate as u128)
+        .ok_or(StakingError::MathOverflow)?;
+        
+    if fldao_amount > u64::MAX as u128 {
+        return Err(StakingError::MathOverflow.into());
+    }
+    
+    Ok(fldao_amount as u64)
+}
+
+// Convert daily rate to per-second Q32.32 format
+pub fn daily_rate_to_per_second(daily_rate: u64) -> u64 {
+    // daily_rate / 86400 * Q32
+    let rate_per_second = (daily_rate as u128 * Q32 as u128) / 86400u128;
+    rate_per_second as u64
 }
 
 // programs/staking/src/math.rs
@@ -1138,274 +979,307 @@ pub fn update_position_points(
     Ok(points_earned)
 }
 
-ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ anchor build
-WARNING: `anchor-lang` version(0.30.1) and the current CLI version(0.31.1) don't match.
+[package]
+name = "staking"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
 
-        This can lead to unwanted behavior. To use the same CLI version, add:
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "staking"
 
-        [toolchain]
-        anchor_version = "0.30.1"
+[features]
+idl-build = [
+    "anchor-lang/idl-build",
+    "anchor-spl/idl-build",
+]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+# Add the init-if-needed feature
+init-if-needed = []
+# Add additional features to suppress warnings
+custom-heap = []
+custom-panic = []
+anchor-debug = []
 
-        to Anchor.toml
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = "0.31.1"
 
-   Compiling libc v0.2.175
-   Compiling semver v1.0.26
-   Compiling syn v2.0.106
-   Compiling ahash v0.7.8
-   Compiling borsh-schema-derive-internal v0.9.3
-   Compiling borsh-derive-internal v0.9.3
-   Compiling sha2 v0.10.9
-   Compiling memchr v2.7.5
-   Compiling sha3 v0.10.8
-   Compiling itertools v0.10.5
-   Compiling anchor-derive-space v0.30.1
-   Compiling hashbrown v0.11.2
-   Compiling rustc_version v0.4.1
-   Compiling solana-frozen-abi-macro v1.18.26
-   Compiling solana-frozen-abi v1.18.26
-   Compiling jobserver v0.1.34
-   Compiling cc v1.2.34
-   Compiling blake3 v1.8.2
-   Compiling solana-program v1.18.26
-   Compiling serde_derive v1.0.219
-   Compiling thiserror-impl v1.0.69
-   Compiling bytemuck_derive v1.10.1
-   Compiling borsh-derive v1.5.7
-   Compiling solana-sdk-macro v1.18.26
-   Compiling num-derive v0.4.2
-   Compiling spl-program-error-derive v0.4.1
-   Compiling num_enum_derive v0.7.4
-   Compiling num_enum v0.7.4
-   Compiling thiserror v1.0.69
-   Compiling spl-discriminator-syn v0.2.1
-   Compiling bytemuck v1.23.2
-   Compiling spl-discriminator-derive v0.2.0
-   Compiling borsh v1.5.7
-   Compiling serde v1.0.219
-   Compiling serde_bytes v0.11.17
-   Compiling bv v0.11.1
-   Compiling serde_json v1.0.143
-   Compiling bincode v1.3.3
-   Compiling toml v0.5.11
-   Compiling anchor-lang-idl-spec v0.1.0
-   Compiling proc-macro-crate v0.1.5
-   Compiling anchor-syn v0.30.1
-   Compiling anchor-lang-idl v0.1.2
-   Compiling borsh-derive v0.10.4
-   Compiling borsh-derive v0.9.3
-   Compiling borsh v0.9.3
-   Compiling borsh v0.10.4
-   Compiling anchor-attribute-event v0.30.1
-   Compiling anchor-derive-serde v0.30.1
-   Compiling anchor-attribute-constant v0.30.1
-   Compiling anchor-attribute-error v0.30.1
-   Compiling anchor-attribute-access-control v0.30.1
-   Compiling anchor-attribute-account v0.30.1
-   Compiling anchor-derive-accounts v0.30.1
-   Compiling spl-program-error v0.4.4
-   Compiling solana-zk-token-sdk v1.18.26
-   Compiling spl-discriminator v0.2.5
-   Compiling spl-memo v4.0.4
-   Compiling spl-token v4.0.3
-   Compiling anchor-attribute-program v0.30.1
-   Compiling spl-pod v0.2.5
-   Compiling spl-type-length-value v0.4.6
-   Compiling spl-token-group-interface v0.2.5
-   Compiling spl-tlv-account-resolution v0.6.5
-   Compiling spl-token-metadata-interface v0.3.5
-   Compiling spl-transfer-hook-interface v0.6.5
-   Compiling spl-token-2022 v3.0.5
-   Compiling anchor-lang v0.30.1
-   Compiling spl-associated-token-account v3.0.4
-   Compiling anchor-spl v0.30.1
-   Compiling staking v0.1.0 (/home/ome/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao/programs/staking)
-warning: unexpected `cfg` condition value: `custom-heap`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `custom-heap` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: `#[warn(unexpected_cfgs)]` on by default
-   = note: this warning originates in the macro `$crate::custom_heap_default` which comes from the expansion of the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
+[toolchain]
+anchor_version = "0.31.1"
+package_manager = "npm"
 
-warning: unexpected `cfg` condition value: `custom-panic`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `custom-panic` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the macro `$crate::custom_panic_default` which comes from the expansion of the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
+[features]
+resolution = true
+skip-lint = false
 
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/init.rs:7:10
-  |
-7 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[programs.localnet]
+# governance = "7Dkf8iMjbwi3MWxJn8mKvauAgGpnvC6XjEdgKjWxJ2rR"
+staking = "E3vEsZDtfgk1CGpS4u1JnFmYcChqTgDN4HSjcS354RRS"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/init.rs:43:10
-   |
-43 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+# [[program]]
+# name = "governance"
+# path = "programs/governance"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/staking.rs:9:10
-  |
-9 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[[program]]
+name = "staking"
+path = "programs/staking"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/staking.rs:91:10
-   |
-91 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[registry]
+url = "https://api.apr.dev"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-   --> programs/staking/src/instructions/staking.rs:166:10
-    |
-166 | #[derive(Accounts)]
-    |          ^^^^^^^^
-    |
-    = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-    = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-    = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/rewards.rs:11:10
-   |
-11 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[scripts]
+test = "npx mocha -t 1000000 --require ts-node/register tests/**/*.ts"
 
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/admin.rs:4:10
-  |
-4 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/instructions/admin.rs:17:10
-   |
-17 | #[derive(Accounts)]
-   |          ^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ tree -L 4 programs
+programs
+└── staking
+    ├── Cargo.toml
+    └── src
+        ├── constants.rs
+        ├── errors.rs
+        ├── events.rs
+        ├── instructions
+        │   ├── admin.rs
+        │   ├── init.rs
+        │   ├── math.rs
+        │   ├── mod.rs
+        │   ├── rewards.rs
+        │   ├── staking.rs
+        │   ├── staking.txt
+        │   └── utils.rs
+        ├── lib.rs
+        ├── math.rs
+        ├── state.rs
+        ├── state_accounts.rs
+        └── utils.rs
 
-warning: unexpected `cfg` condition value: `anchor-debug`
- --> programs/staking/src/instructions/utils.rs:5:10
-  |
-5 | #[derive(Accounts)]
-  |          ^^^^^^^^
-  |
-  = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-  = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-  = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
+4 directories, 17 files
+ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ tree -L 2
+.
+├── Anchor.toml
+├── Cargo.lock
+├── Cargo.toml
+├── all.txt
+├── app
+├── bin
+│   └── governance
+├── migrations
+│   └── deploy.ts
+├── node_modules
+│   ├── @babel
+│   ├── @coral-xyz
+│   ├── @cspotcode
+│   ├── @jridgewell
+│   ├── @noble
+│   ├── @solana
+│   ├── @swc
+│   ├── @tsconfig
+│   ├── @types
+│   ├── @ungap
+│   ├── acorn
+│   ├── acorn-walk
+│   ├── agentkeepalive
+│   ├── ansi-colors
+│   ├── ansi-regex
+│   ├── ansi-styles
+│   ├── anymatch
+│   ├── arg
+│   ├── argparse
+│   ├── arrify
+│   ├── assertion-error
+│   ├── balanced-match
+│   ├── base-x
+│   ├── base64-js
+│   ├── bigint-buffer
+│   ├── bignumber.js
+│   ├── binary-extensions
+│   ├── bindings
+│   ├── bn.js
+│   ├── borsh
+│   ├── brace-expansion
+│   ├── braces
+│   ├── browser-stdout
+│   ├── bs58
+│   ├── buffer
+│   ├── buffer-from
+│   ├── buffer-layout
+│   ├── bufferutil
+│   ├── camelcase
+│   ├── chai
+│   ├── chalk
+│   ├── check-error
+│   ├── chokidar
+│   ├── cliui
+│   ├── color-convert
+│   ├── color-name
+│   ├── commander
+│   ├── concat-map
+│   ├── create-require
+│   ├── cross-fetch
+│   ├── crypto-hash
+│   ├── debug
+│   ├── decamelize
+│   ├── deep-eql
+│   ├── delay
+│   ├── diff
+│   ├── dot-case
+│   ├── emoji-regex
+│   ├── es6-promise
+│   ├── es6-promisify
+│   ├── escalade
+│   ├── escape-string-regexp
+│   ├── eventemitter3
+│   ├── eyes
+│   ├── fast-stable-stringify
+│   ├── fastestsmallesttextencoderdecoder
+│   ├── file-uri-to-path
+│   ├── fill-range
+│   ├── find-up
+│   ├── flat
+│   ├── fs.realpath
+│   ├── get-caller-file
+│   ├── get-func-name
+│   ├── glob
+│   ├── glob-parent
+│   ├── growl
+│   ├── has-flag
+│   ├── he
+│   ├── humanize-ms
+│   ├── ieee754
+│   ├── inflight
+│   ├── inherits
+│   ├── is-binary-path
+│   ├── is-extglob
+│   ├── is-fullwidth-code-point
+│   ├── is-glob
+│   ├── is-number
+│   ├── is-plain-obj
+│   ├── is-unicode-supported
+│   ├── isexe
+│   ├── isomorphic-ws
+│   ├── jayson
+│   ├── js-yaml
+│   ├── json-stringify-safe
+│   ├── json5
+│   ├── locate-path
+│   ├── log-symbols
+│   ├── loupe
+│   ├── lower-case
+│   ├── make-error
+│   ├── minimatch
+│   ├── minimist
+│   ├── mkdirp
+│   ├── mocha
+│   ├── ms
+│   ├── nanoid
+│   ├── no-case
+│   ├── node-fetch
+│   ├── node-gyp-build
+│   ├── normalize-path
+│   ├── once
+│   ├── p-limit
+│   ├── p-locate
+│   ├── pako
+│   ├── path-exists
+│   ├── path-is-absolute
+│   ├── pathval
+│   ├── picomatch
+│   ├── prettier
+│   ├── randombytes
+│   ├── readdirp
+│   ├── require-directory
+│   ├── rpc-websockets
+│   ├── safe-buffer
+│   ├── serialize-javascript
+│   ├── snake-case
+│   ├── source-map
+│   ├── source-map-support
+│   ├── stream-chain
+│   ├── stream-json
+│   ├── string-width
+│   ├── strip-ansi
+│   ├── strip-bom
+│   ├── strip-json-comments
+│   ├── superstruct
+│   ├── supports-color
+│   ├── text-encoding-utf-8
+│   ├── to-regex-range
+│   ├── toml
+│   ├── tr46
+│   ├── ts-mocha
+│   ├── ts-node
+│   ├── tsconfig-paths
+│   ├── tslib
+│   ├── type-detect
+│   ├── typescript
+│   ├── undici-types
+│   ├── utf-8-validate
+│   ├── uuid
+│   ├── v8-compile-cache-lib
+│   ├── webidl-conversions
+│   ├── whatwg-url
+│   ├── which
+│   ├── workerpool
+│   ├── wrap-ansi
+│   ├── wrappy
+│   ├── ws
+│   ├── y18n
+│   ├── yargs
+│   ├── yargs-parser
+│   ├── yargs-unparser
+│   ├── yn
+│   └── yocto-queue
+├── package-lock.json
+├── package.json
+├── programs
+│   └── staking
+├── target
+│   ├── debug
+│   ├── deploy
+│   ├── idl
+│   ├── release
+│   ├── sbpf-solana-solana
+│   └── types
+├── test-keys
+│   ├── admin.json
+│   ├── user1.json
+│   └── user2.json
+├── test-ledger
+│   ├── accounts
+│   ├── admin.rpc
+│   ├── faucet-keypair.json
+│   ├── genesis.bin
+│   ├── genesis.tar.bz2
+│   ├── ledger.lock
+│   ├── rocksdb
+│   ├── snapshot
+│   ├── snapshot-40501-EcDxGTExzAbr6NXyQaidF4jrb6NJctMC8ok2JKBvgKRH.tar.zst
+│   ├── snapshot-40601-HAhyDGi9RNBPRSpqNsCoGLVKZAYTqKqj7t6TojkS5zsG.tar.zst
+│   ├── stake-account-keypair.json
+│   ├── tower-1_9-LQEN6YZVKkQu5uhkbHCwvN6kewyjGZz6pnWNaQgcN7N.bin
+│   ├── validator-1756673804845.log
+│   ├── validator-1756729451502.log
+│   ├── validator-keypair.json
+│   ├── validator.log -> validator-1756729451502.log
+│   └── vote-account-keypair.json
+├── tests
+│   └── governance.ts
+└── tsconfig.json
 
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the attribute macro `program` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-warning: unexpected `cfg` condition value: `anchor-debug`
-  --> programs/staking/src/lib.rs:17:1
-   |
-17 | #[program]
-   | ^^^^^^^^^^
-   |
-   = note: expected values for `feature` are: `cpi`, `default`, `no-entrypoint`, `no-idl`, and `no-log-ix-name`
-   = help: consider adding `anchor-debug` as a feature in `Cargo.toml`
-   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
-   = note: this warning originates in the derive macro `Accounts` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0599]: no method named `get` found for struct `StakeBumps` in the current scope
-  --> programs/staking/src/instructions/staking.rs:55:36
-   |
-9  | #[derive(Accounts)]
-   |          -------- method `get` not found for this struct
-...
-55 |         position.bump = *ctx.bumps.get("position").unwrap();
-   |                          ----------^^^------------
-   |                          |         |
-   |                          |         this is an associated function, not a method
-   |                          help: use associated function syntax instead: `StakeBumps::get("position")`
-   |
-   = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
-note: the candidate is defined in the trait `anchor_lang::prelude::SolanaSysvar`
-  --> src/sysvar/mod.rs:214:5
-   = help: items from traits can only be used if the trait is implemented and in scope
-   = note: the following traits define an item `get`, perhaps you need to implement one of them:
-           candidate #1: `SliceIndex`
-           candidate #2: `ZeroCopyAccessor`
-           candidate #3: `anchor_lang::solana_program::account_info::Account`
-
-error[E0599]: no method named `get` found for struct `ExchangePointsBumps` in the current scope
-  --> programs/staking/src/instructions/rewards.rs:62:42
-   |
-11 | #[derive(Accounts)]
-   |          -------- method `get` not found for this struct
-...
-62 |     let mint_authority_bump = *ctx.bumps.get("mint_authority").unwrap();
-   |                                ----------^^^------------------
-   |                                |         |
-   |                                |         this is an associated function, not a method
-   |                                help: use associated function syntax instead: `ExchangePointsBumps::get("mint_authority")`
-   |
-   = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
-note: the candidate is defined in the trait `anchor_lang::prelude::SolanaSysvar`
-  --> src/sysvar/mod.rs:214:5
-   = help: items from traits can only be used if the trait is implemented and in scope
-   = note: the following traits define an item `get`, perhaps you need to implement one of them:
-           candidate #1: `SliceIndex`
-           candidate #2: `ZeroCopyAccessor`
-           candidate #3: `anchor_lang::solana_program::account_info::Account`
-
-For more information about this error, try `rustc --explain E0599`.
-warning: `staking` (lib) generated 18 warnings (5 duplicates)
-error: could not compile `staking` (lib) due to 2 previous errors; 18 warnings emitted
+184 directories, 26 files
 ome@CodingMachine:~/Projects/Collabs/Freelance-DAO/smart_contract/freelance_dao$ 
