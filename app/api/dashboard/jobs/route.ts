@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job } from '@/models/Job';
+import { Contract } from '@/models/Contract';
 import { Freelancer, Client } from '@/models/User';
 import jwt from 'jsonwebtoken';
 
@@ -55,13 +56,26 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
     
     // Fetch jobs
-    const jobs = await Job.find(query)
+    let jobs = await Job.find(query)
       .populate('client', 'fullname avatar')
       .populate('freelancer', 'fullname avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
+    
+    // For freelancers, filter jobs to only show those with active contracts
+    if (freelancer) {
+      const jobIds = jobs.map(job => job._id);
+      const activeContracts = await Contract.find({
+        job: { $in: jobIds },
+        freelancer: userId,
+        status: 'active'
+      }).select('job');
+      
+      const activeJobIds = activeContracts.map(contract => contract.job.toString());
+      jobs = jobs.filter(job => activeJobIds.includes(job._id.toString()));
+    }
     
     // Get total count for pagination
     const total = await Job.countDocuments(query);

@@ -303,6 +303,31 @@ function DashboardContent() {
       }
 
       const data = await response.json();
+      
+      if (action === 'accepted') {
+        // Create contract automatically
+        const contractResponse = await fetch('/api/contracts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ proposalId })
+        });
+        
+        if (!contractResponse.ok) {
+          const contractError = await contractResponse.json();
+          throw new Error(contractError.message || 'Failed to create contract');
+        }
+        
+        const contractData = await contractResponse.json();
+        toast.success('Proposal accepted and contract created!');
+        
+        // Redirect to contract page
+        window.location.href = `/contracts/${contractData.contractId}`;
+        return;
+      }
+      
       toast.success(`Proposal ${action} successfully!`);
       
       // Refresh proposals and jobs to show updated status
