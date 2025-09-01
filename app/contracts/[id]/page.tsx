@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { SignaturePad } from "@/components/signature-pad"
 import {
   FileText,
   CheckCircle,
@@ -116,6 +117,7 @@ function ContractContent() {
   const [editingMilestones, setEditingMilestones] = useState(false)
   const [milestones, setMilestones] = useState<any[]>([])
   const [savingMilestones, setSavingMilestones] = useState(false)
+  const [drawnSignature, setDrawnSignature] = useState('')
   
   useEffect(() => {
     const fetchContract = async () => {
@@ -168,7 +170,7 @@ function ContractContent() {
         },
         body: JSON.stringify({ 
           action: 'sign',
-          signature: `Digital signature - ${new Date().toISOString()}`
+          signature: drawnSignature || `Digital signature - ${new Date().toISOString()}`
         }),
       })
       
@@ -180,6 +182,7 @@ function ContractContent() {
       const data = await response.json()
       toast.success('Contract signed successfully!')
       setShowSignDialog(false)
+      setDrawnSignature('')
       
       // Refresh contract data
       window.location.reload()
@@ -769,21 +772,24 @@ function ContractContent() {
                         Sign Contract
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>Sign Contract</DialogTitle>
                         <DialogDescription>
                           By signing this contract, you agree to all terms and conditions outlined above.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <p className="text-sm text-slate-600">
-                          This action will digitally sign the contract with your account credentials.
-                        </p>
+                      <div className="space-y-6">
+                        <SignaturePad 
+                          onSignatureChange={setDrawnSignature}
+                          width={500}
+                          height={200}
+                        />
+                        
                         <div className="flex gap-2">
                           <Button 
                             onClick={handleSign} 
-                            disabled={signing}
+                            disabled={signing || !drawnSignature}
                             className="flex-1"
                           >
                             {signing ? (
@@ -791,16 +797,25 @@ function ContractContent() {
                             ) : (
                               <CheckCircle className="w-4 h-4 mr-2" />
                             )}
-                            {signing ? 'Signing...' : 'Confirm Signature'}
+                            {signing ? 'Signing...' : 'Sign Contract'}
                           </Button>
                           <Button 
                             variant="outline" 
-                            onClick={() => setShowSignDialog(false)}
+                            onClick={() => {
+                              setShowSignDialog(false)
+                              setDrawnSignature('')
+                            }}
                             disabled={signing}
                           >
                             Cancel
                           </Button>
                         </div>
+                        
+                        {!drawnSignature && (
+                          <p className="text-sm text-amber-600 text-center">
+                            Please draw your signature above to continue
+                          </p>
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -829,21 +844,30 @@ function ContractContent() {
                         Sign Contract
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>Sign Contract</DialogTitle>
                         <DialogDescription>
                           By signing this contract, you agree to all terms and conditions and commit to delivering the work as specified.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <p className="text-sm text-slate-600">
-                          The client has already signed and escrowed the funds. Signing this contract will make it active and you can start working.
-                        </p>
+                      <div className="space-y-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <p className="text-sm text-green-800">
+                            ✅ The client has already signed and escrowed the funds. Signing this contract will make it active and you can start working.
+                          </p>
+                        </div>
+                        
+                        <SignaturePad 
+                          onSignatureChange={setDrawnSignature}
+                          width={500}
+                          height={200}
+                        />
+                        
                         <div className="flex gap-2">
                           <Button 
                             onClick={handleSign} 
-                            disabled={signing}
+                            disabled={signing || !drawnSignature}
                             className="flex-1"
                           >
                             {signing ? (
@@ -851,16 +875,25 @@ function ContractContent() {
                             ) : (
                               <CheckCircle className="w-4 h-4 mr-2" />
                             )}
-                            {signing ? 'Signing...' : 'Confirm Signature'}
+                            {signing ? 'Signing...' : 'Sign Contract'}
                           </Button>
                           <Button 
                             variant="outline" 
-                            onClick={() => setShowSignDialog(false)}
+                            onClick={() => {
+                              setShowSignDialog(false)
+                              setDrawnSignature('')
+                            }}
                             disabled={signing}
                           >
                             Cancel
                           </Button>
                         </div>
+                        
+                        {!drawnSignature && (
+                          <p className="text-sm text-amber-600 text-center">
+                            Please draw your signature above to continue
+                          </p>
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
