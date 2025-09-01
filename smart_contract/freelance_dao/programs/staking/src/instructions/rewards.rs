@@ -58,8 +58,12 @@ pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64)
         .checked_sub(points)
         .ok_or(StakingError::MathOverflow)?;
     
-    // Mint FL-DAO tokens
-    let mint_authority_seeds = &[b"mint_authority".as_ref(), &[ctx.bumps.mint_authority]]; // Fixed: direct access
+    // Get the bump from the PDA derivation (Anchor provides this automatically)
+    let mint_authority_bump = ctx.bumps.mint_authority;
+    let mint_authority_seeds = &[
+        b"mint_authority".as_ref(), 
+        &[mint_authority_bump]
+    ];
     
     token::mint_to(
         CpiContext::new_with_signer(

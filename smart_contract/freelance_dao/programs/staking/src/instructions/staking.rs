@@ -28,6 +28,7 @@ pub struct Stake<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// programs/staking/src/instructions/staking.rs (stake function only)
 pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
@@ -52,7 +53,7 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.accum_points = 0;
         position.created_at = clock.unix_timestamp;
         position.last_update_ts = clock.unix_timestamp;
-        position.bump = ctx.bumps.position; // Fixed: direct access instead of .get()
+        position.bump = ctx.bumps.position; // Use ctx.bumps directly
     }
     
     // Transfer tokens to vault

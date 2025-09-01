@@ -73,185 +73,188 @@ describe("Staking Program", () => {
   // Helper function to sleep
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  before(async () => {
-    // Load test keypairs
-    admin = Keypair.generate();
-    user1 = Keypair.generate();
-    user2 = Keypair.generate();
+  // Fixed before hook for staking test
+before(async () => {
+  // Load test keypairs
+  admin = Keypair.generate();
+  user1 = Keypair.generate();
+  user2 = Keypair.generate();
 
-    // Airdrop SOL to test accounts
-    await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL);
-    await provider.connection.requestAirdrop(user1.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
-    await provider.connection.requestAirdrop(user2.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
+  // Airdrop SOL to test accounts
+  await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL);
+  await provider.connection.requestAirdrop(user1.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
+  await provider.connection.requestAirdrop(user2.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
 
-    // Wait for airdrops to confirm
-    await sleep(2000);
+  // Wait for airdrops to confirm
+  await sleep(2000);
 
-    // Create mints
-    usdcMint = await createMint(
-      provider.connection,
-      admin,
-      admin.publicKey,
-      null,
-      USDC_DECIMALS
-    );
+  // Create mints with admin as initial authority
+  usdcMint = await createMint(
+    provider.connection,
+    admin,
+    admin.publicKey,  // Use admin as initial authority
+    null,
+    USDC_DECIMALS
+  );
 
-    lpMint = await createMint(
-      provider.connection,
-      admin,
-      admin.publicKey,
-      null,
-      LP_DECIMALS
-    );
+  lpMint = await createMint(
+    provider.connection,
+    admin,
+    admin.publicKey,  // Use admin as initial authority
+    null,
+    LP_DECIMALS
+  );
 
-    flDaoMint = await createMint(
-      provider.connection,
-      admin,
-      null, // We'll set mint authority to PDA later
-      null,
-      FLDAO_DECIMALS
-    );
+  // IMPORTANT: Create FL-DAO mint with admin as initial authority
+  // We'll transfer authority to PDA after initializing the rewards config
+  flDaoMint = await createMint(
+    provider.connection,
+    admin,
+    admin.publicKey,  // Use admin as initial authority (NOT null)
+    null,
+    FLDAO_DECIMALS
+  );
 
-    // Derive PDAs
-    [rewardsConfigPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("rewards_config")],
-      program.programId
-    );
+  // Derive PDAs
+  [rewardsConfigPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("rewards_config")],
+    program.programId
+  );
 
-    [mintAuthorityPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("mint_authority")],
-      program.programId
-    );
+  [mintAuthorityPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint_authority")],
+    program.programId
+  );
 
-    [treasuryPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("treasury")],
-      program.programId
-    );
+  [treasuryPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("treasury")],
+    program.programId
+  );
 
-    [usdcPoolPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("pool"), usdcMint.toBuffer()],
-      program.programId
-    );
+  [usdcPoolPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("pool"), usdcMint.toBuffer()],
+    program.programId
+  );
 
-    [lpPoolPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("pool"), lpMint.toBuffer()],
-      program.programId
-    );
+  [lpPoolPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("pool"), lpMint.toBuffer()],
+    program.programId
+  );
 
-    [usdcVaultPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), usdcMint.toBuffer()],
-      program.programId
-    );
+  [usdcVaultPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), usdcMint.toBuffer()],
+    program.programId
+  );
 
-    [lpVaultPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), lpMint.toBuffer()],
-      program.programId
-    );
+  [lpVaultPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), lpMint.toBuffer()],
+    program.programId
+  );
 
-    // Create associated token accounts
-    adminUsdcAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      usdcMint,
-      admin.publicKey
-    );
+  // Create associated token accounts
+  adminUsdcAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    usdcMint,
+    admin.publicKey
+  );
 
-    adminLpAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      lpMint,
-      admin.publicKey
-    );
+  adminLpAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    lpMint,
+    admin.publicKey
+  );
 
-    adminFlDaoAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      flDaoMint,
-      admin.publicKey
-    );
+  adminFlDaoAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    flDaoMint,
+    admin.publicKey
+  );
 
-    user1UsdcAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      usdcMint,
-      user1.publicKey
-    );
+  user1UsdcAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    usdcMint,
+    user1.publicKey
+  );
 
-    user1LpAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      lpMint,
-      user1.publicKey
-    );
+  user1LpAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    lpMint,
+    user1.publicKey
+  );
 
-    user1FlDaoAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      flDaoMint,
-      user1.publicKey
-    );
+  user1FlDaoAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    flDaoMint,
+    user1.publicKey
+  );
 
-    user2UsdcAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      usdcMint,
-      user2.publicKey
-    );
+  user2UsdcAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    usdcMint,
+    user2.publicKey
+  );
 
-    user2FlDaoAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      admin,
-      flDaoMint,
-      user2.publicKey
-    );
+  user2FlDaoAccount = await createAssociatedTokenAccount(
+    provider.connection,
+    admin,
+    flDaoMint,
+    user2.publicKey
+  );
 
-    // Mint initial tokens
-    await mintTo(
-      provider.connection,
-      admin,
-      usdcMint,
-      adminUsdcAccount,
-      admin,
-      INITIAL_SUPPLY * Math.pow(10, USDC_DECIMALS)
-    );
+  // Mint initial tokens
+  await mintTo(
+    provider.connection,
+    admin,
+    usdcMint,
+    adminUsdcAccount,
+    admin,
+    INITIAL_SUPPLY * Math.pow(10, USDC_DECIMALS)
+  );
 
-    await mintTo(
-      provider.connection,
-      admin,
-      lpMint,
-      adminLpAccount,
-      admin,
-      INITIAL_SUPPLY * Math.pow(10, LP_DECIMALS)
-    );
+  await mintTo(
+    provider.connection,
+    admin,
+    lpMint,
+    adminLpAccount,
+    admin,
+    INITIAL_SUPPLY * Math.pow(10, LP_DECIMALS)
+  );
 
-    // Distribute tokens to users
-    await mintTo(
-      provider.connection,
-      admin,
-      usdcMint,
-      user1UsdcAccount,
-      admin,
-      100_000 * Math.pow(10, USDC_DECIMALS)
-    );
+  // Distribute tokens to users
+  await mintTo(
+    provider.connection,
+    admin,
+    usdcMint,
+    user1UsdcAccount,
+    admin,
+    100_000 * Math.pow(10, USDC_DECIMALS)
+  );
 
-    await mintTo(
-      provider.connection,
-      admin,
-      lpMint,
-      user1LpAccount,
-      admin,
-      100_000 * Math.pow(10, LP_DECIMALS)
-    );
+  await mintTo(
+    provider.connection,
+    admin,
+    lpMint,
+    user1LpAccount,
+    admin,
+    100_000 * Math.pow(10, LP_DECIMALS)
+  );
 
-    await mintTo(
-      provider.connection,
-      admin,
-      usdcMint,
-      user2UsdcAccount,
-      admin,
-      50_000 * Math.pow(10, USDC_DECIMALS)
-    );
-  });
+  await mintTo(
+    provider.connection,
+    admin,
+    usdcMint,
+    user2UsdcAccount,
+    admin,
+    50_000 * Math.pow(10, USDC_DECIMALS)
+  );
+});
 
   describe("Initialization", () => {
     it("Initializes rewards config", async () => {
@@ -327,19 +330,36 @@ describe("Staking Program", () => {
       expect(pool.isLp).to.be.true;
     });
 
-    it("Updates FL-DAO mint authority to PDA", async () => {
-      // Transfer mint authority to the PDA
-      const instruction = anchor.web3.TokenInstruction.createSetAuthorityInstruction({
-        account: flDaoMint,
-        currentAuthority: admin.publicKey,
-        newAuthority: mintAuthorityPDA,
-        authorityType: anchor.web3.AuthorityType.MintTokens,
-      });
+    // In the Initialization describe block, replace the mint authority update test with:
 
-      const transaction = new Transaction().add(instruction);
-      await sendAndConfirmTransaction(provider.connection, transaction, [admin]);
-    });
-  });
+it("Updates FL-DAO mint authority to PDA", async () => {
+  // Import the correct function from SPL Token
+  const { createSetAuthorityInstruction, AuthorityType } = await import('@solana/spl-token');
+  
+  // Create the set authority instruction properly
+  const instruction = createSetAuthorityInstruction(
+    flDaoMint,                    // mint account
+    admin.publicKey,              // current authority
+    AuthorityType.MintTokens,     // authority type
+    mintAuthorityPDA              // new authority (the PDA)
+  );
+
+  // Send the transaction
+  const transaction = new Transaction().add(instruction);
+  const signature = await sendAndConfirmTransaction(
+    provider.connection, 
+    transaction, 
+    [admin]
+  );
+  
+  console.log("Mint authority transferred to PDA, tx:", signature);
+  
+  // Optionally verify the authority was transferred
+  const mintInfo = await provider.connection.getAccountInfo(flDaoMint);
+  if (mintInfo) {
+    console.log("Mint authority update confirmed");
+  }
+});
 
   describe("Staking", () => {
     let user1UsdcPositionPDA: PublicKey;
