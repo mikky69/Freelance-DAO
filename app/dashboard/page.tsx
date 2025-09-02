@@ -59,10 +59,12 @@ interface Job {
   _id: string;
   title: string;
   client?: {
+    _id: string;
     fullname: string;
     avatar?: string;
   };
   freelancer?: {
+    _id: string;
     fullname: string;
     avatar?: string;
   };
@@ -132,7 +134,8 @@ function DashboardContent() {
   });
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
-  const [downloadingContract, setDownloadingContract] = useState(false);
+  const [downloadingContract, setDownloadingContract] = useState(false)
+  const [updatingMilestone, setUpdatingMilestone] = useState<string | null>(null);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -388,6 +391,65 @@ function DashboardContent() {
       toast.error('Failed to download contract')
     } finally {
       setDownloadingContract(false)
+    }
+  }
+  
+  const handleMilestoneUpdate = async (jobId: string, milestoneIndex: number, completed: boolean) => {
+    const milestoneKey = `${jobId}-${milestoneIndex}`
+    setUpdatingMilestone(milestoneKey)
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to update milestone')
+        return
+      }
+      
+      const response = await fetch(`/api/jobs/${jobId}/milestones`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          milestoneIndex,
+          completed
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update milestone')
+      }
+      
+      // Update the selected job's milestone
+      if (selectedJob) {
+        const updatedMilestones = [...selectedJob.milestones]
+        updatedMilestones[milestoneIndex] = {
+          ...updatedMilestones[milestoneIndex],
+          completed
+        }
+        
+        // Calculate new progress
+        const completedCount = updatedMilestones.filter(m => m.completed).length
+        const newProgress = Math.round((completedCount / updatedMilestones.length) * 100)
+        
+        setSelectedJob({
+          ...selectedJob,
+          milestones: updatedMilestones,
+          progress: newProgress
+        })
+      }
+      
+      // Refresh jobs data
+      fetchJobs()
+      
+      toast.success(`Milestone ${completed ? 'completed' : 'reopened'} successfully!`)
+    } catch (error) {
+      console.error('Error updating milestone:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update milestone')
+    } finally {
+      setUpdatingMilestone(null)
     }
   }
 
@@ -970,29 +1032,74 @@ function DashboardContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {selectedJob.milestones.map((milestone, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {milestone.completed ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Clock className="w-5 h-5 text-slate-400" />
-                            )}
-                            <div>
-                              <h4 className="font-medium text-slate-800">{milestone.name}</h4>
-                              <p className="text-sm text-slate-500">
-                                {milestone.completed ? 'Completed' : 'In Progress'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-green-600">
-                              {milestone.amount} {selectedJob.budget.currency}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                       {selectedJob.milestones && selectedJob.milestones.length > 0 ? (
+                         selectedJob.milestones.map((milestone, index) => {
+                         const milestoneKey = `${selectedJob._id}-${index}`
+                         const isUpdating = updatingMilestone === milestoneKey
+                         const isFreelancer = user?.role === 'freelancer'
+                         const isAssignedFreelancer = isFreelancer && selectedJob.freelancer && user?.id === selectedJob.freelancer._id
+                         
+                         return (
+                           <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                             <div className="flex items-center gap-3">
+                               {milestone.completed ? (
+                                 <CheckCircle className="w-5 h-5 text-green-500" />
+                               ) : (
+                                 <Clock className="w-5 h-5 text-slate-400" />
+                               )}
+                               <div>
+                                 <h4 className="font-medium text-slate-800">{milestone.name}</h4>
+                                 <p className="text-sm text-slate-500">
+                                   {milestone.completed ? 'Completed' : 'In Progress'}
+                                 </p>
+                               </div>
+                             </div>
+                             
+                             <div className="flex items-center gap-3">
+                               <div className="text-right">
+                                 <p className="font-semibold text-green-600">
+                                   {milestone.amount} {selectedJob.budget.currency}
+                                 </p>
+                               </div>
+                               
+                               {isAssignedFreelancer && (
+                                 <Button
+                                   size="sm"
+                                   variant={milestone.completed ? "outline" : "default"}
+                                   onClick={() => handleMilestoneUpdate(selectedJob._id, index, !milestone.completed)}
+                                   disabled={isUpdating}
+                                   className={milestone.completed ? "border-green-500 text-green-600 hover:bg-green-50" : "bg-green-600 hover:bg-green-700"}
+                                 >
+                                   {isUpdating ? (
+                                     <Loader2 className="w-4 h-4 animate-spin" />
+                                   ) : milestone.completed ? (
+                                     'Reopen'
+                                   ) : (
+                                     'Complete'
+                                   )}
+                                 </Button>
+                               )}
+                             </div>
+                           </div>
+                         )
+                       })
+                     ) : (
+                       <div className="text-center py-8 text-slate-500">
+                         <div className="mb-4">
+                           <FileText className="w-12 h-12 mx-auto text-slate-300" />
+                         </div>
+                         <p className="text-lg font-medium mb-2">No Milestones Set</p>
+                         <p className="text-sm">
+                           This job doesn't have any milestones defined yet.
+                         </p>
+                         {user?.role === 'client' && (
+                           <p className="text-sm mt-2 text-blue-600">
+                             You can set milestones in the contract page.
+                           </p>
+                         )}
+                       </div>
+                     )}
+                     </div>
                   </CardContent>
                 </Card>
                 

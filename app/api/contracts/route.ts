@@ -79,6 +79,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Get job details to copy milestones
+    const job = await Job.findById(proposal.job._id);
+    if (!job) {
+      return NextResponse.json(
+        { message: 'Job not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Use job milestones if available, otherwise use proposal milestones
+    const milestonesToUse = job.milestones && job.milestones.length > 0 
+      ? job.milestones 
+      : proposal.milestones;
+    
     // Create contract with proposal details
     const contract = new Contract({
       job: proposal.job._id,
@@ -88,12 +102,12 @@ export async function POST(request: NextRequest) {
       title: proposal.job.title,
       description: proposal.description,
       budget: proposal.budget,
-      milestones: proposal.milestones.map(milestone => ({
+      milestones: milestonesToUse.map(milestone => ({
         name: milestone.name,
-        description: `Milestone: ${milestone.name}`,
+        description: milestone.description || `Milestone: ${milestone.name}`,
         amount: milestone.amount,
         duration: milestone.duration,
-        completed: false,
+        completed: milestone.completed || false,
       })),
       paymentTerms: {
         escrowAmount: proposal.budget.amount,
