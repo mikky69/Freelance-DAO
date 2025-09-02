@@ -136,6 +136,7 @@ function DashboardContent() {
   const [showJobDetails, setShowJobDetails] = useState(false);
   const [downloadingContract, setDownloadingContract] = useState(false)
   const [updatingMilestone, setUpdatingMilestone] = useState<string | null>(null);
+  const [contractId, setContractId] = useState<string | null>(null);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -348,9 +349,30 @@ function DashboardContent() {
     }
   };
   
-  const handleViewJobDetails = (job: Job) => {
+  const handleViewJobDetails = async (job: Job) => {
     setSelectedJob(job)
     setShowJobDetails(true)
+    
+    // Fetch contract ID for this job
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) return
+      
+      const response = await fetch(`/api/contracts?jobId=${job._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.contracts && data.contracts.length > 0) {
+          setContractId(data.contracts[0]._id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching contract:', error)
+    }
   }
   
   const handleDownloadContract = async (jobId: string) => {
@@ -1118,12 +1140,19 @@ function DashboardContent() {
                     {downloadingContract ? 'Downloading...' : 'Download Contract'}
                   </Button>
                   
-                  <Link href={`/contracts/${selectedJob._id}`} className="flex-1">
-                    <Button variant="outline" className="w-full">
+                  {contractId ? (
+                    <Link href={`/contracts/${contractId}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Contract
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="outline" className="w-full flex-1" disabled>
                       <FileText className="w-4 h-4 mr-2" />
-                      View Contract
+                      No Contract
                     </Button>
-                  </Link>
+                  )}
                   
                   <Button 
                     variant="outline" 
