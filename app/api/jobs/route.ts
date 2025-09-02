@@ -82,6 +82,29 @@ export async function POST(request: NextRequest) {
       urgencyLevel = 'high';
     }
     
+    // Create default milestones based on budget
+    const totalBudget = budgetMax || budgetMin;
+    const defaultMilestones = [
+      {
+        name: 'Project Setup & Planning',
+        amount: Math.round(totalBudget * 0.3),
+        duration: '1 week',
+        completed: false
+      },
+      {
+        name: 'Development & Implementation',
+        amount: Math.round(totalBudget * 0.5),
+        duration: '2 weeks',
+        completed: false
+      },
+      {
+        name: 'Testing & Final Delivery',
+        amount: totalBudget - Math.round(totalBudget * 0.3) - Math.round(totalBudget * 0.5),
+        duration: '1 week',
+        completed: false
+      }
+    ];
+    
     // Create job
     const job = await Job.create({
       title: title.trim(),
@@ -97,7 +120,8 @@ export async function POST(request: NextRequest) {
       urgency: urgencyLevel,
       client: userId,
       featured: featured || false,
-      status: 'draft'
+      status: 'draft',
+      milestones: defaultMilestones
     });
     
     // If featured job, deduct payment from client (this would integrate with payment system)

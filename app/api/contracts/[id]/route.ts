@@ -119,15 +119,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
         
         contract.milestones = milestones;
-        await contract.save();
-        
-        return NextResponse.json({
-          message: 'Milestones updated successfully',
-          contract: {
-            id: contract._id,
-            milestones: contract.milestones,
-          }
-        });
+         await contract.save();
+         
+         // Also update milestones in the corresponding job
+         const { Job } = require('@/models/Job');
+         await Job.findByIdAndUpdate(contract.job, {
+           milestones: milestones.map((milestone: any) => ({
+             name: milestone.name,
+             amount: milestone.amount,
+             duration: milestone.duration || '1 week',
+             completed: milestone.completed || false
+           }))
+         });
+         
+         return NextResponse.json({
+           message: 'Milestones updated successfully',
+           contract: {
+             id: contract._id,
+             milestones: contract.milestones,
+           }
+         });
         
       case 'sign':
         const isClient = contract.client.toString() === userId;
