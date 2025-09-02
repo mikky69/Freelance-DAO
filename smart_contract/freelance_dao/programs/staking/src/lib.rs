@@ -12,7 +12,7 @@ pub mod utils;
 use instructions::*;
 
 // Updated with actual program ID from Anchor.toml
-declare_id!("E3vEsZDtfgk1CGpS4u1JnFmYcChqTgDN4HSjcS354RRS");
+declare_id!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
 
 #[program]
 pub mod staking {
