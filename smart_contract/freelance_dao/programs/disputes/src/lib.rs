@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
-pub mod error;
-pub mod events;
-pub mod instructions;
-pub mod state;
+mod error;
+mod events;
+mod state;
+mod instructions;
 
 use instructions::*;
 
@@ -14,7 +14,7 @@ pub mod disputes {
     use super::*;
 
     pub fn init_counter(ctx: Context<InitCounter>) -> Result<()> {
-        instructions::init_counter_handler(ctx)
+        instructions::init_counter::handler(ctx)
     }
 
     pub fn open_dispute(
@@ -23,7 +23,7 @@ pub mod disputes {
         uri: String,
         linked_escrow: Option<Pubkey>,
     ) -> Result<()> {
-        instructions::open_dispute_handler(ctx, parties, uri, linked_escrow)
+        instructions::open_dispute::handler(ctx, parties, uri, linked_escrow)
     }
 
     pub fn form_panel(
@@ -32,21 +32,21 @@ pub mod disputes {
         selection_seed: u64,
         required_quorum: u16,
     ) -> Result<()> {
-        instructions::form_panel_handler(ctx, members, selection_seed, required_quorum)
+        instructions::form_panel::handler(ctx, members, selection_seed, required_quorum)
     }
 
     pub fn cast_panel_vote(
         ctx: Context<PanelVote>,
         choice: state::JudgmentChoice,
     ) -> Result<()> {
-        instructions::panel_vote_handler(ctx, choice)
+        instructions::panel_vote::handler(ctx, choice)
     }
 
     pub fn finalize_judgment(ctx: Context<FinalizeJudgment>) -> Result<()> {
-        instructions::finalize_judgment_handler(ctx)
+        instructions::finalize_judgment::handler(ctx)
     }
 
     pub fn execute_judgment(ctx: Context<ExecuteJudgment>) -> Result<()> {
-        instructions::execute_judgment_handler(ctx)
+        instructions::execute_judgment::handler(ctx)
     }
 }

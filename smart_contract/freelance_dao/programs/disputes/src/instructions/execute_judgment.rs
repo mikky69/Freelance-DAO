@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::DisputeExecuted;
-use crate::state::{Dispute, DisputeState, JudgmentChoice};
+use crate::state::{Dispute, DisputeState};
 
 #[derive(Accounts)]
 pub struct ExecuteJudgment<'info> {
