@@ -148,9 +148,10 @@ export async function GET(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
     
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const page = parseInt(searchParams.get('page') || '1');
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const jobId = searchParams.get('jobId')
+    const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10');
     
     // Check if user is freelancer or client
@@ -164,17 +165,21 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Build query based on user type
-    const query: any = {};
+    // Build query based on user role and status
+    const query: any = {}
     
     if (freelancer) {
-      query.freelancer = userId;
+      query.freelancer = userId
     } else if (client) {
-      query.client = userId;
+      query.client = userId
     }
     
     if (status) {
-      query.status = status;
+      query.status = status
+    }
+    
+    if (jobId) {
+      query.job = jobId
     }
     
     // Calculate pagination

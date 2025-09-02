@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SignaturePad } from "@/components/signature-pad"
+import { generateContractPDF } from "@/lib/pdf-generator"
 import {
   FileText,
   CheckCircle,
@@ -33,6 +34,7 @@ import {
   Plus,
   Trash2,
   Save,
+  Download,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -118,6 +120,7 @@ function ContractContent() {
   const [milestones, setMilestones] = useState<any[]>([])
   const [savingMilestones, setSavingMilestones] = useState(false)
   const [drawnSignature, setDrawnSignature] = useState('')
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
   
   useEffect(() => {
     const fetchContract = async () => {
@@ -280,6 +283,21 @@ function ContractContent() {
     const updated = [...milestones]
     updated[index] = { ...updated[index], [field]: value }
     setMilestones(updated)
+  }
+  
+  const handleDownloadPDF = async () => {
+    if (!contract) return
+    
+    setDownloadingPDF(true)
+    try {
+      await generateContractPDF(contract)
+      toast.success('Contract PDF downloaded successfully!')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast.error('Failed to generate PDF')
+    } finally {
+      setDownloadingPDF(false)
+    }
   }
   
   const getStatusColor = (status: string) => {
@@ -764,6 +782,20 @@ function ContractContent() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={downloadingPDF}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {downloadingPDF ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  {downloadingPDF ? 'Generating...' : 'Download PDF'}
+                </Button>
+                
                 {canClientSign && (
                   <Dialog open={showSignDialog} onOpenChange={setShowSignDialog}>
                     <DialogTrigger asChild>

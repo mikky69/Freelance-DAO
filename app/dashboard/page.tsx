@@ -32,12 +32,15 @@ import {
   FileText,
   Calendar,
   Loader2,
+  Download,
+  Eye,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { PaymentSystem } from "@/components/payment-system"
 import { useAuth } from "@/lib/auth-context"
+import { generateContractPDF } from "@/lib/pdf-generator"
 
 interface DashboardStats {
   totalEarnings?: number;
@@ -127,6 +130,9 @@ function DashboardContent() {
     timeline: "",
     milestones: "",
   });
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [showJobDetails, setShowJobDetails] = useState(false);
+  const [downloadingContract, setDownloadingContract] = useState(false);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -338,6 +344,52 @@ function DashboardContent() {
       toast.error(error instanceof Error ? error.message : 'Failed to update proposal');
     }
   };
+  
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJob(job)
+    setShowJobDetails(true)
+  }
+  
+  const handleDownloadContract = async (jobId: string) => {
+    setDownloadingContract(true)
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        toast.error('Please log in to download contract')
+        return
+      }
+      
+      // Find contract for this job
+      const contractResponse = await fetch(`/api/contracts?jobId=${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!contractResponse.ok) {
+        throw new Error('Contract not found')
+      }
+      
+      const contractData = await contractResponse.json()
+      const contract = contractData.contracts[0]
+      
+      if (!contract) {
+        toast.error('No contract found for this job')
+        return
+      }
+      
+      // Generate and download contract PDF
+      await generateContractPDF(contract)
+      
+      toast.success('Contract downloaded successfully!')
+    } catch (error) {
+      console.error('Error downloading contract:', error)
+      toast.error('Failed to download contract')
+    } finally {
+      setDownloadingContract(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -612,7 +664,12 @@ function DashboardContent() {
                                 Message
                               </Button>
                             </Link>
-                            <Button size="sm" className="bg-blue-500 hover:bg-blue-600">
+                            <Button 
+                              size="sm" 
+                              className="bg-blue-500 hover:bg-blue-600"
+                              onClick={() => handleViewJobDetails(job)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
                               View Details
                             </Button>
                           </div>
@@ -816,6 +873,162 @@ function DashboardContent() {
 
           {/* ... existing earnings and profile tabs ... */}
         </Tabs>
+        
+        {/* Job Details Modal */}
+        <Dialog open={showJobDetails} onOpenChange={setShowJobDetails}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Job Details
+              </DialogTitle>
+              <DialogDescription>
+                Complete information about this job and contract
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedJob && (
+              <div className="space-y-6">
+                {/* Job Overview */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{selectedJob.title}</CardTitle>
+                      <CardDescription>
+                        {user?.role === 'client' ? `Freelancer: ${selectedJob.freelancer?.fullname}` : `Client: ${selectedJob.client?.fullname}`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Budget:</span>
+                        <span className="font-semibold text-green-600">
+                          {selectedJob.budget.amount} {selectedJob.budget.currency}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Status:</span>
+                        <Badge className={`${
+                          selectedJob.status === 'in_progress' ? 'bg-blue-500' : 
+                          selectedJob.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'
+                        } text-white`}>
+                          {selectedJob.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Progress:</span>
+                        <span className="font-medium">{selectedJob.progress}%</span>
+                      </div>
+                      {selectedJob.deadline && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Deadline:</span>
+                          <span className="font-medium">
+                            {new Date(selectedJob.deadline).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Progress Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-2">
+                            <span>Overall Progress</span>
+                            <span>{selectedJob.progress}%</span>
+                          </div>
+                          <Progress value={selectedJob.progress} className="h-2" />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="text-center p-3 bg-blue-50 rounded">
+                            <div className="font-semibold text-blue-600">
+                              {selectedJob.milestones.filter(m => m.completed).length}
+                            </div>
+                            <div className="text-slate-600">Completed</div>
+                          </div>
+                          <div className="text-center p-3 bg-slate-50 rounded">
+                            <div className="font-semibold text-slate-600">
+                              {selectedJob.milestones.length - selectedJob.milestones.filter(m => m.completed).length}
+                            </div>
+                            <div className="text-slate-600">Remaining</div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Milestones */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Project Milestones</CardTitle>
+                    <CardDescription>Track progress and payments</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedJob.milestones.map((milestone, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {milestone.completed ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Clock className="w-5 h-5 text-slate-400" />
+                            )}
+                            <div>
+                              <h4 className="font-medium text-slate-800">{milestone.name}</h4>
+                              <p className="text-sm text-slate-500">
+                                {milestone.completed ? 'Completed' : 'In Progress'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-green-600">
+                              {milestone.amount} {selectedJob.budget.currency}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => handleDownloadContract(selectedJob._id)}
+                    disabled={downloadingContract}
+                    className="flex-1"
+                  >
+                    {downloadingContract ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    {downloadingContract ? 'Downloading...' : 'Download Contract'}
+                  </Button>
+                  
+                  <Link href={`/contracts/${selectedJob._id}`} className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      <FileText className="w-4 h-4 mr-2" />
+                      View Contract
+                    </Button>
+                  </Link>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowJobDetails(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
