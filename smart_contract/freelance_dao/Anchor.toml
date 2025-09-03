@@ -10,6 +10,7 @@ skip-lint = false
 governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
 staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
 disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
+shared = "4vvGqQjKWJmAmNx1iuNNwpSJrjgVxgr1wSWWA2ZEkfA6"
 
 [registry]
 url = "https://api.apr.dev"

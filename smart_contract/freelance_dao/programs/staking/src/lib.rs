@@ -67,4 +67,12 @@ pub mod staking {
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
     }
+        
+    pub fn get_position(ctx: Context<GetPosition>) -> Result<(u64, u128)> {
+        instructions::query::get_position(ctx)
+    }
+
+    pub fn view_position(ctx: Context<ViewPosition>) -> Result<u64> {
+        instructions::query::view_position(ctx)
+    }
 }

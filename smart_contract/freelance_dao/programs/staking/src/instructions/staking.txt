@@ -185,12 +185,54 @@ pub mod staking;
 pub mod rewards;
 pub mod admin;
 pub mod utils;
+pub mod query;  
 
 pub use init::*;
 pub use staking::*;
 pub use rewards::*;
 pub use admin::*;
 pub use utils::*;
+pub use query::*;
+
+query
+use anchor_lang::prelude::*;
+use crate::state_accounts::StakePosition;
+use crate::errors::StakingError;
+
+#[derive(Accounts)]
+pub struct GetPosition<'info> {
+    #[account(
+        seeds = [b"position", pool.key().as_ref(), staker.key().as_ref()],
+        bump = position.bump
+    )]
+    pub position: Account<'info, StakePosition>,
+    /// CHECK: Pool validation happens in position seeds
+    pub pool: UncheckedAccount<'info>,
+    pub staker: Signer<'info>,
+}
+
+pub fn get_position(ctx: Context<GetPosition>) -> Result<(u64, u128)> {
+    let position = &ctx.accounts.position;
+    Ok((position.amount, position.accum_points))
+}
+
+// View-only function for cross-program calls
+#[derive(Accounts)]
+pub struct ViewPosition<'info> {
+    #[account(
+        seeds = [b"position", pool.key().as_ref(), user.key().as_ref()],
+        bump = position.bump
+    )]
+    pub position: Account<'info, StakePosition>,
+    /// CHECK: Pool validation happens in position seeds
+    pub pool: UncheckedAccount<'info>,
+    /// CHECK: User key used in seeds
+    pub user: UncheckedAccount<'info>,
+}
+
+pub fn view_position(ctx: Context<ViewPosition>) -> Result<u64> {
+    Ok(ctx.accounts.position.amount)
+}
 
 rewards
 // programs/staking/src/instructions/rewards.rs
@@ -503,19 +545,14 @@ pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
     Ok(ctx.accounts.position.amount)
 }
 
-now outside the instructinos folder
+outside instruction folder
 constants
 use anchor_lang::prelude::*;
 
-// Program IDs for cross-program calls
-declare_id!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
-pub const STAKING_PROGRAM_ID: Pubkey = crate::ID;
+// Cross-program IDs
+pub const GOVERNANCE_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
+pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
 
-// Default governance parameters
-pub const DEFAULT_MIN_VOTE_DURATION: i64 = 86400; // 1 day
-pub const DEFAULT_MAX_VOTE_DURATION: i64 = 604800; // 7 days
-pub const DEFAULT_QUORUM_THRESHOLD: u64 = 1000; // 1000 votes minimum
-pub const DEFAULT_APPROVAL_THRESHOLD: u64 = 5000; // 50% approval (out of 10000)
 
 errors
 use anchor_lang::prelude::*;
@@ -542,63 +579,6 @@ pub enum StakingError {
     PositionNotFound,
     #[msg("Invalid amount")]
     InvalidAmount,
-}
-
-events
-// programs/staking/src/events.rs
-use anchor_lang::prelude::*;
-
-#[event]
-pub struct Staked {
-    pub pool: Pubkey,
-    pub staker: Pubkey,
-    pub amount: u64,
-    pub new_total: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct Unstaked {
-    pub pool: Pubkey,
-    pub staker: Pubkey,
-    pub amount: u64,
-    pub remaining: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct PointsAccrued {
-    pub pool: Pubkey,
-    pub staker: Pubkey,
-    pub delta_points: u128,
-    pub total_points: u128,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct PointsExchanged {
-    pub staker: Pubkey,
-    pub points_burned: u128,
-    pub fldao_minted: u64,
-    pub exchange_rate: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct PoolInitialized {
-    pub pool: Pubkey,
-    pub mint: Pubkey,
-    pub is_lp: bool,
-    pub points_per_token_per_second: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct RewardsConfigInitialized {
-    pub admin: Pubkey,
-    pub fl_dao_mint: Pubkey,
-    pub exchange_rate: u64,
-    pub timestamp: i64,
 }
 
 lib
@@ -670,6 +650,14 @@ pub mod staking {
     // Utility functions
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
+    }
+        
+    pub fn get_position(ctx: Context<GetPosition>) -> Result<(u64, u128)> {
+        instructions::query::get_position(ctx)
+    }
+
+    pub fn view_position(ctx: Context<ViewPosition>) -> Result<u64> {
+        instructions::query::view_position(ctx)
     }
 }
 
@@ -785,8 +773,6 @@ impl StakePosition {
     pub const SPACE: usize = 8 + 32 * 2 + 8 + 16 + 8 + 8 + 1; // 113 bytes
 }
 
-
-
 state
 // CLEANED state.rs - Remove unused PoolType enum
 use anchor_lang::prelude::*;
@@ -860,4 +846,4 @@ anchor-debug = []
 [dependencies]
 anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
 anchor-spl = "0.31.1"
-
+shared = { path = "../shared" }

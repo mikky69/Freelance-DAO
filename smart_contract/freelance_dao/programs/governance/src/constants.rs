@@ -1,12 +1,11 @@
-// Add this to governance/src/constants.rs
 use anchor_lang::prelude::*;
 
-// Program IDs for cross-program calls
+// Cross-program IDs - these MUST match your Anchor.toml
 pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
-pub const DISPUTES_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn");
+pub const GOVERNANCE_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
 
-// Default governance parameters
-pub const DEFAULT_MIN_VOTE_DURATION: i64 = 86400; // 1 day
-pub const DEFAULT_MAX_VOTE_DURATION: i64 = 604800; // 7 days
-pub const DEFAULT_QUORUM_THRESHOLD: u64 = 1000; // 1000 votes minimum
-pub const DEFAULT_APPROVAL_THRESHOLD: u64 = 5000; // 50% approval (out of 10000)
+// Vote weight calculation parameters
+pub const BASE_VOTE_WEIGHT: u64 = 1;
+pub const PREMIUM_BONUS_WEIGHT: u64 = 1;
+pub const STAKING_WEIGHT_DIVISOR: u64 = 1_000_000; // 1 FLDAO = 1 additional vote weight
+

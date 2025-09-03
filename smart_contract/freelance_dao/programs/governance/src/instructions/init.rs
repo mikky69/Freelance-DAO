@@ -1,3 +1,4 @@
+// programs/governance/src/instructions/init.rs
 use anchor_lang::prelude::*;
 use crate::state_accounts::DaoConfig;
 use crate::errors::ErrorCode;
@@ -57,10 +58,11 @@ pub fn init_dao_config(
     dao_config.weight_params = 1_000_000_000; // Default weight divisor
     dao_config.bump = ctx.bumps.dao_config;
     
-    // Treasury fields will be set when treasury is initialized
+    // Treasury and staking fields will be set when they are initialized
     dao_config.usdc_mint = Pubkey::default();
     dao_config.treasury = Pubkey::default();
     dao_config.usdc_treasury = Pubkey::default();
+    dao_config.staking_treasury = Pubkey::default();
 
     msg!("DAO Config initialized successfully");
     msg!("Admin: {}", dao_config.admin);

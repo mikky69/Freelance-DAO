@@ -1,10 +1,10 @@
-// FIXED voting.rs - Simplified version without complex staking integration
 use anchor_lang::{prelude::*, system_program};
 use crate::{
     state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
     errors::ErrorCode,
     events::VoteCast,
-    state::{VoteChoice, ProposalState}
+    state::{VoteChoice, ProposalState},
+    constants::{BASE_VOTE_WEIGHT, PREMIUM_BONUS_WEIGHT, STAKING_WEIGHT_DIVISOR, STAKING_PROGRAM_ID}
 };
 
 #[derive(Accounts)]
@@ -37,6 +37,10 @@ pub struct CastVote<'info> {
         bump = member.bump
     )]
     pub member: Option<Account<'info, Member>>,
+    /// CHECK: This account is validated through PDA derivation and program ownership
+    pub staking_position: Option<UncheckedAccount<'info>>,
+    /// CHECK: This should be the main FLDAO staking pool from staking program - unused but kept for future use
+    pub staking_pool: Option<UncheckedAccount<'info>>,
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
     pub rent: Sysvar<'info, Rent>,
@@ -81,18 +85,36 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
         )?;
     }
 
-    // Calculate vote weight (base 1 + premium bonus)
-    let mut weight: u64 = 1;
+    // Calculate vote weight with staking integration
+    let mut weight: u64 = BASE_VOTE_WEIGHT;
+    
+    // Add premium bonus
     if let Some(member) = &ctx.accounts.member {
         if member.premium {
-            weight = weight.checked_add(1).ok_or(ErrorCode::ArithmeticOverflow)?; // Premium gets +1 weight
+            weight = weight.checked_add(PREMIUM_BONUS_WEIGHT)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
         }
     }
     
-    // TODO: When staking program is ready, add staking weight calculation
-    // This will require adding a stake_position account to the struct above
-    // and implementing a CPI call to the staking program to get staked amount
-
+    // Add staking bonus if position exists and is valid
+    if let Some(staking_position) = &ctx.accounts.staking_position {
+        // Verify the account is owned by the staking program
+        if staking_position.owner == &STAKING_PROGRAM_ID {
+            // Try to read the staked amount from the position
+            let position_data = staking_position.try_borrow_data()?;
+            if position_data.len() >= 8 + 32 + 32 + 8 { // discriminator + staker + pool + amount
+                // Skip discriminator (8 bytes), staker (32 bytes), pool (32 bytes)
+                let amount_bytes = &position_data[72..80];
+                if let Ok(amount_array) = <[u8; 8]>::try_from(amount_bytes) {
+                    let staked_amount = u64::from_le_bytes(amount_array);
+                    let staking_bonus = staked_amount.checked_div(STAKING_WEIGHT_DIVISOR).unwrap_or(0);
+                    weight = weight.checked_add(staking_bonus)
+                        .ok_or(ErrorCode::ArithmeticOverflow)?;
+                }
+            }
+        }
+    }
+    
     if weight == 0 {
         return Err(ErrorCode::InvalidVoteWeight.into());
     }

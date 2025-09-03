@@ -9,6 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "disputes"
 
 [features]
+anchor-debug = []
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []

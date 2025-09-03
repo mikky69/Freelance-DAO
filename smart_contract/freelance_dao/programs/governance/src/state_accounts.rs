@@ -1,3 +1,4 @@
+// programs/governance/src/state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -6,6 +7,7 @@ pub struct DaoConfig {
     pub usdc_mint: Pubkey,           // 32 bytes
     pub treasury: Pubkey,            // 32 bytes - SOL treasury PDA
     pub usdc_treasury: Pubkey,       // 32 bytes - USDC ATA for treasury
+    pub staking_treasury: Pubkey,    // 32 bytes - Reference to staking treasury
     pub light_fee_usdc: u64,         // 8 bytes
     pub major_fee_usdc: u64,         // 8 bytes
     pub vote_fee_lamports: u64,      // 8 bytes
@@ -22,15 +24,15 @@ pub struct DaoConfig {
 }
 
 impl DaoConfig {
-    // Increase space to account for potential alignment and safety
+    // Updated space calculation to include staking_treasury
     pub const SPACE: usize = 8 + // discriminator
-        32 * 4 + // 4 pubkeys (usdc_mint, treasury, usdc_treasury, admin)
+        32 * 5 + // 5 pubkeys (usdc_mint, treasury, usdc_treasury, staking_treasury, admin)
         8 * 8 + // 8 u64/i64 fields
         1 + // eligibility_flags
         1 + // paused
         1 + // bump
         32; // extra padding for safety and alignment
-    // Total: 8 + 128 + 64 + 3 + 32 = 235 bytes
+    // Total: 8 + 160 + 64 + 3 + 32 = 267 bytes
 }
 
 #[account]
