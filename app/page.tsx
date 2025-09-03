@@ -42,11 +42,11 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 animate-pulse" />
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-5xl mx-auto animate-fade-in">
-            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium mb-8 animate-float shadow-lg">
+            {/* <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium mb-8 animate-float shadow-lg">
               <Zap className="w-4 h-4 mr-2 animate-pulse" />
               Powered by Hedera Hashgraph
               <Sparkles className="w-4 h-4 ml-2 text-purple-500" />
-            </div>
+            </div> */}
 
             <h1 className="text-4xl md:text-7xl font-bold text-slate-800 mb-6 text-shadow leading-tight">
               Hire smarter. Work freely. <br />
