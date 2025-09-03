@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { Contract } from '@/models/Contract';
 import { Job } from '@/models/Job';
 import { Freelancer, Client } from '@/models/User';
+import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -220,6 +221,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         contract.escrow.funded = true;
         contract.escrow.fundedAt = new Date();
         contract.status = 'pending_freelancer_signature';
+        
+        // Send notification to freelancer about escrow funding
+        try {
+          const client = await Client.findById(contract.client);
+          if (client) {
+            await NotificationService.notifyContractSigned(
+              contract.freelancer.toString(),
+              client.fullname,
+              contract.title,
+              contract._id.toString(),
+              contract.escrow.amount,
+              contract.escrow.currency
+            );
+          }
+        } catch (notificationError) {
+          console.error('Failed to send contract signed notification:', notificationError);
+          // Don't fail the main operation if notification fails
+        }
         break;
         
       default:

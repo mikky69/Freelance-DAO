@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Admin } from '@/models/User';
 import { Job } from '@/models/Job';
+import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -225,13 +226,27 @@ export async function PATCH(request: NextRequest) {
       jobId,
       updateData,
       { new: true }
-    );
+    ).populate('client', 'fullname');
     
     if (!updatedJob) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
       );
+    }
+    
+    // Send notification when job is approved
+    if (action === 'approve' && updatedJob.client) {
+      try {
+        await NotificationService.notifyJobApproved(
+          updatedJob.client._id.toString(),
+          updatedJob.title,
+          updatedJob._id.toString()
+        );
+      } catch (notificationError) {
+        console.error('Failed to send job approval notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
     }
     
     return NextResponse.json({

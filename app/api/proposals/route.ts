@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { Proposal } from '@/models/Proposal';
 import { Job } from '@/models/Job';
 import { Freelancer, Client } from '@/models/User';
+import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify job exists and is open
-    const job = await Job.findById(jobId);
+    const job = await Job.findById(jobId).populate('client', 'fullname');
     if (!job) {
       return NextResponse.json(
         { message: 'Job not found' },
@@ -105,6 +106,22 @@ export async function POST(request: NextRequest) {
     await Job.findByIdAndUpdate(jobId, {
       $push: { proposals: proposal._id }
     });
+    
+    // Send notification to client about new proposal
+    if (job.client) {
+      try {
+        await NotificationService.notifyProposalSubmitted(
+          job.client._id.toString(),
+          freelancer.fullname,
+          job.title,
+          proposal._id.toString(),
+          job._id.toString()
+        );
+      } catch (notificationError) {
+        console.error('Failed to send proposal submission notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     
     return NextResponse.json(
       { 

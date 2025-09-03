@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
@@ -43,6 +43,7 @@ import { HederaWalletConnect } from "./hedera-wallet-connect"
 export function TopNavigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showWalletConnect, setShowWalletConnect] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const pathname = usePathname()
   const { user, isAuthenticated, isWalletConnected, signOut } = useAuth()
 
@@ -82,6 +83,41 @@ export function TopNavigation() {
   }
 
   const navigationItems = getNavigationItems()
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!isAuthenticated) {
+        setUnreadCount(0)
+        return
+      }
+      
+      try {
+        const token = localStorage.getItem('freelancedao_token')
+        if (!token) return
+        
+        const response = await fetch('/api/notifications?unread=true&limit=1', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadCount(data.unreadCount || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error)
+      }
+    }
+    
+    fetchUnreadCount()
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
 
   return (
     <>
@@ -142,9 +178,11 @@ export function TopNavigation() {
                 <Link href="/notifications">
                   <Button variant="ghost" size="sm" className="relative group">
                     <Bell className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
-                    <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white text-xs animate-bounce shadow-lg">
-                      2
-                    </Badge>
+                    {unreadCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white text-xs animate-bounce shadow-lg">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
               )}
