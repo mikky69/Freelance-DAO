@@ -52,4 +52,6 @@ pub enum ErrorCode {
     VotingStillActive,
     #[msg("Invalid vote weight")]
     InvalidVoteWeight,
+    #[msg("Invalid staking program")]
+    InvalidStakingProgram,
 }

@@ -1,4 +1,4 @@
-// FIXED voting.rs - Remove invalid stake_position reference
+// FIXED voting.rs - Simplified version without complex staking integration
 use anchor_lang::{prelude::*, system_program};
 use crate::{
     state_accounts::{DaoConfig, Proposal, VoteRecord, Member},

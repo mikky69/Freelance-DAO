@@ -1,14 +1,4 @@
-// programs/staking/src/state.rs
+// CLEANED state.rs - Remove unused PoolType enum
 use anchor_lang::prelude::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
-pub enum PoolType {
-    Single,  // Single token (USDC)
-    LP,      // LP token pair
-}
-
-impl Default for PoolType {
-    fn default() -> Self {
-        PoolType::Single
-    }
-}
+// Remove the unused PoolType enum since we use bool is_lp in StakePool instead

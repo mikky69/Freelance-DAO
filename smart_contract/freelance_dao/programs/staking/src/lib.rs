@@ -11,7 +11,6 @@ pub mod utils;
 
 use instructions::*;
 
-// Updated with actual program ID from Anchor.toml
 declare_id!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
 
 #[program]

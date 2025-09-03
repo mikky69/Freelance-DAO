@@ -1,8 +1,9 @@
+// Add this to governance/src/constants.rs
 use anchor_lang::prelude::*;
 
 // Program IDs for cross-program calls
-declare_id!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
-pub const STAKING_PROGRAM_ID: Pubkey = crate::ID;
+pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
+pub const DISPUTES_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn");
 
 // Default governance parameters
 pub const DEFAULT_MIN_VOTE_DURATION: i64 = 86400; // 1 day

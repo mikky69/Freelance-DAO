@@ -1,5 +1,4 @@
-// UPDATED lib.rs
-// ============================================
+// FIXED lib.rs - Simple version without complex integration
 use anchor_lang::prelude::*;
 
 pub mod state_accounts;
@@ -7,6 +6,7 @@ pub mod errors;
 pub mod events;
 pub mod instructions;
 pub mod state;
+pub mod constants;
 
 use instructions::*;
 

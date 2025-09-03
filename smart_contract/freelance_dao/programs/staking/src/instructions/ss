@@ -1,0 +1,413 @@
+# High-level architecture
+
+You’ll likely want **three on-chain programs** (plus a shared treasury PDA) and one optional helper:
+A **DAO Treasury** (system + token PDAs) receives proposal fees, holds USDC/SOL, and (optionally) receives a cut of staking fees.
+
+Event logs (Anchor events) power the **DAO News** feed off-chain.
+
+---
+
+## Program 1: Governance (Proposals & Voting)
+
+### PDAs / Accounts
+
+* `DaoConfig` (PDA): global params
+
+  * `usdc_mint`, `fee_wallet` (PDA), `light_fee_usdc`, `major_fee_usdc`, `eligibility_flags`, `vote_fee_lamports`, `min_panel_size` (used by disputes too if shared), `admin` (multisig).
+* `Member` (PDA: seeds `[b"member", wallet]`): optional flags
+
+  * `is_premium`, `joined_at`, `bump`.
+* `Proposal` (PDA: `[b"proposal", incrementing_id]`):
+
+  * `creator`, `kind` (`Light|Major`), `title_hash` (hash title for storage efficiency), `uri` (off-chain description/document), `state` (`Draft|Active|Succeeded|Failed|Executed|Canceled`), `start_ts`, `end_ts`, `tally_yes`, `tally_no`.
+* `VoteRecord` (PDA: `[b"vote", proposal, voter]`):
+
+  * `choice` (`Yes|No`), `weight`, `paid_fee` (bool).
+
+### External programs used
+
+* **SPL Token** (USDC fee collection)
+* **System program** (SOL vote fee)
+* **Clock** (time windows)
+
+### Key flows
+
+#### Eligibility check for creating proposal
+
+Front-end checks any of:
+
+* `Member.is_premium == true`, or
+* **Staking Program** query: user has nonzero staked amount (or meets min), or
+* User has enough **USDC/SOL** to pay fee.
+
+On-chain enforces payment; *premium/staked* gating can be soft-checked off-chain **and** verified on-chain if desired:
+
+* Premium: verify `Member.is_premium`.
+* Staked: CPI read via Anchor interface to Staking Program (or pass a Merkle proof of stake snapshot signed by an oracle if you prefer lighter coupling).
+
+#### Create proposal (user)
+
+1. User selects `Light|Major`; front-end shows fee.
+2. Instruction: `create_proposal(kind, uri, title_hash, voting_window)`
+
+   * Transfers **USDC fee** from user’s ATA to `fee_wallet` PDA.
+   * Initializes `Proposal` with `Active` and `start_ts/end_ts`.
+
+#### Vote (any connected wallet)
+
+* Instruction: `cast_vote(proposal, choice)`
+
+  * Collects **SOL vote fee** to `fee_wallet` (lamports).
+  * Reads user’s **vote weight** = `max(1, f(staked_fl_dao))`.
+
+    * `f` could be linear (e.g., `1 + k * staked`) or discrete. Keep it simple & audit-friendly: **1 base + 1 per X tokens staked**.
+  * Writes/updates `VoteRecord` (prevent double-vote unless you allow update within window).
+  * Updates `tally_yes/no`.
+
+#### Finalize proposal
+
+* Instruction: `finalize(proposal)` – anyone can call after `end_ts`.
+
+  * Sets `state` → `Succeeded` or `Failed`.
+  * (Optional) triggers CPI/action if proposal is executable; otherwise it’s a signaling vote.
+
+### Parameters you’ll want in `DaoConfig`
+
+* `light_fee_usdc`, `major_fee_usdc`
+* `vote_fee_lamports`
+* `min_vote_duration`, `max_vote_duration`
+* `vote_weight_params` (scalars)
+* `admin` (upgrade authority/multisig)
+* `eligibility_policy` bitflags (enable/disable premium/stake gating)
+
+### Events
+
+* `ProposalCreated { id, creator, kind }`
+* `VoteCast { id, voter, weight, choice }`
+* `ProposalFinalized { id, result }`
+
+---
+
+## Program 2: Staking & Rewards (Points → \$FLDAO)
+
+### Supported assets
+
+* **Single-asset**: USDC (SPL)
+* **LP tokens**: e.g., Raydium/Orca SOL-USDC LP (SPL mint list is configurable)
+
+### PDAs / Accounts
+
+* `StakePool` (PDA: `[b"pool", mint]`): params
+
+  * `mint` (asset or LP mint), `points_per_token_per_second` (Q64.64), `is_lp`, `paused`, `admin`.
+* `StakePosition` (PDA: `[b"pos", pool, staker]`):
+
+  * `staker`, `amount`, `accum_points`, `last_update_ts`, `bump`.
+* `RewardsConfig` (PDA):
+
+  * `fl_dao_mint`, `exchange_rate` (points → tokens), `treasury` (PDA), `mint_authority` (PDA with freeze), `admin`.
+
+### External programs
+
+* **SPL Token** (staking deposits & withdrawals)
+* **Associated Token**
+* **Clock**
+
+### Key flows
+
+#### Stake
+
+* `stake(pool, amount)`
+
+  * Transfer tokens from user ATA → pool vault PDA.
+  * Update `accum_points` using:
+    `accum += amount * points_rate * (now - last_update_ts)`
+  * Update `amount` and `last_update_ts`.
+
+#### Unstake
+
+* `unstake(pool, amount)`
+
+  * Same update math, then transfer back.
+
+#### Claim points (optional surface)
+
+* `sync_position(pool)` – updates `accum_points` without asset move (for UI).
+
+#### Exchange points → \$FLDAO
+
+* `exchange_points(amount_points, min_out)`
+
+  * Calculates `$FLDAO_out = floor(amount_points / exchange_rate)`
+  * Mints `$FLDAO_out` to user ATA using `mint_authority` PDA.
+  * Burns/zeros consumed points from `StakePosition`.
+
+*(You can also implement a **global emission cap** or **epochal exchange rates** by adding `epoch_index`, `epoch_rate`, and an admin-controlled schedule to `RewardsConfig`.)*
+
+### Events
+
+* `Staked { pool, staker, amount }`
+* `Unstaked { pool, staker, amount }`
+* `PointsAccrued { pool, staker, delta_points }`
+* `Exchanged { staker, points, fl_dao_out }`
+
+---
+
+## Program 3: Dispute Resolution
+
+You’ll persist the dispute lifecycle on-chain, while sensitive discussion/evidence remains off-chain (URI pointers). Final judgment is on-chain and can **CPI** to your escrow/payment program.
+
+### PDAs / Accounts
+
+* `Dispute` (PDA: `[b"case", id]`):
+
+  * `opened_by`, `parties` (client/freelancer/agent pubkeys), `uri` (evidence bundle), `state` (`Pending|PanelFormed|Deliberating|Judged|Executed|Canceled`), `created_ts`, `panel_size`, `required_quorum`, `judgment` (`None|ClientWins|FreelancerWins|Split(u16)`), `linked_escrow` (optional).
+* `DisputePanel` (PDA: `[b"panel", dispute_id]`):
+
+  * `members: [Pubkey; MAX]`, `weights: [u16; MAX]`, `selection_seed`, `expires_ts`.
+* `PanelVote` (PDA: `[b"panelvote", dispute_id, member]`):
+
+  * `choice` (`Client|Freelancer|Split(percent)`), `weight`, `ts`.
+
+*(If you have a **reputation score** or “highest-ranked members”, either: (a) store & update in Governance `Member` or separate `Reputation` PDA; or (b) feed a signed snapshot via oracle.)*
+
+### Flows
+
+#### Submit dispute (any user)
+
+* `open_dispute(parties, uri, linked_escrow?)`
+
+  * Creates `Dispute` with `Pending`.
+
+#### Select panel (system / admin / automated)
+
+* `form_panel(dispute, seed, candidate_list_uri)`
+
+  * Deterministic selection using `seed` against candidate list (off-chain computed set, on-chain verified with Merkle root or admin signature).
+  * Writes `DisputePanel`, sets `state = PanelFormed`.
+
+#### Panel review & vote
+
+* `panel_vote(dispute, choice)` – only for `members[]`.
+
+  * Accumulates weighted votes; when `quorum` met, `state = Judged`, set `judgment`.
+
+#### Execute judgment
+
+* `execute_judgment(dispute)`
+
+  * Emits final event; if `linked_escrow` provided, **CPI** into your escrow program to release/refund/partial split.
+  * `state = Executed`.
+
+### Events
+
+* `DisputeOpened { id, parties }`
+* `PanelFormed { id, members }`
+* `PanelVoteCast { id, member, choice, weight }`
+* `DisputeJudged { id, judgment }`
+* `DisputeExecuted { id }`
+
+---
+
+## DAO Treasury
+
+* **System account PDA** for SOL vote fees.
+* **USDC ATA PDA** for proposal fees.
+* Optional **\$FLDAO mint authority PDA** resides under Staking program control (via `RewardsConfig.mint_authority`).
+
+* Governance↔ Staking (read vote weight from `$FLDAO` staking if you choose to include an `$FLDAO` staking pool, or pass signed snapshot).
+* Disputes ↔ Escrow (release/refund).
+* Staking ↔ SPL Token (transfers, mint).
+
+---
+
+## Security, auth & upgradeability
+
+* **Upgradeable programs** via Anchor + a **multisig admin** (e.g., Realms/Multisig) recorded in each `*Config` PDA.
+* Strict signer checks; **no unchecked CPI**.
+* All fee/mint addresses stored in config PDAs to avoid hardcoding.
+* **Reentrancy**: Anchor CPI model is safe if you avoid callbacks; don’t invoke external unknown programs.
+* **Time math**: use `Clock::get()?.unix_timestamp` once per ix; validate windows.
+* **Decimals**: do all point math in fixed-point (e.g., Q64.64) to avoid precision loss.
+* **Rate limits**: optional per-wallet proposal creation throttling (e.g., one active at a time for Light, cooldown for Major).
+* **Pause switches**: `paused` flags on pools and sensitive entrypoints.
+
+---
+
+## Data you’ll store off-chain (URI fields pointing to IPFS/Arweave)
+
+* Proposal rich descriptions/whitepapers.
+* Dispute evidence bundles and panel chat transcripts.
+* Candidate lists / reputation snapshots (if not maintained on-chain).
+
+---
+
+## Parameter suggestions (you can tune later)
+
+* `light_fee_usdc = 10 USDC`, `major_fee_usdc = 75 USDC`
+* `vote_fee_lamports`: small (covers rent/gossip; e.g., \~0.0001 SOL equivalent)
+* Voting window: `3–7 days` for Light, `7–14 days` for Major
+* Vote weight: `1 base + floor(staked_fl_dao / X)` (choose `X` to match supply)
+* Staking points:
+
+  * USDC pool: `points_rate = 1 point per USDC per day`
+  * LP pool: multiply by risk factor (e.g., `1.5x`)
+* Exchange: start conservative: `100 points = 1 $FLDAO` (tunable; consider epochs/caps)
+
+---
+
+## Instruction list (concise)
+
+**Governance**
+
+* `init_dao_config(...)`
+* `set_params(...)`
+* `set_member_premium(member, bool)` *(if Membership not separate)*
+* `create_proposal(kind, uri, title_hash, window)`
+* `cast_vote(proposal, choice)`
+* `finalize(proposal)`
+* `cancel_proposal(proposal)` *(creator/admin, before votes)*
+
+**Staking & Rewards**
+
+* `init_rewards_config(fl_dao_mint, exchange_rate, treasury, mint_authority)`
+* `init_pool(mint, is_lp, points_rate)`
+* `set_pool_params(points_rate, paused)`
+* `stake(pool, amount)`
+* `unstake(pool, amount)`
+* `sync_position(pool)`
+* `exchange_points(points, min_out)`
+
+**Disputes**
+
+* `open_dispute(parties, uri, linked_escrow?)`
+* `form_panel(dispute, seed, candidate_root/uri, panel_size, quorum)`
+* `panel_vote(dispute, choice)`
+* `finalize_judgment(dispute)` *(auto via quorum or explicit)*
+* `execute_judgment(dispute)`
+
+---
+
+## Testing & rollout plan
+
+1. **Unit tests** (Anchor) for every instruction and edge case (fees, time windows, double votes, exchange rounding).
+2. **Program integration tests**:
+
+   * Governance × Staking (vote weights)
+   * Disputes × Escrow (CPI execution)
+3. **Localnet scenarios** mirroring UI flows (proposal creation, vote, finalize; staking, accrue, exchange; dispute open → panel → vote → execute).
+4. **Devnet dry-run** with test mints for USDC/LP and throttled parameters.
+5. **Audit checklist** before mainnet (integer math, signer seeds, PDA derivations, authority transfers, pause switches).
+
+---
+
+## What the front-end needs (per flow)
+
+* **Wallet**: connect, detect ATAs, show balances (SOL, USDC, LP, \$FLDAO).
+* **Eligibility surfaces**:
+
+  * Read `Member.is_premium`,
+  * Show staked totals (from Staking program),
+  * Check fee balance.
+* **Proposal form**: kind switch → dynamic fields; display fees; send `create_proposal`.
+* **Voting**: fetch weight preview; show SOL fee; cast; live tally.
+* **Staking**: pool cards (APY ≈ points\_rate), stake/unstake, live points, “Exchange Points” button.
+* **Disputes**: create form (uploads → IPFS/Arweave), case view, panel view (gated), vote controls.
+* **DAO News**: indexer over events with filters/search.
+
+---
+
+If you want, I can turn this into:
+
+* a **PDA diagram**,
+* an **IDL scaffold** for all instructions,
+* or a **Devnet parameter pack** (mints, fees, rates) you can drop into constants.
+
+Where do you want to start first: Governance, Staking, or Disputes?
+
+Got it 👍 — no UI talk, no integrations.
+Just the **smart contract parts** (programs, accounts, instructions) we actually need to write in Rust + Anchor.
+
+---
+
+# What we’re building on-chain
+
+## 1. Governance Program (Proposals & Voting)
+
+**Accounts (PDAs):**
+
+* `DaoConfig` – stores global settings (fees, durations, admin, treasury).
+* `Proposal` – each governance proposal (creator, type, URI, voting window, tallies).
+* `VoteRecord` – one per voter per proposal (choice + weight).
+* *(Optional)* `Member` – tracks premium membership flag.
+
+**Instructions:**
+
+* `init_dao_config` – initialize DAO config.
+* `create_proposal(kind, uri, window)` – pay fee, create proposal.
+* `cast_vote(proposal, choice)` – pay small SOL fee, record weighted vote.
+* `finalize_proposal(proposal)` – close voting window, mark as Passed/Failed.
+* *(Optional)* `set_member_premium` – flag premium members.
+
+---
+
+## 2. Staking & Rewards Program
+
+**Accounts (PDAs):**
+
+* `StakePool` – config for each supported token/LP (rate, vault).
+* `StakePosition` – user-specific stake state (amount, last\_update, points).
+* `RewardsConfig` – stores \$FLDAO mint, exchange rate, admin, treasury.
+
+**Instructions:**
+
+* `init_rewards_config` – setup rewards mint + params.
+* `init_pool(mint, is_lp, rate)` – create a staking pool for an asset.
+* `stake(pool, amount)` – deposit tokens into vault, accrue points.
+* `unstake(pool, amount)` – withdraw tokens, update points.
+* `sync_position(pool)` – update accrued points without moving tokens.
+* `exchange_points(points)` – burn points, mint \$FLDAO to user.
+
+---
+
+## 3. Dispute Resolution Program
+
+**Accounts (PDAs):**
+
+* `Dispute` – each dispute case (creator, parties, URI, state, judgment).
+* `DisputePanel` – selected reviewers for a dispute.
+* `PanelVote` – vote record from a panel member.
+
+**Instructions:**
+
+* `open_dispute(parties, uri)` – create dispute, store off-chain evidence link.
+* `form_panel(dispute, members)` – assign panel of DAO members.
+* `panel_vote(dispute, choice)` – record reviewer’s vote.
+* `finalize_judgment(dispute)` – decide outcome when quorum is reached.
+* `execute_judgment(dispute)` – apply result (e.g., release/refund funds via CPI).
+
+---
+
+## 4. Shared Treasury (PDA)
+
+* **Holds USDC fees, SOL vote fees, and reward reserves.**
+* Used by Governance & Staking programs.
+
+---
+
+# In summary, we’re building:
+
+1. **Governance Program** → proposals, voting, fees.
+2. **Staking & Rewards Program** → stake tokens/LPs, earn points, convert to \$FLDAO.
+3. **Dispute Resolution Program** → open disputes, select panel, cast votes, finalize judgment.
+4. **DAO Treasury PDA** → collects fees, stores funds.
+
+Lets further think about the plan.
+
+What do we need?
+
+Am using anchor 0.31.1
+
+Properly think and plan everything.
+
+Including the fike structure 
