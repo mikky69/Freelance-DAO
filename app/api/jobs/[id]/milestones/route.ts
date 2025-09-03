@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job } from '@/models/Job';
+import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -32,7 +33,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     
     // Find the job and verify freelancer ownership
-    const job = await Job.findById(jobId).populate('freelancer', 'fullname');
+    const job = await Job.findById(jobId)
+      .populate('freelancer', 'fullname')
+      .populate('client', 'fullname');
     
     if (!job) {
       return NextResponse.json(
@@ -81,6 +84,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (contract && contract.milestones[milestoneIndex]) {
       contract.milestones[milestoneIndex].completed = completed;
       await contract.save();
+    }
+    
+    // Send notification to client when milestone is completed
+    if (completed && job.client && job.freelancer) {
+      try {
+        const milestoneName = job.milestones[milestoneIndex].name;
+        await NotificationService.notifyMilestoneCompleted(
+          job.client._id.toString(),
+          job.freelancer.fullname,
+          job.title,
+          milestoneName,
+          contract ? contract._id.toString() : ''
+        );
+      } catch (notificationError) {
+        console.error('Failed to send milestone completion notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
     }
     
     return NextResponse.json({

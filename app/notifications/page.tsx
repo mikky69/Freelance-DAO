@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Bell,
   MessageSquare,
@@ -19,74 +20,180 @@ import {
   Smartphone,
   Mail,
   Volume2,
+  Loader2,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useAuth } from "@/lib/auth-context"
+import { toast } from "sonner"
+import Link from "next/link"
+
+interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data: {
+    jobId?: string;
+    proposalId?: string;
+    contractId?: string;
+    actionUrl?: string;
+    senderName?: string;
+    amount?: number;
+    currency?: string;
+  };
+}
+
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'job_approved':
+      return <Briefcase className="w-5 h-5 text-green-500" />;
+    case 'proposal_submitted':
+      return <MessageSquare className="w-5 h-5 text-blue-500" />;
+    case 'proposal_accepted':
+      return <CheckCircle className="w-5 h-5 text-green-500" />;
+    case 'proposal_rejected':
+      return <AlertTriangle className="w-5 h-5 text-red-500" />;
+    case 'contract_signed':
+      return <DollarSign className="w-5 h-5 text-purple-500" />;
+    case 'milestone_completed':
+      return <CheckCircle className="w-5 h-5 text-green-500" />;
+    case 'payment_received':
+      return <DollarSign className="w-5 h-5 text-green-500" />;
+    default:
+      return <Bell className="w-5 h-5 text-slate-500" />;
+  }
+};
+
+const getNotificationColor = (type: string) => {
+  switch (type) {
+    case 'job_approved':
+    case 'proposal_accepted':
+    case 'contract_signed':
+    case 'milestone_completed':
+    case 'payment_received':
+      return 'border-green-200 bg-green-50';
+    case 'proposal_submitted':
+      return 'border-blue-200 bg-blue-50';
+    case 'proposal_rejected':
+      return 'border-red-200 bg-red-50';
+    default:
+      return 'border-slate-200 bg-white';
+  }
+};
+
+const formatTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+};
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "payment",
-      title: "Payment Received",
-      message: "You received 3,500 HBAR from TechStartup Inc. for E-commerce Website Development",
-      time: "2 minutes ago",
-      read: false,
-      icon: <DollarSign className="w-5 h-5 text-green-500" />,
-      action: "View Transaction",
-    },
-    {
-      id: 2,
-      type: "message",
-      title: "New Message",
-      message: "CryptoLabs sent you a message about the Smart Contract Audit project",
-      time: "15 minutes ago",
-      read: false,
-      icon: <MessageSquare className="w-5 h-5 text-blue-500" />,
-      action: "Reply",
-    },
-    {
-      id: 3,
-      type: "job",
-      title: "Job Application Update",
-      message: "Your proposal for 'React Native App Development' has been accepted!",
-      time: "1 hour ago",
-      read: true,
-      icon: <Briefcase className="w-5 h-5 text-purple-500" />,
-      action: "View Project",
-    },
-    {
-      id: 4,
-      type: "review",
-      title: "New Review",
-      message: "DesignCorp left you a 5-star review for the Mobile App UI Design project",
-      time: "3 hours ago",
-      read: true,
-      icon: <Star className="w-5 h-5 text-yellow-500" />,
-      action: "View Review",
-    },
-    {
-      id: 5,
-      type: "dispute",
-      title: "Dispute Resolution",
-      message: "The dispute for project #PRJ-456 has been resolved in your favor",
-      time: "1 day ago",
-      read: true,
-      icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
-      action: "View Details",
-    },
-    {
-      id: 6,
-      type: "milestone",
-      title: "Milestone Approved",
-      message: "Milestone 2 for E-commerce Website Development has been approved",
-      time: "2 days ago",
-      read: true,
-      icon: <CheckCircle className="w-5 h-5 text-green-500" />,
-      action: "Continue Work",
-    },
-  ])
-
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [markingAsRead, setMarkingAsRead] = useState<string | null>(null);
+  const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
+  
+  // Fetch notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) return;
+      
+      try {
+        const token = localStorage.getItem('freelancedao_token');
+        if (!token) return;
+        
+        const response = await fetch('/api/notifications', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data.notifications || []);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        toast.error('Failed to load notifications');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchNotifications();
+  }, [user]);
+  
+  const markAsRead = async (notificationId: string) => {
+    setMarkingAsRead(notificationId);
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds: [notificationId]
+        }),
+      });
+      
+      if (response.ok) {
+        setNotifications(notifications.map(notif => 
+          notif._id === notificationId ? { ...notif, read: true } : notif
+        ));
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast.error('Failed to mark notification as read');
+    } finally {
+      setMarkingAsRead(null);
+    }
+  };
+  
+  const markAllAsRead = async () => {
+    setMarkingAllAsRead(true);
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          markAll: true
+        }),
+      });
+      
+      if (response.ok) {
+        setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+        toast.success('All notifications marked as read');
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error('Failed to mark all notifications as read');
+    } finally {
+      setMarkingAllAsRead(false);
+    }
+  };
+  
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: true,
@@ -100,41 +207,10 @@ export default function NotificationsPage() {
     milestoneAlerts: true,
   })
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
-  }
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })))
-  }
-
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
     <ProtectedRoute requireAuth={true} requireCompleteProfile={true}>
-      <div className="min-h-screen bg-slate-50">
-        {/* Header */}
-        <div className="bg-white border-b border-slate-200">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Notifications</h1>
-                <p className="text-slate-600">Stay updated with your freelance activities</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                {unreadCount > 0 && <Badge className="bg-blue-500 text-white">{unreadCount} unread</Badge>}
-                <Button onClick={markAllAsRead} variant="outline">
-                  Mark All Read
-                </Button>
-                <Button className="bg-blue-500 hover:bg-blue-600">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="all" className="space-y-6">
@@ -157,43 +233,81 @@ export default function NotificationsPage() {
                 <CardDescription>Your recent activity and updates</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 border rounded-lg transition-colors cursor-pointer ${
-                        notification.read ? "border-slate-200 bg-white" : "border-blue-200 bg-blue-50"
-                      }`}
-                      onClick={() => markAsRead(notification.id)}
-                    >
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 mt-1">{notification.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className={`font-semibold ${notification.read ? "text-slate-800" : "text-blue-800"}`}>
-                                {notification.title}
-                              </h4>
-                              <p className={`text-sm mt-1 ${notification.read ? "text-slate-600" : "text-blue-700"}`}>
-                                {notification.message}
-                              </p>
-                              <div className="flex items-center justify-between mt-3">
-                                <span className="text-xs text-slate-500 flex items-center">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {notification.time}
-                                </span>
-                                <Button variant="outline" size="sm">
-                                  {notification.action}
-                                </Button>
-                              </div>
-                            </div>
-                            {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-2"></div>}
+                {loading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-4">
+                          <Skeleton className="w-10 h-10 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-3 w-1/2" />
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Bell className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-lg font-medium text-slate-800 mb-2">No notifications yet</h3>
+                    <p className="text-slate-600">You'll see notifications here when there's activity on your account.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification._id}
+                        className={`p-4 border rounded-lg transition-colors cursor-pointer ${
+                          notification.read ? "border-slate-200 bg-white" : getNotificationColor(notification.type)
+                        }`}
+                        onClick={() => !notification.read && markAsRead(notification._id)}
+                      >
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className={`font-semibold ${
+                                  notification.read ? "text-slate-800" : "text-slate-900"
+                                }`}>
+                                  {notification.title}
+                                </h4>
+                                <p className={`text-sm mt-1 ${
+                                  notification.read ? "text-slate-600" : "text-slate-700"
+                                }`}>
+                                  {notification.message}
+                                </p>
+                                <div className="flex items-center justify-between mt-3">
+                                  <span className="text-xs text-slate-500 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {formatTimeAgo(notification.createdAt)}
+                                  </span>
+                                  {notification.data.actionUrl && (
+                                    <Link href={notification.data.actionUrl}>
+                                      <Button variant="outline" size="sm">
+                                        View Details
+                                      </Button>
+                                    </Link>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {markingAsRead === notification._id && (
+                                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                )}
+                                {!notification.read && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -209,29 +323,39 @@ export default function NotificationsPage() {
               <CardContent>
                 <div className="space-y-4">
                   {notifications
-                    .filter((n) => n.type === "message")
+                    .filter((n) => n.type === "proposal_submitted" || n.type === "message_received")
                     .map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification._id}
                         className={`p-4 border rounded-lg ${
                           notification.read ? "border-slate-200" : "border-blue-200 bg-blue-50"
                         }`}
                       >
                         <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-1">{notification.icon}</div>
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-800">{notification.title}</h4>
                             <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
                             <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-slate-500">{notification.time}</span>
-                              <Button variant="outline" size="sm">
-                                {notification.action}
-                              </Button>
+                              <span className="text-xs text-slate-500">{formatTimeAgo(notification.createdAt)}</span>
+                              {notification.data.actionUrl && (
+                                <Link href={notification.data.actionUrl}>
+                                  <Button variant="outline" size="sm">
+                                    View Details
+                                  </Button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                  {notifications.filter((n) => n.type === "proposal_submitted" || n.type === "message_received").length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <MessageSquare className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                      <p>No message notifications</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -248,29 +372,39 @@ export default function NotificationsPage() {
               <CardContent>
                 <div className="space-y-4">
                   {notifications
-                    .filter((n) => n.type === "payment" || n.type === "milestone")
+                    .filter((n) => n.type === "payment_received" || n.type === "contract_signed" || n.type === "milestone_completed")
                     .map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification._id}
                         className={`p-4 border rounded-lg ${
                           notification.read ? "border-slate-200" : "border-green-200 bg-green-50"
                         }`}
                       >
                         <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-1">{notification.icon}</div>
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-800">{notification.title}</h4>
                             <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
                             <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-slate-500">{notification.time}</span>
-                              <Button variant="outline" size="sm">
-                                {notification.action}
-                              </Button>
+                              <span className="text-xs text-slate-500">{formatTimeAgo(notification.createdAt)}</span>
+                              {notification.data.actionUrl && (
+                                <Link href={notification.data.actionUrl}>
+                                  <Button variant="outline" size="sm">
+                                    View Details
+                                  </Button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                  {notifications.filter((n) => n.type === "payment_received" || n.type === "contract_signed" || n.type === "milestone_completed").length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <DollarSign className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                      <p>No payment notifications</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -287,29 +421,39 @@ export default function NotificationsPage() {
               <CardContent>
                 <div className="space-y-4">
                   {notifications
-                    .filter((n) => n.type === "job")
+                    .filter((n) => n.type === "job_approved" || n.type === "proposal_accepted" || n.type === "proposal_rejected")
                     .map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification._id}
                         className={`p-4 border rounded-lg ${
-                          notification.read ? "border-slate-200" : "border-purple-200 bg-purple-50"
+                          notification.read ? "border-slate-200" : getNotificationColor(notification.type)
                         }`}
                       >
                         <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-1">{notification.icon}</div>
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-800">{notification.title}</h4>
                             <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
                             <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-slate-500">{notification.time}</span>
-                              <Button variant="outline" size="sm">
-                                {notification.action}
-                              </Button>
+                              <span className="text-xs text-slate-500">{formatTimeAgo(notification.createdAt)}</span>
+                              {notification.data.actionUrl && (
+                                <Link href={notification.data.actionUrl}>
+                                  <Button variant="outline" size="sm">
+                                    View Details
+                                  </Button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                  {notifications.filter((n) => n.type === "job_approved" || n.type === "proposal_accepted" || n.type === "proposal_rejected").length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                      <p>No job notifications</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -326,29 +470,39 @@ export default function NotificationsPage() {
               <CardContent>
                 <div className="space-y-4">
                   {notifications
-                    .filter((n) => n.type === "review")
+                    .filter((n) => n.type === "review_received")
                     .map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification._id}
                         className={`p-4 border rounded-lg ${
                           notification.read ? "border-slate-200" : "border-yellow-200 bg-yellow-50"
                         }`}
                       >
                         <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-1">{notification.icon}</div>
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-800">{notification.title}</h4>
                             <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
                             <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-slate-500">{notification.time}</span>
-                              <Button variant="outline" size="sm">
-                                {notification.action}
-                              </Button>
+                              <span className="text-xs text-slate-500">{formatTimeAgo(notification.createdAt)}</span>
+                              {notification.data.actionUrl && (
+                                <Link href={notification.data.actionUrl}>
+                                  <Button variant="outline" size="sm">
+                                    View Details
+                                  </Button>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                  {notifications.filter((n) => n.type === "review_received").length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <Star className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                      <p>No review notifications</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -416,7 +570,7 @@ export default function NotificationsPage() {
                       <Volume2 className="w-5 h-5 text-orange-500" />
                       <div>
                         <Label htmlFor="sound">Sound Alerts</Label>
-                        <p className="text-sm text-slate-500">Play sound for notifications</p>
+                        <p className="text-sm text-slate-500">Play sound for new notifications</p>
                       </div>
                     </div>
                     <Switch
@@ -432,76 +586,58 @@ export default function NotificationsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Notification Types</CardTitle>
-                  <CardDescription>Choose which types of notifications to receive</CardDescription>
+                  <CardDescription>Control which types of notifications you receive</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Briefcase className="w-5 h-5 text-purple-500" />
-                      <Label htmlFor="jobs">Job Updates</Label>
-                    </div>
+                    <Label htmlFor="jobAlerts">Job Alerts</Label>
                     <Switch
-                      id="jobs"
+                      id="jobAlerts"
                       checked={settings.jobAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, jobAlerts: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <MessageSquare className="w-5 h-5 text-blue-500" />
-                      <Label htmlFor="messages">New Messages</Label>
-                    </div>
+                    <Label htmlFor="messageAlerts">Message Alerts</Label>
                     <Switch
-                      id="messages"
+                      id="messageAlerts"
                       checked={settings.messageAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, messageAlerts: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <DollarSign className="w-5 h-5 text-green-500" />
-                      <Label htmlFor="payments">Payment Updates</Label>
-                    </div>
+                    <Label htmlFor="paymentAlerts">Payment Alerts</Label>
                     <Switch
-                      id="payments"
+                      id="paymentAlerts"
                       checked={settings.paymentAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, paymentAlerts: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Star className="w-5 h-5 text-yellow-500" />
-                      <Label htmlFor="reviews">New Reviews</Label>
-                    </div>
+                    <Label htmlFor="reviewAlerts">Review Alerts</Label>
                     <Switch
-                      id="reviews"
+                      id="reviewAlerts"
                       checked={settings.reviewAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, reviewAlerts: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
-                      <Label htmlFor="disputes">Dispute Alerts</Label>
-                    </div>
+                    <Label htmlFor="disputeAlerts">Dispute Alerts</Label>
                     <Switch
-                      id="disputes"
+                      id="disputeAlerts"
                       checked={settings.disputeAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, disputeAlerts: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <Label htmlFor="milestones">Milestone Updates</Label>
-                    </div>
+                    <Label htmlFor="milestoneAlerts">Milestone Alerts</Label>
                     <Switch
-                      id="milestones"
+                      id="milestoneAlerts"
                       checked={settings.milestoneAlerts}
                       onCheckedChange={(checked) => setSettings({ ...settings, milestoneAlerts: checked })}
                     />
@@ -509,36 +645,6 @@ export default function NotificationsPage() {
                 </CardContent>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiet Hours</CardTitle>
-                <CardDescription>Set times when you don't want to receive notifications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="start-time">Start Time</Label>
-                    <input
-                      type="time"
-                      id="start-time"
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2"
-                      defaultValue="22:00"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end-time">End Time</Label>
-                    <input
-                      type="time"
-                      id="end-time"
-                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2"
-                      defaultValue="08:00"
-                    />
-                  </div>
-                </div>
-                <Button className="mt-4 bg-blue-500 hover:bg-blue-600">Save Quiet Hours</Button>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>

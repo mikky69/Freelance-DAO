@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Proposal } from '@/models/Proposal';
 import { Job } from '@/models/Job';
-import { Client } from '@/models/User';
+import { Client, Freelancer } from '@/models/User';
+import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
@@ -43,8 +44,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       );
     }
     
-    // Find the proposal and populate job details
-    const proposal = await Proposal.findById(proposalId).populate('job');
+    // Find the proposal and populate job and freelancer details
+    const proposal = await Proposal.findById(proposalId)
+      .populate('job')
+      .populate('freelancer', 'fullname');
     if (!proposal) {
       return NextResponse.json(
         { message: 'Proposal not found' },
@@ -75,6 +78,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     
     // If accepting a proposal, reject all other pending proposals for the same job
     if (action === 'accepted') {
+      // Get all other pending proposals for notification
+      const otherProposals = await Proposal.find({
+        job: proposal.job._id,
+        _id: { $ne: proposalId },
+        status: 'pending'
+      }).populate('freelancer', 'fullname');
+      
       await Proposal.updateMany(
         {
           job: proposal.job._id,
@@ -92,6 +102,44 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         status: 'in_progress',
         freelancer: proposal.freelancer
       });
+      
+      // Send notifications
+      try {
+        // Notify accepted freelancer
+        await NotificationService.notifyProposalAccepted(
+          proposal.freelancer._id.toString(),
+          client.fullname,
+          proposal.job.title,
+          proposal._id.toString(),
+          '' // Contract ID will be added when contract is created
+        );
+        
+        // Notify rejected freelancers
+        const rejectedFreelancerIds = otherProposals.map(p => p.freelancer._id.toString());
+        if (rejectedFreelancerIds.length > 0) {
+          await NotificationService.notifyRejectedProposals(
+            rejectedFreelancerIds,
+            client.fullname,
+            proposal.job.title
+          );
+        }
+      } catch (notificationError) {
+        console.error('Failed to send proposal response notifications:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    } else if (action === 'rejected') {
+      // Send rejection notification
+      try {
+        await NotificationService.notifyProposalRejected(
+          proposal.freelancer._id.toString(),
+          client.fullname,
+          proposal.job.title,
+          proposal._id.toString()
+        );
+      } catch (notificationError) {
+        console.error('Failed to send proposal rejection notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
     }
     
     return NextResponse.json(
