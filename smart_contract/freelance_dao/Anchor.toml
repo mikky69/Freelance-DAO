@@ -1,0 +1,28 @@
+[toolchain]
+anchor_version = "0.31.1"
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
+staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
+disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
+shared = "4vvGqQjKWJmAmNx1iuNNwpSJrjgVxgr1wSWWA2ZEkfA6"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npx mocha -t 1000000 --require ts-node/register tests/**/*.ts"
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false

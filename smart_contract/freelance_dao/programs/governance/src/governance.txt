@@ -1,0 +1,1517 @@
+for the governance
+instrusctions folder
+admin.rs
+// UPDATED admin.rs
+// ============================================
+use anchor_lang::prelude::*;
+use crate::{state_accounts::DaoConfig, errors::ErrorCode};
+
+#[derive(Accounts)]
+pub struct SetParams<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    pub admin: Signer<'info>,
+}
+
+pub fn set_params(
+    ctx: Context<SetParams>,
+    light_fee_usdc: Option<u64>,
+    major_fee_usdc: Option<u64>,
+    vote_fee_lamports: Option<u64>,
+    min_vote_duration: Option<i64>,
+    max_vote_duration: Option<i64>,
+    eligibility_flags: Option<u8>,
+    weight_params: Option<u64>,
+    quorum_threshold: Option<u64>,
+    approval_threshold: Option<u64>,
+) -> Result<()> {
+    let dao_config = &mut ctx.accounts.dao_config;
+
+    if let Some(light_fee) = light_fee_usdc {
+        dao_config.light_fee_usdc = light_fee;
+    }
+    if let Some(major_fee) = major_fee_usdc {
+        dao_config.major_fee_usdc = major_fee;
+    }
+    if let Some(vote_fee) = vote_fee_lamports {
+        dao_config.vote_fee_lamports = vote_fee;
+    }
+    if let Some(min_dur) = min_vote_duration {
+        dao_config.min_vote_duration = min_dur;
+    }
+    if let Some(max_dur) = max_vote_duration {
+        dao_config.max_vote_duration = max_dur;
+    }
+    if let Some(flags) = eligibility_flags {
+        dao_config.eligibility_flags = flags;
+    }
+    if let Some(weight) = weight_params {
+        dao_config.weight_params = weight;
+    }
+    if let Some(quorum) = quorum_threshold {
+        dao_config.quorum_threshold = quorum;
+    }
+    if let Some(approval) = approval_threshold {
+        // Ensure approval threshold is between 1% and 100% (100 to 10000)
+        if approval < 100 || approval > 10000 {
+            return Err(ErrorCode::InvalidWindow.into()); // Reusing error for simplicity
+        }
+        dao_config.approval_threshold = approval;
+    }
+
+    // Validate duration windows after updates
+    if dao_config.min_vote_duration >= dao_config.max_vote_duration || dao_config.min_vote_duration <= 0 {
+        return Err(ErrorCode::InvalidWindow.into());
+    }
+
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct SetPause<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    pub admin: Signer<'info>,
+}
+
+pub fn set_pause(ctx: Context<SetPause>, paused: bool) -> Result<()> {
+    ctx.accounts.dao_config.paused = paused;
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct TransferAdmin<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    pub admin: Signer<'info>,
+    /// CHECK: New admin pubkey - will be validated by admin
+    pub new_admin: UncheckedAccount<'info>,
+}
+
+pub fn transfer_admin(ctx: Context<TransferAdmin>) -> Result<()> {
+    ctx.accounts.dao_config.admin = ctx.accounts.new_admin.key();
+    Ok(())
+}
+
+execution.rs
+use anchor_lang::prelude::*;
+use crate::{
+    state_accounts::{DaoConfig, Proposal},
+    errors::ErrorCode,
+    events::ProposalExecuted,
+    state::ProposalState
+};
+
+// Define the execution delay constant (24 hours in seconds)
+const EXECUTION_DELAY: i64 = 86400;
+
+#[derive(Accounts)]
+pub struct ExecuteProposal<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    #[account(
+        mut,
+        constraint = proposal.state == ProposalState::Succeeded @ ErrorCode::ProposalNotSucceeded,
+        constraint = !proposal.executed @ ErrorCode::AlreadyExecuted
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub executor: Signer<'info>,
+    pub clock: Sysvar<'info, Clock>,
+}
+
+pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+    let proposal = &mut ctx.accounts.proposal;
+    let now = ctx.accounts.clock.unix_timestamp;
+    
+    // Ensure proposal has been finalized and succeeded
+    if proposal.state != ProposalState::Succeeded {
+        return Err(ErrorCode::ProposalNotSucceeded.into());
+    }
+    
+    if proposal.executed {
+        return Err(ErrorCode::AlreadyExecuted.into());
+    }
+    
+    // Check execution delay
+    if now < proposal.end_ts + EXECUTION_DELAY {
+        return Err(ErrorCode::ExecutionDelayNotMet.into());
+    }
+    
+    proposal.executed = true;
+    proposal.executed_at = now;
+    
+    // TODO: Add actual execution logic based on proposal type
+    // For now, just mark as executed - specific execution logic
+    // can be added in separate instructions for different proposal types
+    
+    emit!(ProposalExecuted {
+        id: proposal.key(),
+        executor: ctx.accounts.executor.key(),
+        executed_at: now,
+    });
+    
+    Ok(())
+}
+
+// Specific execution instructions for different proposal types
+#[derive(Accounts)]
+pub struct ExecuteParamChange<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    #[account(
+        mut,
+        constraint = proposal.state == ProposalState::Succeeded @ ErrorCode::ProposalNotSucceeded,
+        constraint = proposal.executed @ ErrorCode::NotExecuted
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub executor: Signer<'info>,
+}
+
+pub fn execute_param_change(
+    ctx: Context<ExecuteParamChange>,
+    new_light_fee: Option<u64>,
+    new_major_fee: Option<u64>,
+    new_vote_fee: Option<u64>,
+) -> Result<()> {
+    let dao_config = &mut ctx.accounts.dao_config;
+    
+    // Only execute if proposal is marked as executed
+    if !ctx.accounts.proposal.executed {
+        return Err(ErrorCode::NotExecuted.into());
+    }
+    
+    if let Some(fee) = new_light_fee {
+        dao_config.light_fee_usdc = fee;
+    }
+    if let Some(fee) = new_major_fee {
+        dao_config.major_fee_usdc = fee;
+    }
+    if let Some(fee) = new_vote_fee {
+        dao_config.vote_fee_lamports = fee;
+    }
+    
+    Ok(())
+}
+
+init.rs
+// programs/governance/src/instructions/init.rs
+use anchor_lang::prelude::*;
+use crate::state_accounts::DaoConfig;
+use crate::errors::ErrorCode;
+
+#[derive(Accounts)]
+pub struct InitDaoConfig<'info> {
+    #[account(
+        init,
+        payer = admin,
+        space = DaoConfig::SPACE,
+        seeds = [b"dao_config"],
+        bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+pub fn init_dao_config(
+    ctx: Context<InitDaoConfig>,
+    light_fee_usdc: u64,
+    major_fee_usdc: u64,
+    vote_fee_lamports: u64,
+    min_vote_duration: i64,
+    max_vote_duration: i64,
+    eligibility_flags: u8,
+    quorum_threshold: u64,
+    approval_threshold: u64,
+) -> Result<()> {
+    // Validate input parameters
+    if min_vote_duration >= max_vote_duration || min_vote_duration <= 0 {
+        return Err(ErrorCode::InvalidWindow.into());
+    }
+    
+    if approval_threshold < 100 || approval_threshold > 10000 {
+        return Err(ErrorCode::InvalidWindow.into());
+    }
+
+    let dao_config = &mut ctx.accounts.dao_config;
+    
+    // Initialize all fields explicitly
+    dao_config.admin = ctx.accounts.admin.key();
+    dao_config.light_fee_usdc = light_fee_usdc;
+    dao_config.major_fee_usdc = major_fee_usdc;
+    dao_config.vote_fee_lamports = vote_fee_lamports;
+    dao_config.min_vote_duration = min_vote_duration;
+    dao_config.max_vote_duration = max_vote_duration;
+    dao_config.eligibility_flags = eligibility_flags;
+    dao_config.quorum_threshold = quorum_threshold;
+    dao_config.approval_threshold = approval_threshold;
+    dao_config.proposal_count = 0;
+    dao_config.paused = false;
+    dao_config.weight_params = 1_000_000_000; // Default weight divisor
+    dao_config.bump = ctx.bumps.dao_config;
+    
+    // Treasury and staking fields will be set when they are initialized
+    dao_config.usdc_mint = Pubkey::default();
+    dao_config.treasury = Pubkey::default();
+    dao_config.usdc_treasury = Pubkey::default();
+    dao_config.staking_treasury = Pubkey::default();
+
+    msg!("DAO Config initialized successfully");
+    msg!("Admin: {}", dao_config.admin);
+    msg!("Light fee: {} USDC", dao_config.light_fee_usdc);
+    msg!("Major fee: {} USDC", dao_config.major_fee_usdc);
+    msg!("Vote fee: {} lamports", dao_config.vote_fee_lamports);
+    msg!("Proposal count: {}", dao_config.proposal_count);
+    
+    Ok(())
+}
+
+membership
+use anchor_lang::prelude::*;
+use crate::{
+    state_accounts::{DaoConfig, Member}, 
+    errors::ErrorCode, 
+    events::MembershipChanged
+};
+
+#[derive(Accounts)]
+#[instruction(user: Pubkey)]
+pub struct ManageMembership<'info> {
+    #[account(
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    
+    #[account(
+        init_if_needed,
+        payer = admin,
+        space = Member::SPACE,
+        seeds = [b"member", dao_config.key().as_ref(), user.as_ref()],
+        bump
+    )]
+    pub member: Account<'info, Member>,
+    
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+    pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+pub fn set_membership_status(
+    ctx: Context<ManageMembership>,
+    user: Pubkey,
+    premium: bool,
+    flags: u8,
+) -> Result<()> {
+    let member = &mut ctx.accounts.member;
+    let now = ctx.accounts.clock.unix_timestamp;
+    
+    let was_premium = member.premium;
+    
+    // Initialize or update member data
+    member.user = user;
+    member.premium = premium;
+    member.flags = flags;
+    member.bump = ctx.bumps.member;
+    
+    // Set timestamps
+    if member.joined_at == 0 {
+        member.joined_at = now;
+    }
+    
+    if was_premium != premium {
+        member.updated_at = now;
+    }
+    
+    emit!(MembershipChanged {
+        user,
+        premium,
+        flags,
+        timestamp: now,
+    });
+    
+    msg!("Membership updated for user: {}", user);
+    msg!("Premium: {}, Flags: {}", premium, flags);
+    
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct CheckMembership<'info> {
+    #[account(
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    
+    #[account(
+        seeds = [b"member", dao_config.key().as_ref(), user.key().as_ref()],
+        bump = member.bump
+    )]
+    pub member: Account<'info, Member>,
+    
+    pub user: Signer<'info>,
+}
+
+// This is a view function - doesn't modify state
+pub fn check_membership(_ctx: Context<CheckMembership>) -> Result<()> {
+    // The constraints already validate the member exists
+    // Return value would be handled by client reading the account
+    Ok(())
+}
+
+mod
+// UPDATED mod.rs
+// ============================================
+pub mod init;
+pub mod proposals;
+pub mod voting;
+pub mod admin;
+pub mod treasury;
+pub mod execution;
+pub mod membership;
+
+pub use init::*;
+pub use proposals::*;
+pub use voting::*;
+pub use admin::*;
+pub use treasury::*;
+pub use execution::*;
+pub use membership::*;
+
+
+proposals
+// FIXED proposals.rs - Add rent sysvar and fix field names
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use crate::{
+    state_accounts::{DaoConfig, Proposal, Member},
+    errors::ErrorCode,
+    events::ProposalCreated,
+    state::{ProposalKind, ProposalState}
+};
+
+#[derive(Accounts)]
+#[instruction(kind: ProposalKind, uri: String, title_hash: [u8; 32], window: i64)]
+pub struct CreateProposal<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    #[account(
+        init,
+        payer = creator,
+        space = Proposal::space(uri.len()),
+        seeds = [b"proposal", dao_config.key().as_ref(), &dao_config.proposal_count.to_le_bytes()],
+        bump
+    )]
+    pub proposal: Account<'info, Proposal>,
+    #[account(mut)]
+    pub creator: Signer<'info>,
+    #[account(
+        mut,
+        address = dao_config.usdc_treasury @ ErrorCode::InvalidTreasury
+    )]
+    pub usdc_treasury: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub creator_usdc: Account<'info, TokenAccount>,
+    #[account(
+        seeds = [b"member", dao_config.key().as_ref(), creator.key().as_ref()],
+        bump = member.bump
+    )]
+    pub member: Option<Account<'info, Member>>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>, // ADD THIS LINE
+}
+
+pub fn create_proposal(
+    ctx: Context<CreateProposal>,
+    kind: ProposalKind,
+    uri: String,
+    title_hash: [u8; 32],
+    window: i64,
+) -> Result<()> {
+    if ctx.accounts.dao_config.paused {
+        return Err(ErrorCode::Paused.into());
+    }
+
+    if uri.len() > 200 {
+        return Err(ErrorCode::UriTooLong.into());
+    }
+    
+    if title_hash == [0u8; 32] {
+        return Err(ErrorCode::InvalidTitleHash.into());
+    }
+
+    let dao_config = &ctx.accounts.dao_config;
+    if window < dao_config.min_vote_duration || window > dao_config.max_vote_duration {
+        return Err(ErrorCode::InvalidWindow.into());
+    }
+
+    let mut fee_amount = match kind {
+        ProposalKind::Light => dao_config.light_fee_usdc,
+        ProposalKind::Major => dao_config.major_fee_usdc,
+    };
+    
+    if let Some(member) = &ctx.accounts.member {
+        if member.premium {
+            fee_amount = fee_amount / 2;
+        }
+    }
+
+    if fee_amount > 0 {
+        token::transfer(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.creator_usdc.to_account_info(),
+                    to: ctx.accounts.usdc_treasury.to_account_info(),
+                    authority: ctx.accounts.creator.to_account_info(),
+                },
+            ),
+            fee_amount,
+        )?;
+    }
+
+    let proposal = &mut ctx.accounts.proposal;
+    let now = ctx.accounts.clock.unix_timestamp;
+
+    proposal.creator = ctx.accounts.creator.key();
+    proposal.id = dao_config.proposal_count;
+    proposal.kind = kind;
+    proposal.title_hash = title_hash;
+    proposal.uri = uri;
+    proposal.state = ProposalState::Active;
+    proposal.start_ts = now;
+    proposal.end_ts = now + window;
+    proposal.tally_yes = 0;
+    proposal.tally_no = 0;
+    proposal.total_votes = 0;
+    proposal.executed = false;
+    proposal.executed_at = 0;
+    proposal.bump = ctx.bumps.proposal;
+
+    ctx.accounts.dao_config.proposal_count = ctx.accounts.dao_config.proposal_count
+        .checked_add(1)
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+    emit!(ProposalCreated {
+        id: proposal.key(),
+        creator: proposal.creator,
+        kind: proposal.kind,
+        title_hash: proposal.title_hash,
+    });
+
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct CancelProposal<'info> {
+    #[account(
+        mut,
+        has_one = creator @ ErrorCode::Unauthorized,
+        constraint = proposal.state == ProposalState::Active @ ErrorCode::ProposalNotActive
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub creator: Signer<'info>,
+    pub clock: Sysvar<'info, Clock>,
+}
+
+pub fn cancel_proposal(ctx: Context<CancelProposal>) -> Result<()> {
+    let proposal = &mut ctx.accounts.proposal;
+    let now = ctx.accounts.clock.unix_timestamp;
+    
+    // Can only cancel if voting hasn't started or very early in voting period
+    let grace_period = 3600; // 1 hour grace period
+    if now > proposal.start_ts + grace_period {
+        return Err(ErrorCode::VotingWindowClosed.into());
+    }
+    
+    proposal.state = ProposalState::Canceled;
+    
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct FinalizeProposal<'info> {
+    #[account(
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    #[account(mut)]
+    pub proposal: Account<'info, Proposal>,
+    pub clock: Sysvar<'info, Clock>,
+}
+
+pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
+    let proposal = &mut ctx.accounts.proposal;
+    let dao_config = &ctx.accounts.dao_config;
+    let now = ctx.accounts.clock.unix_timestamp;
+
+    if proposal.state != ProposalState::Active {
+        return Err(ErrorCode::ProposalNotActive.into());
+    }
+
+    if now < proposal.end_ts {
+        return Err(ErrorCode::VotingStillActive.into());
+    }
+
+    // Check quorum
+    if proposal.total_votes < dao_config.quorum_threshold {
+        proposal.state = ProposalState::Failed;
+        emit!(crate::events::ProposalFinalized {
+            id: proposal.key(),
+            result: proposal.state,
+            total_votes: proposal.total_votes,
+            yes_votes: proposal.tally_yes,
+            no_votes: proposal.tally_no,
+        });
+        return Ok(());
+    }
+
+    // Check approval threshold
+    let approval_percentage = (proposal.tally_yes * 10000) / proposal.total_votes;
+    if approval_percentage >= dao_config.approval_threshold {
+        proposal.state = ProposalState::Succeeded;
+    } else {
+        proposal.state = ProposalState::Failed;
+    }
+
+    emit!(crate::events::ProposalFinalized {
+        id: proposal.key(),
+        result: proposal.state,
+        total_votes: proposal.total_votes,
+        yes_votes: proposal.tally_yes,
+        no_votes: proposal.tally_no,
+    });
+
+    Ok(())
+}
+
+treasury
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer, Mint};
+use crate::{state_accounts::DaoConfig, errors::ErrorCode};
+
+#[derive(Accounts)]
+pub struct InitTreasury<'info> {
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    
+    /// CHECK: Treasury PDA for SOL storage - no init needed for SOL treasury
+    #[account(
+        seeds = [b"treasury", dao_config.key().as_ref()],
+        bump
+    )]
+    pub treasury: UncheckedAccount<'info>,
+    
+    #[account(
+        init,
+        payer = admin,
+        seeds = [b"usdc_treasury", dao_config.key().as_ref()],
+        bump,
+        token::mint = usdc_mint,
+        token::authority = treasury
+    )]
+    pub usdc_treasury: Account<'info, TokenAccount>,
+    
+    pub usdc_mint: Account<'info, Mint>,
+    
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+pub fn init_treasury(ctx: Context<InitTreasury>) -> Result<()> {
+    let dao_config = &mut ctx.accounts.dao_config;
+    
+    // Update DAO config with treasury information
+    dao_config.treasury = ctx.accounts.treasury.key();
+    dao_config.usdc_treasury = ctx.accounts.usdc_treasury.key();
+    dao_config.usdc_mint = ctx.accounts.usdc_mint.key();
+    
+    msg!("Treasury initialized successfully");
+    msg!("SOL Treasury: {}", dao_config.treasury);
+    msg!("USDC Treasury: {}", dao_config.usdc_treasury);
+    msg!("USDC Mint: {}", dao_config.usdc_mint);
+    
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct WithdrawTreasury<'info> {
+    #[account(
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+        has_one = admin @ ErrorCode::Unauthorized
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    
+    #[account(
+        mut,
+        seeds = [b"treasury", dao_config.key().as_ref()],
+        bump
+    )]
+    /// CHECK: This is the SOL treasury PDA
+    pub treasury: UncheckedAccount<'info>,
+    
+    #[account(
+        mut,
+        seeds = [b"usdc_treasury", dao_config.key().as_ref()],
+        bump
+    )]
+    pub usdc_treasury: Account<'info, TokenAccount>,
+    
+    #[account(mut)]
+    pub destination_sol: SystemAccount<'info>,
+    
+    #[account(mut)]
+    pub destination_usdc: Account<'info, TokenAccount>,
+    
+    pub admin: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+pub fn withdraw_sol(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> {
+    let dao_config = &ctx.accounts.dao_config;
+    let dao_config_key = dao_config.key();
+    let treasury_seeds = &[
+        b"treasury",
+        dao_config_key.as_ref(),
+        &[ctx.bumps.treasury]
+    ];
+    
+    anchor_lang::system_program::transfer(
+        CpiContext::new_with_signer(
+            ctx.accounts.system_program.to_account_info(),
+            anchor_lang::system_program::Transfer {
+                from: ctx.accounts.treasury.to_account_info(),
+                to: ctx.accounts.destination_sol.to_account_info(),
+            },
+            &[treasury_seeds]
+        ),
+        amount,
+    )?;
+    
+    Ok(())
+}
+
+pub fn withdraw_usdc(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> {
+    let dao_config = &ctx.accounts.dao_config;
+    let dao_config_key = dao_config.key();
+    let treasury_seeds = &[
+        b"treasury",
+        dao_config_key.as_ref(),
+        &[ctx.bumps.treasury]
+    ];
+    
+    token::transfer(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            SplTransfer {
+                from: ctx.accounts.usdc_treasury.to_account_info(),
+                to: ctx.accounts.destination_usdc.to_account_info(),
+                authority: ctx.accounts.treasury.to_account_info(),
+            },
+            &[treasury_seeds]
+        ),
+        amount,
+    )?;
+    
+    Ok(())
+}
+
+voting
+use anchor_lang::{prelude::*, system_program};
+use crate::{
+    state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
+    errors::ErrorCode,
+    events::VoteCast,
+    state::{VoteChoice, ProposalState},
+    constants::{BASE_VOTE_WEIGHT, PREMIUM_BONUS_WEIGHT, STAKING_WEIGHT_DIVISOR, STAKING_PROGRAM_ID}
+};
+
+#[derive(Accounts)]
+pub struct CastVote<'info> {
+    #[account(
+        seeds = [b"dao_config"],
+        bump = dao_config.bump
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+    #[account(mut)]
+    pub proposal: Account<'info, Proposal>,
+    #[account(
+        init_if_needed,
+        payer = voter,
+        space = VoteRecord::SPACE,
+        seeds = [b"vote", proposal.key().as_ref(), voter.key().as_ref()],
+        bump
+    )]
+    pub vote_record: Account<'info, VoteRecord>,
+    #[account(mut)]
+    pub voter: Signer<'info>,
+    #[account(
+        mut,
+        address = dao_config.treasury @ ErrorCode::InvalidTreasury
+    )]
+    /// CHECK: This is the SOL treasury PDA validated by address constraint
+    pub treasury: UncheckedAccount<'info>,
+    #[account(
+        seeds = [b"member", dao_config.key().as_ref(), voter.key().as_ref()],
+        bump = member.bump
+    )]
+    pub member: Option<Account<'info, Member>>,
+    /// CHECK: This account is validated through PDA derivation and program ownership
+    pub staking_position: Option<UncheckedAccount<'info>>,
+    /// CHECK: This should be the main FLDAO staking pool from staking program
+    pub staking_pool: Option<UncheckedAccount<'info>>,
+    pub system_program: Program<'info, System>,
+    pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
+    if ctx.accounts.dao_config.paused {
+        return Err(ErrorCode::Paused.into());
+    }
+
+    let proposal = &mut ctx.accounts.proposal;
+    let now = ctx.accounts.clock.unix_timestamp;
+    
+    if now < proposal.start_ts || now >= proposal.end_ts || proposal.state != ProposalState::Active {
+        return Err(ErrorCode::VotingWindowClosed.into());
+    }
+
+    let vote_record = &mut ctx.accounts.vote_record;
+    if vote_record.voter != Pubkey::default() {
+        return Err(ErrorCode::AlreadyVoted.into());
+    }
+
+    // Calculate vote fee (premium members get discount)
+    let mut vote_fee = ctx.accounts.dao_config.vote_fee_lamports;
+    if let Some(member) = &ctx.accounts.member {
+        if member.premium {
+            vote_fee = vote_fee / 2; // 50% discount for premium members
+        }
+    }
+
+    // Transfer SOL vote fee
+    if vote_fee > 0 {
+        system_program::transfer(
+            CpiContext::new(
+                ctx.accounts.system_program.to_account_info(),
+                system_program::Transfer {
+                    from: ctx.accounts.voter.to_account_info(),
+                    to: ctx.accounts.treasury.to_account_info(),
+                },
+            ),
+            vote_fee,
+        )?;
+    }
+
+    // Calculate vote weight with staking integration
+    let mut weight: u64 = BASE_VOTE_WEIGHT;
+    
+    // Add premium bonus
+    if let Some(member) = &ctx.accounts.member {
+        if member.premium {
+            weight = weight.checked_add(PREMIUM_BONUS_WEIGHT)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
+        }
+    }
+    
+    // Add staking bonus if position exists and is valid
+    if let (Some(staking_position), Some(staking_pool)) = (&ctx.accounts.staking_position, &ctx.accounts.staking_pool) {
+        // Verify the account is owned by the staking program
+        if staking_position.owner == &STAKING_PROGRAM_ID {
+            // Try to read the staked amount from the position (this is your original logic)
+            let position_data = staking_position.try_borrow_data()?;
+            if position_data.len() >= 8 + 32 + 32 + 8 { // discriminator + staker + pool + amount
+                // Skip discriminator (8 bytes), staker (32 bytes), pool (32 bytes)
+                let amount_bytes = &position_data[72..80];
+                if let Ok(amount_array) = <[u8; 8]>::try_from(amount_bytes) {
+                    let staked_amount = u64::from_le_bytes(amount_array);
+                    let staking_bonus = staked_amount.checked_div(STAKING_WEIGHT_DIVISOR).unwrap_or(0);
+                    weight = weight.checked_add(staking_bonus)
+                        .ok_or(ErrorCode::ArithmeticOverflow)?;
+                }
+            }
+        }
+    }
+    
+    if weight == 0 {
+        return Err(ErrorCode::InvalidVoteWeight.into());
+    }
+
+    vote_record.proposal = proposal.key();
+    vote_record.voter = ctx.accounts.voter.key();
+    vote_record.choice = choice;
+    vote_record.weight = weight;
+    vote_record.paid_fee = true;
+    vote_record.timestamp = now;
+    vote_record.bump = ctx.bumps.vote_record;
+
+    // Update proposal tallies with overflow protection
+    match choice {
+        VoteChoice::Yes => {
+            proposal.tally_yes = proposal.tally_yes
+                .checked_add(weight)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
+        },
+        VoteChoice::No => {
+            proposal.tally_no = proposal.tally_no
+                .checked_add(weight)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
+        },
+    }
+    
+    proposal.total_votes = proposal.total_votes
+        .checked_add(weight)
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+    emit!(VoteCast {
+        id: proposal.key(),
+        voter: vote_record.voter,
+        choice: vote_record.choice,
+        weight: vote_record.weight,
+        timestamp: now,
+    });
+
+    Ok(())
+}
+
+utils folder
+mod.rs
+pub mod staking;
+
+pub use staking::*;
+
+staking.rs
+use anchor_lang::prelude::*;
+use crate::constants::STAKING_PROGRAM_ID;
+
+pub fn get_staking_pool_pda(mint: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[b"pool", mint.as_ref()],
+        &STAKING_PROGRAM_ID,
+    )
+}
+
+
+pub fn get_stake_position_pda(pool: &Pubkey, staker: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[b"position", pool.as_ref(), staker.as_ref()],
+        &STAKING_PROGRAM_ID,
+    )
+}
+
+pub fn calculate_vote_weight(
+    base_weight: u64,
+    premium_bonus: u64,
+    staked_amount: u64,
+    weight_divisor: u64,
+) -> Result<u64> {
+    let staking_bonus = staked_amount.checked_div(weight_divisor).unwrap_or(0);
+    
+    base_weight
+        .checked_add(premium_bonus)
+        .and_then(|w| w.checked_add(staking_bonus))
+        .ok_or(anchor_lang::error::ErrorCode::ArithmeticError.into())
+}
+
+outside utils folder
+constants
+use anchor_lang::prelude::*;
+
+// Cross-program IDs - these MUST match your Anchor.toml
+pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
+pub const GOVERNANCE_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
+
+// Vote weight calculation parameters
+pub const BASE_VOTE_WEIGHT: u64 = 1;
+pub const PREMIUM_BONUS_WEIGHT: u64 = 1;
+pub const STAKING_WEIGHT_DIVISOR: u64 = 1_000_000; // 1 FLDAO = 1 additional vote weight
+
+
+errors
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Unauthorized access")]
+    Unauthorized,
+    #[msg("Invalid instruction data")]
+    InvalidInstructionData,
+    #[msg("Proposal voting period has ended")]
+    VotingPeriodEnded,
+    #[msg("Proposal voting period has not ended")]
+    VotingPeriodNotEnded,
+    #[msg("Already voted on this proposal")]
+    AlreadyVoted,
+    #[msg("Proposal has not succeeded")]
+    ProposalNotSucceeded,
+    #[msg("Proposal already executed")]
+    AlreadyExecuted,
+    #[msg("Proposal not executed yet")]
+    NotExecuted,
+    #[msg("Execution delay period not met")]
+    ExecutionDelayNotMet,
+    #[msg("Insufficient voting power")]
+    InsufficientVotingPower,
+    #[msg("Invalid proposal type")]
+    InvalidProposalType,
+    #[msg("Invalid voting period")]
+    InvalidVotingPeriod,
+    #[msg("Member not found")]
+    MemberNotFound,
+    #[msg("Not a premium member")]
+    NotPremiumMember,
+    #[msg("Insufficient funds")]
+    InsufficientFunds,
+    #[msg("Invalid window or time parameter")]
+    InvalidWindow,
+    #[msg("Invalid treasury account")]
+    InvalidTreasury,
+    #[msg("DAO operations are paused")]
+    Paused,
+    #[msg("URI too long")]
+    UriTooLong,
+    #[msg("Invalid title hash")]
+    InvalidTitleHash,
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
+    #[msg("Proposal not active")]
+    ProposalNotActive,
+    #[msg("Voting window closed")]
+    VotingWindowClosed,
+    #[msg("Voting still active")]
+    VotingStillActive,
+    #[msg("Invalid vote weight")]
+    InvalidVoteWeight,
+    #[msg("Invalid staking program")]
+    InvalidStakingProgram,
+}
+
+events
+// UPDATED events.rs
+use anchor_lang::prelude::*;
+use crate::state::{ProposalKind, ProposalState, VoteChoice};
+
+#[event]
+pub struct ProposalCreated {
+    pub id: Pubkey,
+    pub creator: Pubkey,
+    pub kind: ProposalKind,
+    pub title_hash: [u8; 32],
+}
+
+#[event]
+pub struct ProposalFinalized {
+    pub id: Pubkey,
+    pub result: ProposalState,
+    pub total_votes: u64,
+    pub yes_votes: u64,
+    pub no_votes: u64,
+}
+
+#[event]
+pub struct ProposalExecuted {
+    pub id: Pubkey,
+    pub executor: Pubkey,
+    pub executed_at: i64,
+}
+
+#[event]
+pub struct VoteCast {
+    pub id: Pubkey,
+    pub voter: Pubkey,
+    pub choice: VoteChoice,
+    pub weight: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MembershipChanged {
+    pub user: Pubkey,
+    pub premium: bool,
+    pub flags: u8,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct TreasuryWithdrawal {
+    pub amount: u64,
+    pub token_type: String, // "SOL" or "USDC"
+    pub destination: Pubkey,
+    pub admin: Pubkey,
+}
+
+lib
+// FIXED lib.rs - Simple version without complex integration
+use anchor_lang::prelude::*;
+
+pub mod state_accounts;
+pub mod errors;
+pub mod events;
+pub mod instructions;
+pub mod state;
+pub mod constants;
+
+use instructions::*;
+
+declare_id!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
+
+#[program]
+pub mod governance {
+    use super::*;
+
+    // Core governance functions
+    pub fn init_dao_config(
+        ctx: Context<InitDaoConfig>,
+        light_fee_usdc: u64,
+        major_fee_usdc: u64,
+        vote_fee_lamports: u64,
+        min_vote_duration: i64,
+        max_vote_duration: i64,
+        eligibility_flags: u8,
+        quorum_threshold: u64,
+        approval_threshold: u64,
+    ) -> Result<()> {
+        instructions::init::init_dao_config(
+            ctx, light_fee_usdc, major_fee_usdc, vote_fee_lamports,
+            min_vote_duration, max_vote_duration, eligibility_flags,
+            quorum_threshold, approval_threshold
+        )
+    }
+
+    pub fn init_treasury(ctx: Context<InitTreasury>) -> Result<()> {
+        instructions::treasury::init_treasury(ctx)
+    }
+
+    pub fn create_proposal(
+        ctx: Context<CreateProposal>,
+        kind: state::ProposalKind,
+        uri: String,
+        title_hash: [u8; 32],
+        window: i64,
+    ) -> Result<()> {
+        instructions::proposals::create_proposal(ctx, kind, uri, title_hash, window)
+    }
+
+    pub fn cancel_proposal(ctx: Context<CancelProposal>) -> Result<()> {
+        instructions::proposals::cancel_proposal(ctx)
+    }
+
+    pub fn cast_vote(ctx: Context<CastVote>, choice: state::VoteChoice) -> Result<()> {
+        instructions::voting::cast_vote(ctx, choice)
+    }
+
+    pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
+        instructions::proposals::finalize_proposal(ctx)
+    }
+
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        instructions::execution::execute_proposal(ctx)
+    }
+
+    pub fn execute_param_change(
+        ctx: Context<ExecuteParamChange>,
+        new_light_fee: Option<u64>,
+        new_major_fee: Option<u64>,
+        new_vote_fee: Option<u64>,
+    ) -> Result<()> {
+        instructions::execution::execute_param_change(ctx, new_light_fee, new_major_fee, new_vote_fee)
+    }
+
+    // Admin functions
+    pub fn set_params(
+        ctx: Context<SetParams>,
+        light_fee_usdc: Option<u64>,
+        major_fee_usdc: Option<u64>,
+        vote_fee_lamports: Option<u64>,
+        min_vote_duration: Option<i64>,
+        max_vote_duration: Option<i64>,
+        eligibility_flags: Option<u8>,
+        weight_params: Option<u64>,
+        quorum_threshold: Option<u64>,
+        approval_threshold: Option<u64>,
+    ) -> Result<()> {
+        instructions::admin::set_params(
+            ctx, light_fee_usdc, major_fee_usdc, vote_fee_lamports,
+            min_vote_duration, max_vote_duration, eligibility_flags,
+            weight_params, quorum_threshold, approval_threshold
+        )
+    }
+
+    pub fn set_pause(ctx: Context<SetPause>, paused: bool) -> Result<()> {
+        instructions::admin::set_pause(ctx, paused)
+    }
+
+    pub fn transfer_admin(ctx: Context<TransferAdmin>) -> Result<()> {
+        instructions::admin::transfer_admin(ctx)
+    }
+
+    // Treasury functions
+    pub fn withdraw_sol(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> {
+        instructions::treasury::withdraw_sol(ctx, amount)
+    }
+
+    pub fn withdraw_usdc(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> {
+        instructions::treasury::withdraw_usdc(ctx, amount)
+    }
+
+    // Membership functions
+    pub fn set_membership_status(
+        ctx: Context<ManageMembership>,
+        user: Pubkey,
+        premium: bool,
+        flags: u8,
+    ) -> Result<()> {
+        instructions::membership::set_membership_status(ctx, user, premium, flags)
+    }
+
+    pub fn check_membership(ctx: Context<CheckMembership>) -> Result<()> {
+        instructions::membership::check_membership(ctx)
+    }
+}
+
+state_accounts
+// programs/governance/src/state_accounts.rs
+use anchor_lang::prelude::*;
+
+#[account]
+#[derive(Default)]
+pub struct DaoConfig {
+    pub usdc_mint: Pubkey,           // 32 bytes
+    pub treasury: Pubkey,            // 32 bytes - SOL treasury PDA
+    pub usdc_treasury: Pubkey,       // 32 bytes - USDC ATA for treasury
+    pub staking_treasury: Pubkey,    // 32 bytes - Reference to staking treasury
+    pub light_fee_usdc: u64,         // 8 bytes
+    pub major_fee_usdc: u64,         // 8 bytes
+    pub vote_fee_lamports: u64,      // 8 bytes
+    pub min_vote_duration: i64,      // 8 bytes
+    pub max_vote_duration: i64,      // 8 bytes
+    pub admin: Pubkey,               // 32 bytes
+    pub eligibility_flags: u8,       // 1 byte
+    pub paused: bool,                // 1 byte
+    pub proposal_count: u64,         // 8 bytes
+    pub weight_params: u64,          // 8 bytes
+    pub quorum_threshold: u64,       // 8 bytes
+    pub approval_threshold: u64,     // 8 bytes
+    pub bump: u8,                    // 1 byte
+}
+
+impl DaoConfig {
+    // Updated space calculation to include staking_treasury
+    pub const SPACE: usize = 8 + // discriminator
+        32 * 5 + // 5 pubkeys (usdc_mint, treasury, usdc_treasury, staking_treasury, admin)
+        8 * 8 + // 8 u64/i64 fields
+        1 + // eligibility_flags
+        1 + // paused
+        1 + // bump
+        32; // extra padding for safety and alignment
+    // Total: 8 + 160 + 64 + 3 + 32 = 267 bytes
+}
+
+#[account]
+#[derive(Default)]
+pub struct Proposal {
+    pub creator: Pubkey,             // 32 bytes
+    pub id: u64,                     // 8 bytes
+    pub kind: crate::state::ProposalKind,  // 1 byte
+    pub title_hash: [u8; 32],        // 32 bytes
+    pub uri: String,                 // 4 + uri_len bytes
+    pub state: crate::state::ProposalState, // 1 byte
+    pub start_ts: i64,               // 8 bytes
+    pub end_ts: i64,                 // 8 bytes
+    pub tally_yes: u64,              // 8 bytes
+    pub tally_no: u64,               // 8 bytes
+    pub total_votes: u64,            // 8 bytes
+    pub executed: bool,              // 1 byte
+    pub executed_at: i64,            // 8 bytes
+    pub bump: u8,                    // 1 byte
+}
+
+impl Proposal {
+    pub fn space(uri_len: usize) -> usize {
+        8 + // discriminator
+        32 + // creator
+        8 + // id
+        1 + // kind
+        32 + // title_hash
+        (4 + uri_len) + // uri (String with length prefix)
+        1 + // state
+        8 + // start_ts
+        8 + // end_ts
+        8 + // tally_yes
+        8 + // tally_no
+        8 + // total_votes
+        1 + // executed
+        8 + // executed_at
+        1 + // bump
+        32 // extra padding for safety
+    }
+}
+
+#[account]
+#[derive(Default)]
+pub struct VoteRecord {
+    pub proposal: Pubkey,            // 32 bytes
+    pub voter: Pubkey,               // 32 bytes
+    pub choice: crate::state::VoteChoice, // 1 byte
+    pub weight: u64,                 // 8 bytes
+    pub paid_fee: bool,              // 1 byte
+    pub timestamp: i64,              // 8 bytes
+    pub bump: u8,                    // 1 byte
+}
+
+impl VoteRecord {
+    pub const SPACE: usize = 8 + // discriminator
+        32 + // proposal
+        32 + // voter
+        1 + // choice
+        8 + // weight
+        1 + // paid_fee
+        8 + // timestamp
+        1 + // bump
+        16; // padding for safety
+}
+
+#[account]
+#[derive(Default)]
+pub struct Member {
+    pub user: Pubkey,                // 32 bytes
+    pub premium: bool,               // 1 byte
+    pub flags: u8,                   // 1 byte
+    pub joined_at: i64,              // 8 bytes
+    pub updated_at: i64,             // 8 bytes
+    pub bump: u8,                    // 1 byte
+}
+
+impl Member {
+    pub const SPACE: usize = 8 + // discriminator
+        32 + // user
+        1 + // premium
+        1 + // flags
+        8 + // joined_at
+        8 + // updated_at
+        1 + // bump
+        16; // padding for safety
+}
+
+state
+// UPDATED state.rs
+// ============================================
+use anchor_lang::prelude::*;
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Default)]
+pub enum ProposalKind {
+    #[default]
+    Light,    // Small changes, lower fee
+    Major,    // Significant changes, higher fee
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Default)]
+pub enum ProposalState {
+    #[default]
+    Draft,     // Not yet active
+    Active,    // Currently accepting votes
+    Succeeded, // Passed voting requirements
+    Failed,    // Did not meet requirements
+    Canceled,  // Canceled by creator
+    Executed,  // Successfully executed (for tracking)
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Default)]
+pub enum VoteChoice {
+    #[default]
+    Yes,
+    No,
+}
+
+// New: Proposal categories for better organization
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
+pub enum ProposalCategory {
+    Treasury,     // Treasury management proposals
+    Parameters,   // DAO parameter changes
+    Membership,   // Membership rule changes
+    General,      // General governance proposals
+}
+
+impl Default for ProposalCategory {
+    fn default() -> Self {
+        ProposalCategory::General
+    }
+}
+
+// ============================================
+// CLIENT HELPER FUNCTIONS (TypeScript/JavaScript)
+// ============================================
+
+/*
+// Helper functions for the frontend (put these in a separate TS file)
+
+export interface CreateProposalParams {
+  kind: 'Light' | 'Major';
+  title: string;
+  description: string;
+  uri: string; // IPFS or Arweave link to full proposal
+  votingWindow: number; // seconds
+}
+
+export function hashTitle(title: string): Uint8Array {
+  // Use a consistent hashing method (e.g., SHA-256)
+  return new TextEncoder().encode(title).slice(0, 32);
+}
+
+export async function createProposal(
+  program: Program,
+  wallet: Wallet,
+  params: CreateProposalParams
+): Promise<string> {
+  const titleHash = hashTitle(params.title);
+  
+  // Get DAO config
+  const [daoConfig] = PublicKey.findProgramAddressSync(
+    [Buffer.from("dao_config")],
+    program.programId
+  );
+  
+  // Get proposal PDA
+  const daoConfigData = await program.account.daoConfig.fetch(daoConfig);
+  const [proposal] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("proposal"),
+      daoConfig.toBuffer(),
+      Buffer.from(daoConfigData.proposalCount.toString())
+    ],
+    program.programId
+  );
+  
+  const tx = await program.methods
+    .createProposal(
+      { [params.kind.toLowerCase()]: {} },
+      params.uri,
+      Array.from(titleHash),
+      new BN(params.votingWindow)
+    )
+    .accounts({
+      daoConfig,
+      proposal,
+      creator: wallet.publicKey,
+      // ... other accounts
+    })
+    .rpc();
+    
+  return tx;
+}
+
+export async function castVote(
+  program: Program,
+  wallet: Wallet,
+  proposalId: PublicKey,
+  choice: 'Yes' | 'No'
+): Promise<string> {
+  const [daoConfig] = PublicKey.findProgramAddressSync(
+    [Buffer.from("dao_config")],
+    program.programId
+  );
+  
+  const [voteRecord] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("vote"),
+      proposalId.toBuffer(),
+      wallet.publicKey.toBuffer()
+    ],
+    program.programId
+  );
+  
+  const tx = await program.methods
+    .castVote({ [choice.toLowerCase()]: {} })
+    .accounts({
+      daoConfig,
+      proposal: proposalId,
+      voteRecord,
+      voter: wallet.publicKey,
+      // ... other accounts
+    })
+    .rpc();
+    
+  return tx;
+}
+*/
+
+[package]
+name = "governance"
+version = "0.1.0"
+description = "Governance smart contract for FreelanceDao"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "governance"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = [
+    "anchor-lang/idl-build",
+    "anchor-spl/idl-build",
+]
+custom-heap = []
+custom-panic = []
+anchor-debug = []
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token"] }
+shared = { path = "../shared" }
+
