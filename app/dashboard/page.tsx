@@ -34,6 +34,9 @@ import {
   Loader2,
   Download,
   Eye,
+  ThumbsUp,
+  ThumbsDown,
+  Clock3,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -117,8 +120,10 @@ function DashboardContent() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [completedJobs, setCompletedJobs] = useState<Job[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completedJobsLoading, setCompletedJobsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [showNewProposal, setShowNewProposal] = useState(false);
@@ -137,6 +142,7 @@ function DashboardContent() {
   const [downloadingContract, setDownloadingContract] = useState(false)
   const [updatingMilestone, setUpdatingMilestone] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
+  const [approvingJob, setApprovingJob] = useState<string | null>(null);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -167,6 +173,13 @@ function DashboardContent() {
         if (!jobsResponse.ok) throw new Error('Failed to fetch jobs');
         const jobsData = await jobsResponse.json();
         setJobs(jobsData.jobs);
+        
+        // Fetch completed jobs (jobs with 100% progress awaiting approval)
+        const completedJobsResponse = await fetch('/api/dashboard/jobs?status=completed&progress=100', { headers });
+        if (completedJobsResponse.ok) {
+          const completedJobsData = await completedJobsResponse.json();
+          setCompletedJobs(completedJobsData.jobs || []);
+        }
         
         // Fetch proposals (for both freelancers and clients)
         if (user?.role === 'freelancer' || user?.role === 'client') {
@@ -231,6 +244,60 @@ function DashboardContent() {
        console.error('Error fetching jobs:', error);
      }
    };
+
+  // Fetch completed jobs separately
+  const fetchCompletedJobs = async () => {
+    setCompletedJobsLoading(true);
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      if (!token) return;
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      const response = await fetch('/api/dashboard/jobs?status=completed&progress=100', { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedJobs(data.jobs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching completed jobs:', error);
+    } finally {
+      setCompletedJobsLoading(false);
+    }
+  };
+  
+  // Handle job approval/rejection by client
+  const handleJobApproval = async (jobId: string, approved: boolean) => {
+    setApprovingJob(jobId);
+    
+    try {
+      const token = localStorage.getItem('freelancedao_token');
+      const response = await fetch(`/api/jobs/${jobId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ approved }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to update job status');
+      
+      toast.success(`Job ${approved ? 'approved' : 'rejected'} successfully!`);
+      
+      // Refresh completed jobs
+      fetchCompletedJobs();
+      
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      toast.error('Failed to update job status');
+    } finally {
+      setApprovingJob(null);
+    }
+  };
 
   const handleNewProposal = async () => {
     if (!proposalForm.title || !proposalForm.description || !proposalForm.budget) {
@@ -672,9 +739,16 @@ function DashboardContent() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="active-jobs" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-4">
+        <Tabs defaultValue="active-jobs" className="space-y-6" onValueChange={(value) => {
+          if (value === 'completed-jobs' && completedJobs.length === 0 && !completedJobsLoading) {
+            fetchCompletedJobs();
+          }
+        }}>
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="active-jobs">Active Jobs</TabsTrigger>
+            <TabsTrigger value="completed-jobs">
+              {user?.role === 'freelancer' ? 'Completed' : 'Review Jobs'}
+            </TabsTrigger>
             {user?.role === 'freelancer' && <TabsTrigger value="proposals">My Proposals</TabsTrigger>}
             {user?.role === 'client' && <TabsTrigger value="proposals">Job Proposals</TabsTrigger>}
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
@@ -954,6 +1028,141 @@ function DashboardContent() {
               </div>
             </TabsContent>
           )}
+
+          {/* Completed Jobs Tab */}
+          <TabsContent value="completed-jobs" className="space-y-6">
+            <div className="grid gap-6">
+              {completedJobsLoading ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-blue-500" />
+                    <p className="text-slate-600">Loading completed jobs...</p>
+                  </CardContent>
+                </Card>
+              ) : completedJobs.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Clock3 className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                    <p className="text-slate-600">
+                      {user?.role === 'freelancer' 
+                        ? 'No completed jobs awaiting approval' 
+                        : 'No jobs pending your review'}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-2">
+                      {user?.role === 'freelancer' 
+                        ? 'Complete your milestones to see jobs here' 
+                        : 'Jobs will appear here when freelancers mark them as complete'}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                completedJobs.map((job) => (
+                  <Card key={job._id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg text-slate-800">{job.title}</CardTitle>
+                          <CardDescription className="flex items-center mt-2">
+                            <Avatar className="w-6 h-6 mr-2">
+                              <AvatarImage src={user?.role === 'freelancer' ? job.client?.avatar : job.freelancer?.avatar} />
+                              <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
+                                {(user?.role === 'freelancer' ? job.client?.fullname : job.freelancer?.fullname)?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            {user?.role === 'freelancer' ? job.client?.fullname : job.freelancer?.fullname}
+                          </CardDescription>
+                        </div>
+                        <div className="flex flex-col md:items-end gap-2">
+                          <Badge className="bg-green-500 text-white">
+                            Completed - Awaiting Approval
+                          </Badge>
+                          <span className="text-lg font-semibold text-green-600">
+                            {job.budget.amount} {job.budget.currency}
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">Progress:</span>
+                          <div className="flex items-center gap-2">
+                            <Progress value={job.progress} className="w-24 h-2" />
+                            <span className="text-sm font-medium">{job.progress}%</span>
+                          </div>
+                        </div>
+                        
+                        {job.milestones && job.milestones.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">Milestones:</h4>
+                            <div className="space-y-2">
+                              {job.milestones.map((milestone, index) => (
+                                <div key={index} className="flex items-center justify-between text-sm bg-slate-50 p-2 rounded">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                    <span>{milestone.name}</span>
+                                  </div>
+                                  <span className="font-medium text-green-600">
+                                    {milestone.amount} {job.budget.currency}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {user?.role === 'client' && (
+                          <div className="flex gap-3 pt-4 border-t">
+                            <Button 
+                              onClick={() => handleJobApproval(job._id, true)}
+                              disabled={approvingJob === job._id}
+                              className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                            >
+                              {approvingJob === job._id ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <ThumbsUp className="w-4 h-4 mr-2" />
+                              )}
+                              Approve & Release Payment
+                            </Button>
+                            <Button 
+                              onClick={() => handleJobApproval(job._id, false)}
+                              disabled={approvingJob === job._id}
+                              variant="outline" 
+                              className="border-red-500 text-red-500 hover:bg-red-50 flex-1"
+                            >
+                              <ThumbsDown className="w-4 h-4 mr-2" />
+                              Request Revisions
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {user?.role === 'freelancer' && (
+                          <div className="flex justify-between items-center pt-4 border-t">
+                            <div className="flex items-center gap-2 text-amber-600">
+                              <Clock className="w-4 h-4" />
+                              <span className="text-sm">Awaiting client approval</span>
+                            </div>
+                            <Button 
+                              onClick={() => {
+                                setSelectedJob(job)
+                                setShowJobDetails(true)
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
 
           {/* ... existing earnings and profile tabs ... */}
         </Tabs>
