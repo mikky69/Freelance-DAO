@@ -37,6 +37,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Clock3,
+  Scale,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -1138,22 +1139,35 @@ function DashboardContent() {
                         )}
                         
                         {user?.role === 'freelancer' && (
-                          <div className="flex justify-between items-center pt-4 border-t">
+                          <div className="space-y-3 pt-4 border-t">
                             <div className="flex items-center gap-2 text-amber-600">
                               <Clock className="w-4 h-4" />
                               <span className="text-sm">Awaiting client approval</span>
                             </div>
-                            <Button 
-                              onClick={() => {
-                                setSelectedJob(job)
-                                setShowJobDetails(true)
-                              }}
-                              variant="outline"
-                              size="sm"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={() => {
+                                  setSelectedJob(job)
+                                  setShowJobDetails(true)
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </Button>
+                              <Link href="/dao/disputes" className="flex-1">
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-red-500 text-red-600 hover:bg-red-50"
+                                >
+                                  <Scale className="w-4 h-4 mr-2" />
+                                  File Dispute
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         )}
                       </div>
