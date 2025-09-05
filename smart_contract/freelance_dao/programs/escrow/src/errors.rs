@@ -1,4 +1,3 @@
-
 use anchor_lang::prelude::*;
 
 #[error_code]
@@ -19,4 +18,6 @@ pub enum EscrowError {
     BothSignaturesRequired,
     #[msg("Invalid freelancer")]
     InvalidFreelancer,
+    #[msg("Cannot cancel escrow in current state or you're not authorized")]
+    CannotCancel,
 }

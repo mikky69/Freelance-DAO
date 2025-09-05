@@ -11,7 +11,7 @@ pub mod events;
 pub mod instructions;
 pub mod state;
 
-declare_id!("3RLxFsUQPpeM7sFG77TtqeN7sgHp7uybGJuoa4Cwg6QU");
+declare_id!("5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg");
 
 #[program]
 pub mod escrow {

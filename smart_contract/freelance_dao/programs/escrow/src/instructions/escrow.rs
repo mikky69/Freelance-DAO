@@ -65,7 +65,10 @@ pub struct CompleteEscrow<'info> {
             escrow.client.as_ref(),
             escrow.escrow_id.to_le_bytes().as_ref()
         ],
-        bump = escrow.bump
+        bump = escrow.bump,
+        constraint = escrow.state == EscrowState::Active @ EscrowError::InvalidState,
+        constraint = escrow.client == client.key() @ EscrowError::Unauthorized,
+        close = client // This closes the account and sends remaining lamports to client
     )]
     pub escrow: Account<'info, EscrowAccount>,
     
@@ -88,7 +91,9 @@ pub struct CancelEscrow<'info> {
             escrow.client.as_ref(),
             escrow.escrow_id.to_le_bytes().as_ref()
         ],
-        bump = escrow.bump
+        bump = escrow.bump,
+        constraint = can_cancel(&escrow, &authority.key()) @ EscrowError::CannotCancel,
+        close = client // This closes the account and sends remaining lamports to client
     )]
     pub escrow: Account<'info, EscrowAccount>,
     
@@ -179,45 +184,25 @@ pub fn accept_proposal(ctx: Context<AcceptProposal>) -> Result<()> {
 
 pub fn complete_escrow(ctx: Context<CompleteEscrow>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow;
-    let client = &ctx.accounts.client;
-    let freelancer = &ctx.accounts.freelancer;
+    let clock = Clock::get()?;
     
-    require!(
-        escrow.client == client.key(),
-        EscrowError::Unauthorized
-    );
-    require!(
-        escrow.state == EscrowState::Active,
-        EscrowError::InvalidState
-    );
+    // Store values we need before modifying the account
+    let escrow_amount = escrow.amount;
+    let escrow_id = escrow.escrow_id;
     
-    // Transfer funds to freelancer - fix for temporary value issue
-    let escrow_id_bytes = escrow.escrow_id.to_le_bytes();
-    let escrow_seeds = &[
-        ESCROW_SEED,
-        escrow.client.as_ref(),
-        escrow_id_bytes.as_ref(),
-        &[escrow.bump],
-    ];
-    let signer_seeds = &[&escrow_seeds[..]];
-    
-    let cpi_context = CpiContext::new_with_signer(
-        ctx.accounts.system_program.to_account_info(),
-        system_program::Transfer {
-            from: escrow.to_account_info(),
-            to: freelancer.to_account_info(),
-        },
-        signer_seeds,
-    );
-    system_program::transfer(cpi_context, escrow.amount)?;
-    
+    // Update escrow state
     escrow.state = EscrowState::Completed;
-    escrow.completed_at = Some(Clock::get()?.unix_timestamp);
+    escrow.completed_at = Some(clock.unix_timestamp);
+    
+    // Transfer the escrowed amount to freelancer
+    // This must be done manually before the account is closed
+    **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= escrow_amount;
+    **ctx.accounts.freelancer.try_borrow_mut_lamports()? += escrow_amount;
     
     emit!(EscrowCompleted {
-        escrow_id: escrow.escrow_id,
-        amount: escrow.amount,
-        timestamp: escrow.completed_at.unwrap(),
+        escrow_id,
+        amount: escrow_amount,
+        timestamp: clock.unix_timestamp,
     });
     
     msg!("Escrow completed, funds released to freelancer");
@@ -226,49 +211,40 @@ pub fn complete_escrow(ctx: Context<CompleteEscrow>) -> Result<()> {
 
 pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow;
-    let authority = &ctx.accounts.authority;
-    let client = &ctx.accounts.client;
+    let clock = Clock::get()?;
     
-    // Only client can cancel before Active, both parties can cancel after
-    let can_cancel = match escrow.state {
-        EscrowState::Proposed | EscrowState::AwaitingSigs => {
-            escrow.client == authority.key()
-        }
-        EscrowState::Active => {
-            escrow.client == authority.key() || escrow.freelancer == authority.key()
-        }
-        _ => false,
-    };
+    // Store values we need before modifying the account
+    let escrow_amount = escrow.amount;
+    let escrow_id = escrow.escrow_id;
     
-    require!(can_cancel, EscrowError::Unauthorized);
-    
-    // Refund to client - fix for temporary value issue
-    let escrow_id_bytes = escrow.escrow_id.to_le_bytes();
-    let escrow_seeds = &[
-        ESCROW_SEED,
-        escrow.client.as_ref(),
-        escrow_id_bytes.as_ref(),
-        &[escrow.bump],
-    ];
-    let signer_seeds = &[&escrow_seeds[..]];
-    
-    let cpi_context = CpiContext::new_with_signer(
-        ctx.accounts.system_program.to_account_info(),
-        system_program::Transfer {
-            from: escrow.to_account_info(),
-            to: client.to_account_info(),
-        },
-        signer_seeds,
-    );
-    system_program::transfer(cpi_context, escrow.amount)?;
-    
+    // Update escrow state
     escrow.state = EscrowState::Cancelled;
     
+    // Transfer the escrowed amount back to client
+    // This must be done manually before the account is closed
+    **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= escrow_amount;
+    **ctx.accounts.client.try_borrow_mut_lamports()? += escrow_amount;
+    
     emit!(EscrowCancelled {
-        escrow_id: escrow.escrow_id,
-        timestamp: Clock::get()?.unix_timestamp,
+        escrow_id,
+        timestamp: clock.unix_timestamp,
     });
     
     msg!("Escrow cancelled, funds returned to client");
     Ok(())
+}
+
+// Helper function to determine if escrow can be cancelled
+fn can_cancel(escrow: &EscrowAccount, authority: &Pubkey) -> bool {
+    match escrow.state {
+        EscrowState::Proposed | EscrowState::AwaitingSigs => {
+            // Only client can cancel before Active
+            escrow.client == *authority
+        }
+        EscrowState::Active => {
+            // Both parties can cancel when Active
+            escrow.client == *authority || escrow.freelancer == *authority
+        }
+        _ => false, // Cannot cancel if already completed or cancelled
+    }
 }

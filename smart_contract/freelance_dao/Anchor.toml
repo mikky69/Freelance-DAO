@@ -11,7 +11,7 @@ governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
 staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
 disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
 shared = "4vvGqQjKWJmAmNx1iuNNwpSJrjgVxgr1wSWWA2ZEkfA6"
-escrow = "3RLxFsUQPpeM7sFG77TtqeN7sgHp7uybGJuoa4Cwg6QU"
+escrow = "5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg"
 
 [registry]
 url = "https://api.apr.dev"
