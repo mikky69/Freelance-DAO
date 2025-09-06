@@ -479,7 +479,7 @@ export default function StakingPage() {
               <div className="flex items-center">
                 <AlertCircle className="w-6 h-6 text-orange-500 mr-3" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-orange-900">Connect Your Solana Wallet</h3>
+                  <h3 className="font-semibold text-orange-900">Connect Your Wallet</h3>
                   <p className="text-orange-700">Connect your wallet to start staking and earning rewards.</p>
                 </div>
                 <Button className="bg-orange-600 hover:bg-orange-700">
