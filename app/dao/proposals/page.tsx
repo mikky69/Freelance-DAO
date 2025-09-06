@@ -196,7 +196,7 @@ export default function ProposalsPage() {
 
   const handleCreateProposal = async (formData: FormData) => {
     if (!isWalletConnected) {
-      toast.error("Please connect your Solana wallet to create a proposal")
+      toast.error("Please connect your wallet to create a proposal")
       return
     }
 
@@ -222,7 +222,7 @@ export default function ProposalsPage() {
 
   const handleVote = async (proposalId: number, vote: "yes" | "no") => {
     if (!isWalletConnected) {
-      toast.error("Please connect your Solana wallet to vote")
+      toast.error("Please connect your wallet to vote")
       return
     }
 
@@ -560,10 +560,10 @@ export default function ProposalsPage() {
               <div className="flex items-center">
                 <AlertCircle className="w-6 h-6 text-orange-500 mr-3" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-orange-900">Connect Your Solana Wallet</h3>
+                  <h3 className="font-semibold text-orange-900">Connect Your Wallet</h3>
                   <p className="text-orange-700">
-                    Connect your Solana-compatible wallet (Phantom, Solflare) to vote on proposals and create new ones.
-                    Voting requires a small SOL gas fee to prevent bot activity.
+                    Connect your wallet to vote on proposals and create new ones.
+                    Voting requires a small gas fee to prevent bot activity.
                   </p>
                 </div>
                 <Button className="bg-orange-600 hover:bg-orange-700">

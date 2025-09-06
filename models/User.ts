@@ -46,6 +46,7 @@ export interface IFreelancer extends Document {
 
   // Status Flags
   verified: boolean
+  suspended: boolean
   topRated: boolean
 
   // Portfolio
@@ -78,6 +79,7 @@ export interface IClient extends Document {
   hiringNeeds?: string // Add this field
   budgetPreference?: string // Add this field
   verified: boolean
+  suspended: boolean
   rating: number
   reviewCount: number
   createdAt: Date
@@ -198,6 +200,10 @@ const FreelancerSchema = new Schema<IFreelancer>(
       type: Boolean,
       default: false,
     },
+    suspended: {
+      type: Boolean,
+      default: false,
+    },
     topRated: {
       type: Boolean,
       default: false,
@@ -282,6 +288,10 @@ const ClientSchema = new Schema<IClient>(
       trim: true,
     },
     verified: {
+      type: Boolean,
+      default: false,
+    },
+    suspended: {
       type: Boolean,
       default: false,
     },

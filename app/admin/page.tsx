@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -215,6 +216,33 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(`Error ${action}ing job:`, error)
       toast.error(`Error ${action}ing job`)
+    }
+  }
+
+  const handleUserAction = async (userId: string, userType: string, action: 'verify' | 'suspend' | 'activate') => {
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId, userType, action })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(data.message)
+        // Refresh users list
+        fetchUsers()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || `Failed to ${action} user`)
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing user:`, error)
+      toast.error(`Error ${action}ing user`)
     }
   }
 
@@ -463,6 +491,16 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+              {!loading.users && users.length > 0 && (
+                <div className="mt-6 text-center">
+                  <Button asChild variant="outline">
+                    <Link href="/admin/users">
+                      <Users className="w-4 h-4 mr-2" />
+                      View All Users
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -544,11 +582,59 @@ export default function AdminDashboard() {
                               </Button>
                               {user.status === "Under Review" && (
                                 <>
-                                  <Button size="sm" className="bg-green-500 hover:bg-green-600">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-500 hover:bg-green-600"
+                                    onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'verify')}
+                                  >
                                     <UserCheck className="w-4 h-4 mr-1" />
                                     Approve
                                   </Button>
-                                  <Button variant="destructive" size="sm">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'suspend')}
+                                  >
+                                    <Ban className="w-4 h-4 mr-1" />
+                                    Suspend
+                                  </Button>
+                                </>
+                              )}
+                              {user.status === "Active" && (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'suspend')}
+                                >
+                                  <Ban className="w-4 h-4 mr-1" />
+                                  Suspend
+                                </Button>
+                              )}
+                              {user.status === "Suspended" && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-500 hover:bg-green-600"
+                                  onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'activate')}
+                                >
+                                  <UserCheck className="w-4 h-4 mr-1" />
+                                  Activate
+                                </Button>
+                              )}
+                              {user.status === "Pending Verification" && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-500 hover:bg-green-600"
+                                    onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'verify')}
+                                  >
+                                    <UserCheck className="w-4 h-4 mr-1" />
+                                    Verify
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleUserAction(user.id, user.type.toLowerCase(), 'suspend')}
+                                  >
                                     <Ban className="w-4 h-4 mr-1" />
                                     Suspend
                                   </Button>

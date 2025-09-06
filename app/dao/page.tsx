@@ -126,9 +126,9 @@ export default function DAOPage() {
               <div className="flex items-center">
                 <AlertTriangle className="w-6 h-6 text-orange-500 mr-3" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-orange-900">Connect Your Solana Wallet</h3>
+                  <h3 className="font-semibold text-orange-900">Connect Your Wallet</h3>
                   <p className="text-orange-700">
-                    Connect your Solana-compatible wallet (Phantom, Solflare) to participate in DAO governance.
+                    Connect your wallet to participate in DAO governance.
                   </p>
                 </div>
                 <Button className="bg-orange-600 hover:bg-orange-700">
