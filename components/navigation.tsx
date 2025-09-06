@@ -44,10 +44,24 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HederaWalletConnect } from "./hedera-wallet-connect";
+import { SidebarNavigation } from "./sidebar-navigation";
+
+type NavigationItem = {
+	href: string;
+	label: string;
+	icon: React.ComponentType<{ className?: string }>;
+	badge?: number;
+	subItems?: {
+		name: string;
+		href: string;
+		icon: React.ComponentType<{ className?: string }>;
+	}[];
+};
 
 export function TopNavigation() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [showWalletConnect, setShowWalletConnect] = useState(false);
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const pathname = usePathname();
 	const { user, isAuthenticated, isWalletConnected, signOut } = useAuth();
@@ -55,7 +69,7 @@ export function TopNavigation() {
 	const isActive = (path: string) => pathname === path;
 
 	// Navigation items for unauthenticated users
-	const publicNavigationItems = [
+	const publicNavigationItems: NavigationItem[] = [
 		{ href: "/", label: "Home", icon: Home },
 		{ href: "/jobs", label: "Browse Jobs", icon: Search },
 		{ href: "/freelancers", label: "Find Talent", icon: Users },
@@ -74,7 +88,7 @@ export function TopNavigation() {
 	];
 
 	// Navigation items for freelancers
-	const freelancerNavigationItems = [
+	const freelancerNavigationItems: NavigationItem[] = [
 		{ href: "/", label: "Home", icon: Home },
 		{ href: "/jobs", label: "Find Work", icon: Search },
 		{ href: "/dashboard", label: "Dashboard", icon: Briefcase },
@@ -95,7 +109,7 @@ export function TopNavigation() {
 	];
 
 	// Navigation items for clients
-	const clientNavigationItems = [
+	const clientNavigationItems: NavigationItem[] = [
 		{ href: "/", label: "Home", icon: Home },
 		{ href: "/post-job", label: "Post Job", icon: Plus },
 		{ href: "/dashboard", label: "Dashboard", icon: Briefcase },
@@ -168,6 +182,14 @@ export function TopNavigation() {
 
 	return (
 		<>
+			{/* Sidebar Navigation for authenticated users */}
+			{isAuthenticated && (
+				<SidebarNavigation
+					isOpen={isSidebarOpen}
+					onClose={() => setIsSidebarOpen(false)}
+				/>
+			)}
+
 			<nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95 shadow-sm">
 				<div className="container mx-auto px-4">
 					<div className="flex items-center justify-between h-16">
@@ -194,70 +216,69 @@ export function TopNavigation() {
 						</Link>
 
 						{/* Desktop Navigation */}
-						<div className="hidden lg:flex items-center space-x-1 relative">
-							{navigationItems.map((item) =>
-								item.subItems ? (
-									<div key={item.href} className="relative">
-										<Button
-											variant="ghost"
-											className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
-												isActive(item.href)
-													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-											}`}
-											onClick={() => handleDropdownToggle(item.href)}
-										>
-											<item.icon className="w-4 h-4" />
-											<span className="font-medium">{item.label}</span>
-											<ChevronDown
-												className={`w-4 h-4 transition-transform ${
-													openDropdown === item.href ? "rotate-180" : ""
+						{!isAuthenticated && (
+							/* Full navigation for unauthenticated users */
+							<div className="hidden lg:flex items-center space-x-1 relative">
+								{navigationItems.map((item) =>
+									item.subItems ? (
+										<div key={item.href} className="relative">
+											<Button
+												variant="ghost"
+												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
+													isActive(item.href)
+														? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
+														: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
 												}`}
-											/>
-										</Button>
-										{openDropdown === item.href && (
-											<div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
-												{item.subItems.map((sub) => (
-													<Link key={sub.href} href={sub.href}>
-														<div className="flex items-center px-4 py-2 hover:bg-blue-50 cursor-pointer">
-															<sub.icon className="w-4 h-4 mr-2 text-blue-500" />
-															<span className="text-slate-700 font-medium">
-																{sub.name}
-															</span>
-														</div>
-													</Link>
-												))}
-											</div>
-										)}
-									</div>
-								) : (
-									<Link key={item.href} href={item.href}>
-										<Button
-											variant="ghost"
-											className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
-												isActive(item.href)
-													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-											}`}
-										>
-											<item.icon className="w-4 h-4" />
-											<span className="font-medium">{item.label}</span>
-											{item.badge && (
-												<Badge className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 animate-pulse">
-													{item.badge}
-												</Badge>
+												onClick={() => handleDropdownToggle(item.href)}
+											>
+												<item.icon className="w-4 h-4" />
+												<span className="font-medium">{item.label}</span>
+												<ChevronDown
+													className={`w-4 h-4 transition-transform ${
+														openDropdown === item.href ? "rotate-180" : ""
+													}`}
+												/>
+											</Button>
+											{openDropdown === item.href && (
+												<div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+													{item.subItems.map((sub) => (
+														<Link key={sub.href} href={sub.href}>
+															<div className="flex items-center px-4 py-2 hover:bg-blue-50 cursor-pointer">
+																<sub.icon className="w-4 h-4 mr-2 text-blue-500" />
+																<span className="text-slate-700 font-medium">
+																	{sub.name}
+																</span>
+															</div>
+														</Link>
+													))}
+												</div>
 											)}
-											{isActive(item.href) && (
-												<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
-											)}
-										</Button>
-									</Link>
-								)
-							)}
-						</div>
+										</div>
+									) : (
+										<Link key={item.href} href={item.href}>
+											<Button
+												variant="ghost"
+												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
+													isActive(item.href)
+														? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
+														: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+												}`}
+											>
+												<item.icon className="w-4 h-4" />
+												<span className="font-medium">{item.label}</span>
+												{isActive(item.href) && (
+													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+												)}
+											</Button>
+										</Link>
+									)
+								)}
+							</div>
+						)}
 
 						{/* Right Side Actions */}
 						<div className="flex items-center space-x-3">
+							
 							{/* Notifications for authenticated users */}
 							{isAuthenticated && (
 								<Link href="/notifications">
@@ -325,9 +346,9 @@ export function TopNavigation() {
 												</AvatarFallback>
 											</Avatar>
 											<div className="hidden sm:block text-left">
-												<div className="text-sm font-medium text-slate-800">
+												{/* <div className="text-sm font-medium text-slate-800">
 													{user?.name}
-												</div>
+												</div> */}
 												<div className="flex items-center space-x-1">
 													{user?.isVerified && (
 														<CheckCircle className="w-3 h-3 text-green-500" />
@@ -525,20 +546,38 @@ export function TopNavigation() {
 								variant="ghost"
 								size="sm"
 								className="lg:hidden"
-								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+								onClick={() => {
+									if (isAuthenticated) {
+										setIsSidebarOpen(!isSidebarOpen);
+									} else {
+										setIsMobileMenuOpen(!isMobileMenuOpen);
+									}
+								}}
 							>
-								{isMobileMenuOpen ? (
+								{(isAuthenticated ? isSidebarOpen : isMobileMenuOpen) ? (
 									<X className="w-5 h-5" />
 								) : (
 									<Menu className="w-5 h-5" />
 								)}
 							</Button>
+							{/* Menu button for authenticated users on desktop */}
+							{isAuthenticated && (
+								<Button
+									variant="ghost"
+									size="sm"
+									className="hidden bg-blue-200 lg:flex text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+									onClick={() => setIsSidebarOpen(true)}
+								>
+									<Menu className="w-5 h-5" />
+									{/* <span className="ml-2">Menu</span> */}
+								</Button>
+							)}
 						</div>
 					</div>
 				</div>
 
-				{/* Mobile Menu */}
-				{isMobileMenuOpen && (
+				{/* Mobile Menu - only for unauthenticated users */}
+				{!isAuthenticated && isMobileMenuOpen && (
 					<div className="lg:hidden border-t border-slate-200 bg-white shadow-lg">
 						<div className="container mx-auto px-4 py-4 space-y-2">
 							{navigationItems.map((item) => (
