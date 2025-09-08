@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { DollarSign, Users, FileText, Shield, Plus, X, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DollarSign, Users, FileText, Shield, Plus, X, Loader2, CreditCard, Wallet } from "lucide-react"
 import { useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -39,6 +40,8 @@ export default function PostJobPage() {
   const [newSkill, setNewSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDraft, setIsDraft] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
 
   const addSkill = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
@@ -86,8 +89,35 @@ export default function PostJobPage() {
         toast.error(errors[0])
         return
       }
+      
+      // If job is featured and not draft, show payment modal
+      if (formData.featured) {
+        setShowPaymentModal(true)
+        return
+      }
     }
     
+    // If not featured or is draft, proceed directly
+    await processJobSubmission(asDraft)
+  }
+
+  const handlePaymentAndSubmit = async () => {
+    if (!selectedPaymentMethod) {
+      toast.error('Please select a payment method')
+      return
+    }
+    
+    setShowPaymentModal(false)
+    
+    // TODO: Implement actual payment processing here
+    // For now, we'll just proceed with job posting
+    toast.success(`Payment method selected: ${selectedPaymentMethod}. Payment processing  later.`)
+    
+    // Proceed with job posting
+    await processJobSubmission(false)
+  }
+
+  const processJobSubmission = async (asDraft = false) => {
     setIsSubmitting(true)
     setIsDraft(asDraft)
     
@@ -371,7 +401,7 @@ export default function PostJobPage() {
                     />
                     <Label htmlFor="featured" className="flex-1">
                       <div className="font-medium">Make this job featured</div>
-                      <div className="text-sm text-slate-500">Get more visibility for +100 HBAR</div>
+                      <div className="text-sm text-slate-500">Get more visibility for +$20</div>
                     </Label>
                   </div>
 
@@ -438,6 +468,88 @@ export default function PostJobPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Method Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
+              Choose Payment Method
+            </DialogTitle>
+            <DialogDescription>
+              Select your preferred payment method for the featured job listing (+$20)
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                <RadioGroupItem value="solana" id="solana" />
+                <Label htmlFor="solana" className="flex-1 cursor-pointer">
+                  <div className="flex items-center">
+                    <Wallet className="w-5 h-5 mr-2 text-purple-500" />
+                    <div>
+                      <div className="font-medium">Solana (SOL)</div>
+                      <div className="text-sm text-slate-500">Pay with Solana cryptocurrency</div>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                <RadioGroupItem value="hbar" id="hbar" />
+                <Label htmlFor="hbar" className="flex-1 cursor-pointer">
+                  <div className="flex items-center">
+                    <Wallet className="w-5 h-5 mr-2 text-green-500" />
+                    <div>
+                      <div className="font-medium">HBAR (Hedera)</div>
+                      <div className="text-sm text-slate-500">Pay with Hedera Hashgraph</div>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                <RadioGroupItem value="fiat" id="fiat" />
+                <Label htmlFor="fiat" className="flex-1 cursor-pointer">
+                  <div className="flex items-center">
+                    <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
+                    <div>
+                      <div className="font-medium">Credit/Debit Card</div>
+                      <div className="text-sm text-slate-500">Pay with traditional payment methods</div>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPaymentModal(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePaymentAndSubmit}
+              disabled={!selectedPaymentMethod || isSubmitting}
+              className="flex-1 bg-blue-500 hover:bg-blue-600"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Continue with Payment'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ProtectedRoute>
   )
 }
