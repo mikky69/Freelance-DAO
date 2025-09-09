@@ -43,10 +43,11 @@ import {
 	Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 import { MultiWalletConnect } from "./multi-wallet-connect";
 import { SidebarNavigation } from "./sidebar-navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Copy } from "lucide-react";
 
 type NavigationItem = {
 	href: string;
@@ -67,7 +68,12 @@ export function TopNavigation() {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const pathname = usePathname();
-	const { user, isAuthenticated, isWalletConnected, signOut } = useAuth();
+	const { user, isAuthenticated, isWalletConnected, signOut, disconnectWallet } = useAuth();
+
+	const maskAddress = (address: string) => {
+		if (!address) return "";
+		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	};
 
 	const isActive = (path: string) => pathname === path;
 
@@ -299,23 +305,67 @@ export function TopNavigation() {
 					{/* Wallet Connect Button for authenticated users */}
 			{isAuthenticated && (
 				<>
-					<Button
-						variant="outline"
-						className={`hidden sm:flex items-center space-x-2 transition-all duration-200 ${
-							isWalletConnected
-								? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-								: "border-blue-200 text-blue-600 hover:bg-blue-50"
-						}`}
-						onClick={() => setShowWalletDialog(true)}
-					>
-						<Wallet className="w-4 h-4" />
-						<span>
-							{isWalletConnected ? "Connected" : "Connect Wallet"}
-						</span>
-						{isWalletConnected && (
-							<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-						)}
-					</Button>
+					{isWalletConnected ? (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="outline"
+									className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+								>
+									<Wallet className="w-4 h-4" />
+									<span className="font-mono">
+										{user?.walletAddress ? maskAddress(user.walletAddress) : "Connected"}
+									</span>
+									<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+									<ChevronDown className="w-3 h-3" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-64">
+								<DropdownMenuLabel>Wallet Connected</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<div className="p-3">
+									<div className="flex items-center justify-between mb-2">
+										<span className="text-sm text-slate-600">Address:</span>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												if (user?.walletAddress) {
+													navigator.clipboard.writeText(user.walletAddress);
+													toast.success("Address copied to clipboard");
+												}
+											}}
+											className="h-6 w-6 p-0"
+										>
+											<Copy className="w-3 h-3" />
+										</Button>
+									</div>
+									<div className="font-mono text-sm bg-slate-100 p-2 rounded border break-all">
+										{user?.walletAddress || "No address"}
+									</div>
+								</div>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+										onClick={() => {
+											disconnectWallet();
+											toast.success("Wallet disconnected successfully");
+										}}
+										className="text-red-600 focus:text-red-600"
+									>
+										Disconnect Wallet
+									</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					) : (
+						<Button
+							variant="outline"
+							className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-blue-200 text-blue-600 hover:bg-blue-50"
+							onClick={() => setShowWalletDialog(true)}
+						>
+							<Wallet className="w-4 h-4" />
+							<span>Connect Wallet</span>
+						</Button>
+					)}
 					
 					<Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
 						<DialogContent className="max-w-md">

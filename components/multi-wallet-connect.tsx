@@ -32,6 +32,7 @@ import {
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { walletManager, type HederaAccount, type WalletError } from "@/lib/hedera-wallet"
+import { useAuth } from "@/lib/auth-context"
 
 interface MultiWalletConnectProps {
   onConnectionChange?: (connected: boolean, account?: HederaAccount, walletType?: 'hedera' | 'solana') => void
@@ -47,6 +48,7 @@ interface SolanaAccount {
 }
 
 export function MultiWalletConnect({ onConnectionChange, showDialog = true }: MultiWalletConnectProps) {
+  const { connectWallet: authConnectWallet, disconnectWallet: authDisconnectWallet } = useAuth()
   const [account, setAccount] = useState<HederaAccount | SolanaAccount | null>(null)
   const [walletType, setWalletType] = useState<WalletType | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -88,6 +90,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       const connectedAccount = await walletManager.connectWallet(walletId)
       setAccount(connectedAccount)
       setWalletType('hedera')
+      authConnectWallet(connectedAccount.accountId)
       onConnectionChange?.(true, connectedAccount, 'hedera')
       toast.success(`${walletName} wallet connected successfully!`)
       setShowWalletDialog(false)
@@ -139,6 +142,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
           
           setAccount(mockAccount)
           setWalletType('solana')
+          authConnectWallet(publicKey)
           onConnectionChange?.(true, mockAccount as any, 'solana')
           toast.success(`${walletName} wallet connected successfully!`)
           setShowWalletDialog(false)
@@ -177,6 +181,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       
       setAccount(null)
       setWalletType(null)
+      authDisconnectWallet()
       onConnectionChange?.(false)
       toast.success("Wallet disconnected")
     } catch (error) {
