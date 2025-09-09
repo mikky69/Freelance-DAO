@@ -23,7 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { Bot, CheckCircle, Zap, Wallet, ArrowRight, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
-import { HederaWalletConnect } from "@/components/hedera-wallet-connect"
+import { MultiWalletConnect } from "@/components/multi-wallet-connect"
 import type { HederaAccount } from "@/lib/hedera-wallet"
 
 /* -------------------------------------------------------------------------- */
@@ -325,7 +325,7 @@ function WalletConnectStep({
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Connect Wallet</h3>
       <p className="text-slate-600">Connect your Hedera wallet to create the smart contract and fund the escrow.</p>
-      <HederaWalletConnect onConnectionChange={handleConnectionChange} />
+      <MultiWalletConnect onConnectionChange={handleConnectionChange} />
       {connectedAccount && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-500" />

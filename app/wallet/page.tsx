@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { HederaWalletConnect } from "@/components/hedera-wallet-connect"
+import { MultiWalletConnect } from "@/components/multi-wallet-connect"
 import { walletManager, type HederaAccount } from "@/lib/hedera-wallet"
 import { ProtectedRoute } from "@/components/protected-route"
 
@@ -188,7 +188,7 @@ export default function WalletPage() {
           {!account ? (
             /* Wallet Connection */
             <div className="max-w-2xl mx-auto">
-              <HederaWalletConnect onConnectionChange={handleConnectionChange} />
+              <MultiWalletConnect onConnectionChange={handleConnectionChange} />
             </div>
           ) : (
             /* Wallet Dashboard */
@@ -476,7 +476,7 @@ export default function WalletPage() {
                       </div>
 
                       <div className="pt-4 border-t border-slate-200">
-                        <HederaWalletConnect onConnectionChange={handleConnectionChange} />
+                        <MultiWalletConnect onConnectionChange={handleConnectionChange} />
                       </div>
                     </CardContent>
                   </Card>

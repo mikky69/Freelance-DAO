@@ -43,8 +43,10 @@ import {
 	Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { HederaWalletConnect } from "./hedera-wallet-connect";
+import { MultiWalletConnect } from "./multi-wallet-connect";
 import { SidebarNavigation } from "./sidebar-navigation";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sparkles } from "lucide-react";
 
 type NavigationItem = {
 	href: string;
@@ -61,6 +63,7 @@ type NavigationItem = {
 export function TopNavigation() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [showWalletConnect, setShowWalletConnect] = useState(false);
+	const [showWalletDialog, setShowWalletDialog] = useState(false);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const pathname = usePathname();
@@ -293,41 +296,49 @@ export function TopNavigation() {
 								</Link>
 							)}
 
-							{/* Wallet Connect Button for authenticated users */}
-							{isAuthenticated && (
-								<DropdownMenu
-									open={showWalletConnect}
-									onOpenChange={setShowWalletConnect}
-								>
-									<DropdownMenuTrigger asChild>
-										<Button
-											variant="outline"
-											className={`hidden sm:flex items-center space-x-2 transition-all duration-200 ${
-												isWalletConnected
-													? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-													: "border-blue-200 text-blue-600 hover:bg-blue-50"
-											}`}
-										>
-											<Wallet className="w-4 h-4" />
-											<span>
-												{isWalletConnected ? "Connected" : "Connect Wallet"}
-											</span>
-											{isWalletConnected && (
-												<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-											)}
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-80">
-										<DropdownMenuLabel>Hedera Wallet</DropdownMenuLabel>
-										<DropdownMenuSeparator />
-										<div className="p-2">
-											<HederaWalletConnect
-												onConnectionChange={() => setShowWalletConnect(false)}
-											/>
-										</div>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							)}
+					{/* Wallet Connect Button for authenticated users */}
+			{isAuthenticated && (
+				<>
+					<Button
+						variant="outline"
+						className={`hidden sm:flex items-center space-x-2 transition-all duration-200 ${
+							isWalletConnected
+								? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+								: "border-blue-200 text-blue-600 hover:bg-blue-50"
+						}`}
+						onClick={() => setShowWalletDialog(true)}
+					>
+						<Wallet className="w-4 h-4" />
+						<span>
+							{isWalletConnected ? "Connected" : "Connect Wallet"}
+						</span>
+						{isWalletConnected && (
+							<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+						)}
+					</Button>
+					
+					<Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
+						<DialogContent className="max-w-md">
+							<DialogHeader>
+								<DialogTitle className="flex items-center space-x-2">
+									<Sparkles className="w-5 h-5 text-blue-500" />
+									<span>Choose Wallet Type</span>
+								</DialogTitle>
+								<DialogDescription>Select your preferred blockchain wallet</DialogDescription>
+							</DialogHeader>
+							<div className="p-4">
+								<MultiWalletConnect
+									showDialog={false}
+									onConnectionChange={() => {
+										setShowWalletDialog(false)
+										setShowWalletConnect(false)
+									}}
+								/>
+							</div>
+						</DialogContent>
+					</Dialog>
+				</>
+			)}
 
 							{/* User Menu or Auth Buttons */}
 							{isAuthenticated ? (
@@ -668,7 +679,7 @@ export function TopNavigation() {
 							{isAuthenticated && (
 								<div className="border-t border-slate-200 pt-4 mt-4">
 									<div className="p-2">
-										<HederaWalletConnect />
+										<MultiWalletConnect />
 									</div>
 								</div>
 							)}
