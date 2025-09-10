@@ -594,27 +594,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       )}
 
       <div className="text-center pt-4 border-t border-slate-200">
-        <p className="text-sm text-slate-600 mb-3">New to crypto wallets?</p>
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 bg-transparent"
-            onClick={() => window.open("https://docs.hedera.com/hedera/getting-started/introduction", "_blank")}
-          >
-            <ExternalLink className="w-3 h-3 mr-2" />
-            Learn About Wallets
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-500 hover:text-blue-600 transition-colors duration-200"
-            onClick={() => window.open("https://hedera.com/wallets", "_blank")}
-          >
-            View all supported wallets
-            <ExternalLink className="w-3 h-3 ml-2" />
-          </Button>
-        </div>
+       
       </div>
     </>
   )
