@@ -1,4 +1,3 @@
-// programs/staking/src/instructions/staking.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::state_accounts::{StakePool, StakePosition};

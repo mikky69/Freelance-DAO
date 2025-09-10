@@ -1,4 +1,3 @@
-// programs/staking/src/instructions/init.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Mint};
 use crate::{

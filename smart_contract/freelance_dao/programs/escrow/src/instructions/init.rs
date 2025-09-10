@@ -1,4 +1,3 @@
-
 use anchor_lang::prelude::*;
 use crate::{state::Counter, constants::COUNTER_SEED};
 

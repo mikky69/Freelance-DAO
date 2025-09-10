@@ -1,4 +1,3 @@
-// programs/staking/src/instructions/mod.rs
 pub mod init;
 pub mod staking;
 pub mod rewards;

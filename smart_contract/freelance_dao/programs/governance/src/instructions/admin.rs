@@ -1,5 +1,3 @@
-// UPDATED admin.rs
-// ============================================
 use anchor_lang::prelude::*;
 use crate::{state_accounts::DaoConfig, errors::ErrorCode};
 

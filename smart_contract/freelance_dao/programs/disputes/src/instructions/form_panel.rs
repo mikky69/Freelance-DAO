@@ -1,4 +1,3 @@
-// instructions/form_panel.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::PanelFormed;

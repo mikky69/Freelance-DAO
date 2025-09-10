@@ -1,4 +1,3 @@
-// programs/governance/src/state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]

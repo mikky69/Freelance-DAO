@@ -1,5 +1,3 @@
-// UPDATED mod.rs
-// ============================================
 pub mod init;
 pub mod proposals;
 pub mod voting;

@@ -1,4 +1,3 @@
-// programs/governance/src/instructions/init.rs
 use anchor_lang::prelude::*;
 use crate::state_accounts::DaoConfig;
 use crate::errors::ErrorCode;

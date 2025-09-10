@@ -1,4 +1,3 @@
-// instructions/panel_vote.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::PanelVoteCast;

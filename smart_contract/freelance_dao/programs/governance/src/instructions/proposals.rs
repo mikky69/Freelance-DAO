@@ -1,4 +1,3 @@
-// FIXED proposals.rs - Add rent sysvar and fix field names
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::{

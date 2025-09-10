@@ -1,4 +1,3 @@
-// instructions/finalize_judgment.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::DisputeJudged;

@@ -1,4 +1,3 @@
-// FIXED lib.rs - Simple version without complex integration
 use anchor_lang::prelude::*;
 
 pub mod state_accounts;

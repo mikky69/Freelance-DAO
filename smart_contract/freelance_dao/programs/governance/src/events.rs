@@ -1,4 +1,3 @@
-// UPDATED events.rs
 use anchor_lang::prelude::*;
 use crate::state::{ProposalKind, ProposalState, VoteChoice};
 

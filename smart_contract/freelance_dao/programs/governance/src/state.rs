@@ -1,5 +1,3 @@
-// UPDATED state.rs
-// ============================================
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Default)]

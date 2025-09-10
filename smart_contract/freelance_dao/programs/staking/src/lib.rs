@@ -1,4 +1,3 @@
-// programs/staking/src/lib.rs
 use anchor_lang::prelude::*;
 
 pub mod state_accounts;

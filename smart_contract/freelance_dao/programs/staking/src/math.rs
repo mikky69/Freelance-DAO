@@ -1,4 +1,3 @@
-// programs/staking/src/math.rs
 use anchor_lang::prelude::*;
 use crate::errors::StakingError;
 

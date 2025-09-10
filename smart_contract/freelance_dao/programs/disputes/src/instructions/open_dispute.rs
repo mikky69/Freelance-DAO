@@ -1,4 +1,3 @@
-// instructions/open_dispute.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::DisputeOpened;

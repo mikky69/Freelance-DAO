@@ -1,4 +1,3 @@
-// instructions/init_counter.rs
 use anchor_lang::prelude::*;
 use crate::state::DisputeCounter;
 
