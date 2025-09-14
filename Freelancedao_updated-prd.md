@@ -113,3 +113,105 @@ The following chart compares FreelanceDAO with key competitors based on features
     }
   }
 }
+
+4. Key Features and Workflows
+The platform is divided into three main navigation sections: Work, Hire, and Govern. Below, we outline core workflows with visual aids in mind (e.g., flowcharts for designers).
+
+4.1 Work Section (For Freelancers, AI Creators, Hybrid Teams)
+This section allows providers to manage profiles, showcase services, and engage in projects.
+
+- Profile Registration:
+  - Freelancers: Upload portfolio, skills, rates.
+  - AI Creators: Add AI agents (description, capabilities, limitations, usage fees, royalty %).
+  - Hybrid Teams: Register as institutions/studios/labs. Include team members (humans + AI agents), specialties (e.g., full-stack web dev: UI/UX, frontend, backend), capacity, and pricing models.
+  - Workflow: User selects type (Human Team / AI Team / Hybrid) → Fill form → Verify via wallet connect → Profile live.
+
+- AI Agent Marketplace:
+  - A dedicated subsection for browsing/hiring AI agents.
+  - Creators list agents with: Name, Description (e.g., "AI Copywriter for marketing"), Limitations (e.g., "No legal advice"), Fee structure (per task/hour), Royalties (e.g., 10% on resales).
+  - Clients search/filter by task type → Hire instantly or integrate into hybrid teams.
+  - Workflow: Creator uploads → Moderation (light review) → Listed → Client hires → Agent executes → Payment split (client pays fee; creator gets royalty).
+
+- Job Bidding and Collaboration:
+  - Providers bid on client postings or form ad-hoc teams.
+  - Supports hybrid formations: E.g., Freelancer + AI Agent.
+  - Visual Aid for Designers: Use swimlane flowchart showing Client Post → Bid Review → Team Assembly → Milestone Tracking.
+
+4.2 Hire Section (For Clients)
+Focus on discovering and engaging teams.
+
+- Team Discovery:
+  - Browse by type: Human Teams, AI Teams, Hybrid Teams.
+  - Filters: Skills, Budget, Location (decentralized, so wallet-based), Ratings.
+  - UI Element: Circular avatar carousel (as in brief image) showing diverse team icons (human photos, AI avatars, hybrid blends).
+
+- Project Posting and Hiring:
+  - Post RFP with scope, budget, timeline.
+  - Receive proposals from individuals/teams.
+  - Hire via smart contract escrow.
+  - Workflow: Post Job → Review Bids → Select Team (e.g., Creative Studio for website: auto-assigns UI/UX, devs) → Onboard → Track via dashboard → Release funds.
+
+- Project Management:
+  - Real-time collaboration tools (integrated chat, milestone gates).
+  - AI-assisted: Agents handle routine tasks (e.g., code generation).
+
+4.3 Govern Section (DAO Governance)
+Newly added for community-driven decision-making. Accessible to FLDAO token holders.
+
+- Proposals:
+  - Major Proposals: For significant changes (e.g., protocol upgrades, fee adjustments). Requires quorum vote; if passed, auto-implemented via governance contracts.
+  - Light Proposals: For minor tweaks (e.g., UI updates, feature requests). Faster voting; manual implementation by core team.
+  - Workflow: Member submits (title, description, vote options) → Discussion period → Vote (quadratic/1-token-1-vote) → Execution.
+
+- Dispute Resolution:
+  - Handles conflicts between clients and freelancers/hybrid teams (e.g., scope creep, quality issues).
+  - Workflow: Party submits dispute (evidence upload) → Arbitrator pool (staked members) reviews → Vote on resolution (refund, rework) → Enforced via escrow.
+
+- Staking:
+  - Users stake FLDAO tokens to participate in governance, earn rewards, or signal commitment.
+  - Slashing for bad actors in disputes.
+  - Workflow: Connect wallet → Stake amount → Lock period → Delegate to pools if desired.
+
+- DAO News:
+  - Feed of updates: Proposal outcomes, platform announcements, community highlights.
+  - Integrated with X/Discord for real-time alerts.
+  - UI Element: Timeline view with purple/orange accents for categories (Proposals in orange, News in purple).
+
+Visual Aid for Designers: High-level site map flowchart:
+Home → [Work | Hire | Govern]
+  ├── Work
+  │   ├── Profile Setup (Human/AI/Hybrid)
+  │   └── AI Marketplace
+  ├── Hire
+  │   ├── Browse Teams
+  │   └── Post Job → Manage Project
+  └── Govern
+      ├── Proposals (Major/Light)
+      ├── Disputes
+      ├── Staking
+      └── News
+
+5. Non-Functional Requirements
+- Tech Stack:
+  - Frontend: React/Next.js
+  - Backend: Smart contracts on Solana and Hedera (initial); planned expansion to Ethereum and other blockchains for payment flexibility.
+  - Storage: IPFS
+- Security: Wallet integration (e.g., Phantom for Solana, HashPack for Hedera), multi-sig for treasury, audit proposals.
+- Accessibility: WCAG 2.1 compliant; dark mode with rebranded colors.
+- Performance: <2s load times; scalable for 10k+ users.
+- Mobile Responsiveness: Full support for iOS/Android apps.
+
+6. Success Metrics
+- Engagement: 500+ monthly active users; 100 hires/month.
+- Governance: 70% proposal participation rate.
+- Retention: 80% repeat clients; 20% hybrid team growth QoQ.
+- KPIs: Average project completion time <14 days; Dispute resolution <7 days.
+
+7. Risks and Dependencies
+- Risks: Low token adoption → Mitigate with airdrops; AI limitations → Clear disclaimers; Multi-chain complexity → Phased rollout with testing.
+- Dependencies: Solana/Hedera nodes; Future Ethereum integration; Oracles for off-chain data; Discord/X integrations.
+
+8. Appendices
+- Wireframe Guidelines: Use Figma for prototypes; Incorporate circular team visuals from brief.
+- Tokenomics: FLDAO for governance/staking (details in whitepaper).
+- Roadmap: Q4 2025 - Launch Govern; Q1 2026 - AI Marketplace v2; Q2 2026 - Ethereum payment support.
