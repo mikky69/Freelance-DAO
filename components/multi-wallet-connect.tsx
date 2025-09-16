@@ -247,6 +247,14 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
         gradient: "from-green-500 to-green-600",
         installUrl: "#",
       },
+      metamask: {
+        name: "MetaMask",
+        description: "The most popular Ethereum wallet",
+        icon: "🦊",
+        recommended: false,
+        gradient: "from-orange-500 to-red-600",
+        installUrl: "https://metamask.io/",
+      },
     }
     return configs[walletId as keyof typeof configs]
   }

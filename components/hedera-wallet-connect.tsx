@@ -158,6 +158,14 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
         installUrl:
           "https://chrome.google.com/webstore/detail/blade-hedera-web3-digital/abogmiocnneedmmepnohnhlijcjpcifd",
       },
+      metamask: {
+        name: "MetaMask",
+        description: "Popular EVM wallet. Now supports Hedera via JSON-RPC.",
+        icon: "🦊",
+        recommended: false,
+        gradient: "from-orange-500 to-amber-500",
+        installUrl: "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
+      },
       kabila: {
         name: "Kabila Wallet",
         description: "Enterprise-grade security",
@@ -304,11 +312,10 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
                 return (
                   <Card
                     key={wallet.id}
-                    className={`cursor-pointer transition-all duration-300 border-slate-200 ${
-                      wallet.isInstalled
-                        ? "hover:shadow-lg hover:scale-105 hover:border-blue-300"
-                        : "opacity-60 cursor-not-allowed"
-                    }`}
+                    className={`cursor-pointer transition-all duration-300 border-slate-200 ${wallet.isInstalled
+                      ? "hover:shadow-lg hover:scale-105 hover:border-blue-300"
+                      : "opacity-60 cursor-not-allowed"
+                      }`}
                     onClick={() => {
                       if (wallet.isInstalled) {
                         connectWallet(wallet.id, config.name)
