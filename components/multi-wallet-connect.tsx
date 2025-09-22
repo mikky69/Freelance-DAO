@@ -33,6 +33,7 @@ import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { walletManager, type HederaAccount, type WalletError } from "@/lib/hedera-wallet"
 import { useAuth } from "@/lib/auth-context"
+import Image from "next/image"
 
 interface MultiWalletConnectProps {
   onConnectionChange?: (connected: boolean, account?: HederaAccount, walletType?: 'hedera' | 'solana') => void
@@ -60,27 +61,10 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
   const [connectionError, setConnectionError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get available Hedera wallets
-    const hederaWallets = walletManager.getAvailableWallets()
+    // Only show MetaMask as Hedera wallet
+    const hederaWallets = walletManager.getAvailableWallets().filter(w => w.id === 'metamask')
     setAvailableHederaWallets(hederaWallets)
-
-    // Try to restore previous connection
-    restoreConnection()
   }, [])
-
-  const restoreConnection = async () => {
-    try {
-      const restoredAccount = await walletManager.restoreConnection()
-      if (restoredAccount) {
-        setAccount(restoredAccount)
-        setWalletType('hedera')
-        onConnectionChange?.(true, restoredAccount, 'hedera')
-        toast.success("Wallet connection restored")
-      }
-    } catch (error) {
-      console.error("Failed to restore wallet connection:", error)
-    }
-  }
 
   const connectHederaWallet = async (walletId: string, walletName: string) => {
     setIsConnecting(true)
@@ -128,18 +112,18 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       // Check if Solana wallet is available
       if (typeof window !== 'undefined' && (window as any).solana) {
         const solana = (window as any).solana
-        
+
         if (solana.isPhantom) {
           const response = await solana.connect()
           const publicKey = response.publicKey.toString()
-          
+
           // Mock balance for now - in real implementation, you'd fetch from Solana network
           const mockAccount: SolanaAccount = {
             publicKey,
             balance: "0.00",
             network: "devnet"
           }
-          
+
           setAccount(mockAccount)
           setWalletType('solana')
           authConnectWallet(publicKey)
@@ -155,7 +139,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       }
     } catch (error: any) {
       let errorMessage = "Failed to connect Solana wallet"
-      
+
       if (error.message.includes("not installed") || error.message.includes("not detected")) {
         errorMessage = `${walletName} is not installed. Please install it and refresh the page.`
       } else if (error.code === 4001) {
@@ -178,7 +162,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       } else if (walletType === 'solana' && typeof window !== 'undefined' && (window as any).solana) {
         await (window as any).solana.disconnect()
       }
-      
+
       setAccount(null)
       setWalletType(null)
       authDisconnectWallet()
@@ -223,35 +207,19 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
 
   const getHederaWalletConfig = (walletId: string) => {
     const configs = {
-      hashpack: {
-        name: "HashPack",
-        description: "The most popular Hedera wallet",
-        icon: "🔐",
-        recommended: true,
-        gradient: "from-purple-500 to-purple-600",
-        installUrl: "https://chrome.google.com/webstore/detail/hashpack/gjagmgiddbbciopjhllkdnddhcglnemk",
-      },
-      blade: {
-        name: "Blade Wallet",
-        description: "User-friendly with DeFi features",
-        icon: "⚡",
-        recommended: false,
-        gradient: "from-blue-500 to-blue-600",
-        installUrl: "https://chrome.google.com/webstore/detail/blade-hedera-web3-digital/abogmiocnneedmmepnohnhlijcjpcifd",
-      },
-      kabila: {
-        name: "Kabila Wallet",
-        description: "Enterprise-grade security",
-        icon: "🛡️",
-        recommended: false,
-        gradient: "from-green-500 to-green-600",
-        installUrl: "#",
-      },
       metamask: {
         name: "MetaMask",
         description: "The most popular Ethereum wallet",
-        icon: "🦊",
-        recommended: false,
+        icon: (
+          <Image
+            src="/metamask.svg"
+            alt="MetaMask"
+            width={32}
+            height={32}
+            className="block"
+          />
+        ),
+        recommended: true,
         gradient: "from-orange-500 to-red-600",
         installUrl: "https://metamask.io/",
       },
@@ -285,10 +253,10 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
   }
 
   if (account) {
-    const isHedera = walletType === 'hedera'
+    const isHedera = walletType === 'hedera';
     const displayBalance = isHedera ? `${account.balance} HBAR` : `${account.balance} SOL`
     const displayAddress = isHedera ? (account as HederaAccount).accountId : (account as SolanaAccount).publicKey
-    
+
     return (
       <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
         <CardHeader className="pb-3">
@@ -455,15 +423,13 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
           {availableHederaWallets.map((wallet) => {
             const config = getHederaWalletConfig(wallet.id)
             if (!config) return null
-
             return (
               <Card
                 key={wallet.id}
-                className={`cursor-pointer transition-all duration-300 border-slate-200 ${
-                  wallet.isInstalled
-                    ? "hover:shadow-lg hover:scale-105 hover:border-blue-300"
-                    : "opacity-60 cursor-not-allowed"
-                }`}
+                className={`cursor-pointer transition-all duration-300 border-slate-200 ${wallet.isInstalled
+                  ? "hover:shadow-lg hover:scale-105 hover:border-orange-300"
+                  : "opacity-60 cursor-not-allowed"
+                  }`}
                 onClick={() => {
                   if (wallet.isInstalled) {
                     connectHederaWallet(wallet.id, config.name)
@@ -479,12 +445,12 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-semibold text-slate-800">{config.name}</span>
-                          {/* {config.recommended && (
+                          {config.recommended && (
                             <Badge className="bg-green-100 text-green-700 text-xs animate-pulse">
                               <Sparkles className="w-3 h-3 mr-1" />
                               Recommended
                             </Badge>
-                          )} */}
+                          )}
                           {!wallet.isInstalled && (
                             <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-xs">
                               Not Installed
@@ -496,9 +462,9 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
                     </div>
                     <div className="flex flex-col items-center space-y-2">
                       {isConnecting ? (
-                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                        <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
                       ) : wallet.isInstalled ? (
-                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors duration-200" />
+                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors duration-200" />
                       ) : (
                         <Button
                           variant="outline"
@@ -510,7 +476,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
                           className="text-xs"
                         >
                           <Download className="w-3 h-3 mr-1" />
-                          
+                          Install
                         </Button>
                       )}
                     </div>
@@ -539,11 +505,10 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
           {getSolanaWallets().map((wallet) => (
             <Card
               key={wallet.id}
-              className={`cursor-pointer transition-all duration-300 border-slate-200 ${
-                wallet.isInstalled
-                  ? "hover:shadow-lg hover:scale-105 hover:border-purple-300"
-                  : "opacity-60 cursor-not-allowed"
-              }`}
+              className={`cursor-pointer transition-all duration-300 border-slate-200 ${wallet.isInstalled
+                ? "hover:shadow-lg hover:scale-105 hover:border-purple-300"
+                : "opacity-60 cursor-not-allowed"
+                }`}
               onClick={() => {
                 if (wallet.isInstalled) {
                   connectSolanaWallet(wallet.name)
@@ -602,7 +567,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
       )}
 
       <div className="text-center pt-4 border-t border-slate-200">
-       
+
       </div>
     </>
   )

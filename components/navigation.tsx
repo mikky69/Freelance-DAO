@@ -48,6 +48,7 @@ import { MultiWalletConnect } from "./multi-wallet-connect";
 import { SidebarNavigation } from "./sidebar-navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Copy } from "lucide-react";
+import { walletManager } from "@/lib/hedera-wallet";
 
 type NavigationItem = {
 	href: string;
@@ -67,12 +68,20 @@ export function TopNavigation() {
 	const [showWalletDialog, setShowWalletDialog] = useState(false);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
+	const [walletBalance, setWalletBalance] = useState<string | null>(null);
+	const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 	const pathname = usePathname();
 	const { user, isAuthenticated, isWalletConnected, signOut, disconnectWallet } = useAuth();
 
 	const maskAddress = (address: string) => {
 		if (!address) return "";
+		if (address.length <= 11) return address;
 		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	};
+
+	const getHederaBalance = async () => {
+		const bal = await walletManager.refreshBalance();
+		return bal;
 	};
 
 	const isActive = (path: string) => pathname === path;
@@ -189,6 +198,20 @@ export function TopNavigation() {
 		setOpenDropdown((prev) => (prev === href ? null : href));
 	};
 
+	// Fetch balance when dropdown opens and wallet is connected
+	useEffect(() => {
+		if (isWalletConnected && user?.walletAddress) {
+			setIsBalanceLoading(true);
+			getHederaBalance().then((bal) => {
+				setWalletBalance(bal);
+				setIsBalanceLoading(false);
+			});
+		} else {
+			setWalletBalance(null);
+		}
+		// Only run when wallet connection changes
+	}, [isWalletConnected, user?.walletAddress]);
+
 	return (
 		<>
 			{/* Sidebar Navigation for authenticated users */}
@@ -233,19 +256,17 @@ export function TopNavigation() {
 										<div key={item.href} className="relative">
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
-													isActive(item.href)
-														? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-														: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-												}`}
+												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${isActive(item.href)
+													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
+													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+													}`}
 												onClick={() => handleDropdownToggle(item.href)}
 											>
 												<item.icon className="w-4 h-4" />
 												<span className="font-medium">{item.label}</span>
 												<ChevronDown
-													className={`w-4 h-4 transition-transform ${
-														openDropdown === item.href ? "rotate-180" : ""
-													}`}
+													className={`w-4 h-4 transition-transform ${openDropdown === item.href ? "rotate-180" : ""
+														}`}
 												/>
 											</Button>
 											{openDropdown === item.href && (
@@ -267,11 +288,10 @@ export function TopNavigation() {
 										<Link key={item.href} href={item.href}>
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${
-													isActive(item.href)
-														? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-														: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-												}`}
+												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${isActive(item.href)
+													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
+													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+													}`}
 											>
 												<item.icon className="w-4 h-4" />
 												<span className="font-medium">{item.label}</span>
@@ -287,7 +307,7 @@ export function TopNavigation() {
 
 						{/* Right Side Actions */}
 						<div className="flex items-center space-x-3">
-							
+
 							{/* Notifications for authenticated users */}
 							{isAuthenticated && (
 								<Link href="/notifications">
@@ -302,93 +322,102 @@ export function TopNavigation() {
 								</Link>
 							)}
 
-					{/* Wallet Connect Button for authenticated users */}
-			{isAuthenticated && (
-				<>
-					{isWalletConnected ? (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-								>
-									<Wallet className="w-4 h-4" />
-									<span className="font-mono">
-										{user?.walletAddress ? maskAddress(user.walletAddress) : "Connected"}
-									</span>
-									<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-									<ChevronDown className="w-3 h-3" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-64">
-								<DropdownMenuLabel>Wallet Connected</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								<div className="p-3">
-									<div className="flex items-center justify-between mb-2">
-										<span className="text-sm text-slate-600">Address:</span>
+							{/* Wallet Connect Button for authenticated users */}
+							{isAuthenticated && (
+								<>
+									{isWalletConnected ? (
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="outline"
+													className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+												>
+													<Wallet className="w-4 h-4" />
+													<span className="font-mono">
+														{user?.walletAddress ? maskAddress(user.walletAddress) : "Connected"}
+													</span>
+													<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+													<ChevronDown className="w-3 h-3" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end" className="w-64">
+												<DropdownMenuSeparator />
+												<div className="p-3">
+													<div className="flex items-center justify-between mb-2">
+														<span className="text-sm text-slate-600">Connected Address:</span>
+
+													</div>
+													<div className="font-mono text-sm bg-slate-100 p-2 rounded border break-all flex justify-between items-center">
+														{user?.walletAddress || "No address"}
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() => {
+																if (user?.walletAddress) {
+																	navigator.clipboard.writeText(user.walletAddress);
+																	toast.success("Address copied to clipboard");
+																}
+															}}
+															className="h-6 w-6 p-0"
+														>
+															<Copy className="w-3 h-3" />
+														</Button>
+													</div>
+													{user?.walletAddress && (
+														<div className="text-sm mt-4 text-slate-600 ">
+															Balance: {isBalanceLoading ? (
+																<span className="font-mono text-slate-400">0.00</span>
+															) : (
+																<span className="font-mono bg-slate-100 p-2 rounded border break-all">{walletBalance ?? 0} HBAR</span>
+															)}
+														</div>
+													)}
+												</div>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onClick={() => {
+														disconnectWallet();
+														toast.success("Wallet disconnected successfully");
+													}}
+													className="text-red-600 focus:text-red-600"
+												>
+													Disconnect Wallet
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									) : (
 										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												if (user?.walletAddress) {
-													navigator.clipboard.writeText(user.walletAddress);
-													toast.success("Address copied to clipboard");
-												}
-											}}
-											className="h-6 w-6 p-0"
+											variant="outline"
+											className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-blue-200 text-blue-600 hover:bg-blue-50"
+											onClick={() => setShowWalletDialog(true)}
 										>
-											<Copy className="w-3 h-3" />
+											<Wallet className="w-4 h-4" />
+											<span>Connect Wallet</span>
 										</Button>
-									</div>
-									<div className="font-mono text-sm bg-slate-100 p-2 rounded border break-all">
-										{user?.walletAddress || "No address"}
-									</div>
-								</div>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-										onClick={() => {
-											disconnectWallet();
-											toast.success("Wallet disconnected successfully");
-										}}
-										className="text-red-600 focus:text-red-600"
-									>
-										Disconnect Wallet
-									</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					) : (
-						<Button
-							variant="outline"
-							className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-blue-200 text-blue-600 hover:bg-blue-50"
-							onClick={() => setShowWalletDialog(true)}
-						>
-							<Wallet className="w-4 h-4" />
-							<span>Connect Wallet</span>
-						</Button>
-					)}
-					
-					<Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
-						<DialogContent className="max-w-md">
-							<DialogHeader>
-								<DialogTitle className="flex items-center space-x-2">
-									<Sparkles className="w-5 h-5 text-blue-500" />
-									<span>Choose Wallet Type</span>
-								</DialogTitle>
-								<DialogDescription>Select your preferred blockchain wallet</DialogDescription>
-							</DialogHeader>
-							<div className="p-4">
-								<MultiWalletConnect
-									showDialog={false}
-									onConnectionChange={() => {
-										setShowWalletDialog(false)
-										setShowWalletConnect(false)
-									}}
-								/>
-							</div>
-						</DialogContent>
-					</Dialog>
-				</>
-			)}
+									)}
+
+									<Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
+										<DialogContent className="max-w-md">
+											<DialogHeader>
+												<DialogTitle className="flex items-center space-x-2">
+													<Sparkles className="w-5 h-5 text-blue-500" />
+													<span>Choose Wallet Type</span>
+												</DialogTitle>
+												<DialogDescription>Select your preferred blockchain wallet</DialogDescription>
+											</DialogHeader>
+											<div className="p-4">
+												<MultiWalletConnect
+													showDialog={false}
+													onConnectionChange={() => {
+														setShowWalletDialog(false)
+														setShowWalletConnect(false)
+													}}
+												/>
+											</div>
+										</DialogContent>
+									</Dialog>
+								</>
+							)}
 
 							{/* User Menu or Auth Buttons */}
 							{isAuthenticated ? (
@@ -448,9 +477,8 @@ export function TopNavigation() {
 														<span>
 															{user?.role === "freelancer"
 																? `${user?.profile?.completedJobs || 0} Jobs`
-																: `${
-																		user?.profile?.projectsPosted || 0
-																  } Projects`}
+																: `${user?.profile?.projectsPosted || 0
+																} Projects`}
 														</span>
 													</div>
 												</div>
@@ -649,11 +677,10 @@ export function TopNavigation() {
 								>
 									<Button
 										variant="ghost"
-										className={`w-full justify-start transition-all duration-200 ${
-											isActive(item.href)
-												? "bg-blue-100 text-blue-600"
-												: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-										}`}
+										className={`w-full justify-start transition-all duration-200 ${isActive(item.href)
+											? "bg-blue-100 text-blue-600"
+											: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+											}`}
 									>
 										<item.icon className="w-4 h-4 mr-3" />
 										{item.label}
@@ -793,11 +820,10 @@ export function BottomNavigation() {
 						<Button
 							variant="ghost"
 							size="sm"
-							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-200 relative ${
-								isActive(item.href)
-									? "bg-blue-100 text-blue-600 scale-105"
-									: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-							}`}
+							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-200 relative ${isActive(item.href)
+								? "bg-blue-100 text-blue-600 scale-105"
+								: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+								}`}
 						>
 							<item.icon className="w-5 h-5" />
 							<span className="text-xs font-medium">{item.label}</span>

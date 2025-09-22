@@ -281,14 +281,14 @@ class MetaMaskProvider implements WalletProvider {
   private async resolveHederaAccountId(evmAddress: string): Promise<string> {
     try {
       const response = await fetch(
-        `https://testnet.mirrornode.hedera.com/api/v1/accounts?evm_address=${evmAddress}`,
+        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${evmAddress}`,
       )
       if (!response.ok) {
         throw new Error("Failed to resolve Hedera account from EVM address")
       }
       const data = await response.json()
-      const account = data.accounts?.[0]?.account || data.accounts?.[0]?.account_id
-      return account || evmAddress
+      const account = data.account || data.evm_address
+      return account
     } catch {
       return evmAddress
     }
