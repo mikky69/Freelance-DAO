@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@hashgraph/sdk": "^2.73.2",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -45,6 +46,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dotenv": "^17.2.2",
     "embla-carousel-react": "8.5.1",
     "html2canvas": "^1.4.1",
     "input-otp": "1.4.1",
