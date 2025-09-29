@@ -40,8 +40,13 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         return Err(ErrorCode::AlreadyExecuted.into());
     }
 
-    // Check execution delay
-    if now < proposal.end_ts + EXECUTION_DELAY {
+    // Check execution delay with overflow protection
+    let execution_deadline = proposal
+        .end_ts
+        .checked_add(EXECUTION_DELAY)
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+    if now < execution_deadline {
         return Err(ErrorCode::ExecutionDelayNotMet.into());
     }
 
@@ -88,8 +93,13 @@ pub fn execute_param_change(
     let proposal = &ctx.accounts.proposal;
     let now = Clock::get()?.unix_timestamp;
 
-    // CRITICAL: Re-check execution delay here too
-    if now < proposal.end_ts + EXECUTION_DELAY {
+    // CRITICAL: Re-check execution delay with overflow protection
+    let execution_deadline = proposal
+        .end_ts
+        .checked_add(EXECUTION_DELAY)
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+    if now < execution_deadline {
         return Err(ErrorCode::ExecutionDelayNotMet.into());
     }
 
