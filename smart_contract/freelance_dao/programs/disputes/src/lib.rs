@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
-mod error;
-mod events;
-mod state;
-mod instructions;
+pub mod error;
+pub mod events;
+pub mod instructions;
+pub mod state;
 
 use instructions::*;
 
@@ -13,6 +13,7 @@ declare_id!("AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn");
 pub mod disputes {
     use super::*;
 
+    /// Initialize the dispute counter and admin config (ONE TIME ONLY)
     pub fn init_counter(ctx: Context<InitCounter>) -> Result<()> {
         instructions::init_counter::handler(ctx)
     }
@@ -35,14 +36,13 @@ pub mod disputes {
         instructions::form_panel::handler(ctx, members, selection_seed, required_quorum)
     }
 
-    pub fn cast_panel_vote(
-        ctx: Context<PanelVote>,
-        choice: state::JudgmentChoice,
-    ) -> Result<()> {
+    pub fn cast_panel_vote(ctx: Context<PanelVote>, choice: state::JudgmentChoice) -> Result<()> {
         instructions::panel_vote::handler(ctx, choice)
     }
 
-    pub fn finalize_judgment(ctx: Context<FinalizeJudgment>) -> Result<()> {
+    pub fn finalize_judgment<'info>(
+        ctx: Context<'_, '_, 'info, 'info, FinalizeJudgment<'info>>,
+    ) -> Result<()> {
         instructions::finalize_judgment::handler(ctx)
     }
 
