@@ -1,10 +1,10 @@
-use anchor_lang::prelude::*;
 use crate::{
-    state_accounts::{DaoConfig, Proposal},
     errors::ErrorCode,
     events::ProposalExecuted,
-    state::ProposalState
+    state::ProposalState,
+    state_accounts::{DaoConfig, Proposal},
 };
+use anchor_lang::prelude::*;
 
 // Define the execution delay constant (24 hours in seconds)
 const EXECUTION_DELAY: i64 = 86400;
@@ -30,34 +30,34 @@ pub struct ExecuteProposal<'info> {
 pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
     let proposal = &mut ctx.accounts.proposal;
     let now = ctx.accounts.clock.unix_timestamp;
-    
+
     // Ensure proposal has been finalized and succeeded
     if proposal.state != ProposalState::Succeeded {
         return Err(ErrorCode::ProposalNotSucceeded.into());
     }
-    
+
     if proposal.executed {
         return Err(ErrorCode::AlreadyExecuted.into());
     }
-    
+
     // Check execution delay
     if now < proposal.end_ts + EXECUTION_DELAY {
         return Err(ErrorCode::ExecutionDelayNotMet.into());
     }
-    
+
     proposal.executed = true;
     proposal.executed_at = now;
-    
+
     // TODO: Add actual execution logic based on proposal type
     // For now, just mark as executed - specific execution logic
     // can be added in separate instructions for different proposal types
-    
+
     emit!(ProposalExecuted {
         id: proposal.key(),
         executor: ctx.accounts.executor.key(),
         executed_at: now,
     });
-    
+
     Ok(())
 }
 
@@ -85,13 +85,21 @@ pub fn execute_param_change(
     new_major_fee: Option<u64>,
     new_vote_fee: Option<u64>,
 ) -> Result<()> {
-    let dao_config = &mut ctx.accounts.dao_config;
-    
-    // Only execute if proposal is marked as executed
-    if !ctx.accounts.proposal.executed {
+    let proposal = &ctx.accounts.proposal;
+    let now = Clock::get()?.unix_timestamp;
+
+    // CRITICAL: Re-check execution delay here too
+    if now < proposal.end_ts + EXECUTION_DELAY {
+        return Err(ErrorCode::ExecutionDelayNotMet.into());
+    }
+
+    // Verify proposal is marked as executed
+    if !proposal.executed {
         return Err(ErrorCode::NotExecuted.into());
     }
-    
+
+    let dao_config = &mut ctx.accounts.dao_config;
+
     if let Some(fee) = new_light_fee {
         dao_config.light_fee_usdc = fee;
     }
@@ -101,6 +109,6 @@ pub fn execute_param_change(
     if let Some(fee) = new_vote_fee {
         dao_config.vote_fee_lamports = fee;
     }
-    
+
     Ok(())
 }

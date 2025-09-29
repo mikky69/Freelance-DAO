@@ -31,7 +31,11 @@ pub struct CreateProposal<'info> {
         address = dao_config.usdc_treasury @ ErrorCode::InvalidTreasury
     )]
     pub usdc_treasury: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = creator_usdc.mint == dao_config.usdc_mint @ ErrorCode::InvalidTreasury,
+        constraint = creator_usdc.owner == creator.key() @ ErrorCode::Unauthorized
+    )]
     pub creator_usdc: Account<'info, TokenAccount>,
     #[account(
         seeds = [b"member", dao_config.key().as_ref(), creator.key().as_ref()],
@@ -54,7 +58,8 @@ pub fn create_proposal(
         return Err(ErrorCode::Paused.into());
     }
 
-    if uri.len() > 200 {
+    // Validate URI is not empty and not too long
+    if uri.as_bytes().is_empty() || uri.as_bytes().len() > 200 {
         return Err(ErrorCode::UriTooLong.into());
     }
 
@@ -63,7 +68,11 @@ pub fn create_proposal(
     }
 
     let dao_config = &ctx.accounts.dao_config;
-    if window < dao_config.min_vote_duration || window > dao_config.max_vote_duration {
+    use crate::constants::ABSOLUTE_MIN_VOTE_DURATION;
+
+    if window < ABSOLUTE_MIN_VOTE_DURATION.max(dao_config.min_vote_duration)
+        || window > dao_config.max_vote_duration
+    {
         return Err(ErrorCode::InvalidWindow.into());
     }
 
@@ -74,7 +83,9 @@ pub fn create_proposal(
 
     if let Some(member) = &ctx.accounts.member {
         if member.premium {
-            fee_amount = fee_amount / 2;
+            fee_amount = fee_amount
+                .checked_div(2)
+                .ok_or(ErrorCode::ArithmeticOverflow)?;
         }
     }
 
@@ -102,7 +113,9 @@ pub fn create_proposal(
     proposal.uri = uri;
     proposal.state = ProposalState::Active;
     proposal.start_ts = now;
-    proposal.end_ts = now + window;
+    proposal.end_ts = now
+        .checked_add(window)
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
     proposal.tally_yes = 0;
     proposal.tally_no = 0;
     proposal.total_votes = 0;
@@ -150,6 +163,10 @@ pub fn cancel_proposal(ctx: Context<CancelProposal>) -> Result<()> {
     }
 
     proposal.state = ProposalState::Canceled;
+    emit!(crate::events::ProposalCanceled {
+        id: proposal.key(),
+        timestamp: now,
+    });
 
     Ok(())
 }
@@ -179,6 +196,19 @@ pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
         return Err(ErrorCode::VotingStillActive.into());
     }
 
+    // Check if there are any votes at all
+    if proposal.total_votes == 0 {
+        proposal.state = ProposalState::Failed;
+        emit!(crate::events::ProposalFinalized {
+            id: proposal.key(),
+            result: proposal.state,
+            total_votes: 0,
+            yes_votes: 0,
+            no_votes: 0,
+        });
+        return Ok(());
+    }
+
     // Check quorum
     if proposal.total_votes < dao_config.quorum_threshold {
         proposal.state = ProposalState::Failed;
@@ -192,8 +222,13 @@ pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
         return Ok(());
     }
 
-    // Check approval threshold
-    let approval_percentage = (proposal.tally_yes * 10000) / proposal.total_votes;
+    // Check approval threshold with overflow protection
+    let approval_percentage = proposal
+        .tally_yes
+        .checked_mul(10000)
+        .and_then(|v| v.checked_div(proposal.total_votes))
+        .ok_or(ErrorCode::ArithmeticOverflow)?;
+
     if approval_percentage >= dao_config.approval_threshold {
         proposal.state = ProposalState::Succeeded;
     } else {

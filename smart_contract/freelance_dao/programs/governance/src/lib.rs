@@ -1,13 +1,15 @@
 use anchor_lang::prelude::*;
 
-pub mod state_accounts;
+pub mod constants;
 pub mod errors;
 pub mod events;
 pub mod instructions;
 pub mod state;
-pub mod constants;
+pub mod state_accounts;
+pub mod utils;
 
 use instructions::*;
+pub use utils::*;
 
 declare_id!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
 
@@ -28,9 +30,15 @@ pub mod governance {
         approval_threshold: u64,
     ) -> Result<()> {
         instructions::init::init_dao_config(
-            ctx, light_fee_usdc, major_fee_usdc, vote_fee_lamports,
-            min_vote_duration, max_vote_duration, eligibility_flags,
-            quorum_threshold, approval_threshold
+            ctx,
+            light_fee_usdc,
+            major_fee_usdc,
+            vote_fee_lamports,
+            min_vote_duration,
+            max_vote_duration,
+            eligibility_flags,
+            quorum_threshold,
+            approval_threshold,
         )
     }
 
@@ -70,7 +78,12 @@ pub mod governance {
         new_major_fee: Option<u64>,
         new_vote_fee: Option<u64>,
     ) -> Result<()> {
-        instructions::execution::execute_param_change(ctx, new_light_fee, new_major_fee, new_vote_fee)
+        instructions::execution::execute_param_change(
+            ctx,
+            new_light_fee,
+            new_major_fee,
+            new_vote_fee,
+        )
     }
 
     // Admin functions
@@ -87,9 +100,16 @@ pub mod governance {
         approval_threshold: Option<u64>,
     ) -> Result<()> {
         instructions::admin::set_params(
-            ctx, light_fee_usdc, major_fee_usdc, vote_fee_lamports,
-            min_vote_duration, max_vote_duration, eligibility_flags,
-            weight_params, quorum_threshold, approval_threshold
+            ctx,
+            light_fee_usdc,
+            major_fee_usdc,
+            vote_fee_lamports,
+            min_vote_duration,
+            max_vote_duration,
+            eligibility_flags,
+            weight_params,
+            quorum_threshold,
+            approval_threshold,
         )
     }
 

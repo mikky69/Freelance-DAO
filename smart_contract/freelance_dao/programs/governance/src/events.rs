@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::state::{ProposalKind, ProposalState, VoteChoice};
+use anchor_lang::prelude::*;
 
 #[event]
 pub struct ProposalCreated {
@@ -48,4 +48,31 @@ pub struct TreasuryWithdrawal {
     pub token_type: String, // "SOL" or "USDC"
     pub destination: Pubkey,
     pub admin: Pubkey,
+}
+
+// ADD these new events:
+#[event]
+pub struct ParamsUpdated {
+    pub admin: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PauseStatusChanged {
+    pub paused: bool,
+    pub admin: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AdminTransferred {
+    pub old_admin: Pubkey,
+    pub new_admin: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ProposalCanceled {
+    pub id: Pubkey,
+    pub timestamp: i64,
 }
