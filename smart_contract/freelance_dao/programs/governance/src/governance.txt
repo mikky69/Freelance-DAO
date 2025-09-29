@@ -1,8 +1,5 @@
-for the governance
-instrusctions folder
+// instructions folder
 admin.rs
-// UPDATED admin.rs
-// ============================================
 use anchor_lang::prelude::*;
 use crate::{state_accounts::DaoConfig, errors::ErrorCode};
 
@@ -108,7 +105,7 @@ pub fn transfer_admin(ctx: Context<TransferAdmin>) -> Result<()> {
     Ok(())
 }
 
-execution.rs
+// execution.rs
 use anchor_lang::prelude::*;
 use crate::{
     state_accounts::{DaoConfig, Proposal},
@@ -216,8 +213,7 @@ pub fn execute_param_change(
     Ok(())
 }
 
-init.rs
-// programs/governance/src/instructions/init.rs
+// init.rs
 use anchor_lang::prelude::*;
 use crate::state_accounts::DaoConfig;
 use crate::errors::ErrorCode;
@@ -293,7 +289,7 @@ pub fn init_dao_config(
     Ok(())
 }
 
-membership
+// membership.rs
 use anchor_lang::prelude::*;
 use crate::{
     state_accounts::{DaoConfig, Member}, 
@@ -391,9 +387,7 @@ pub fn check_membership(_ctx: Context<CheckMembership>) -> Result<()> {
     Ok(())
 }
 
-mod
-// UPDATED mod.rs
-// ============================================
+// mod.rs
 pub mod init;
 pub mod proposals;
 pub mod voting;
@@ -411,8 +405,7 @@ pub use execution::*;
 pub use membership::*;
 
 
-proposals
-// FIXED proposals.rs - Add rent sysvar and fix field names
+//proposals.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::{
@@ -624,7 +617,7 @@ pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
     Ok(())
 }
 
-treasury
+//treasury.rs
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer, Mint};
 use crate::{state_accounts::DaoConfig, errors::ErrorCode};
@@ -766,7 +759,7 @@ pub fn withdraw_usdc(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> 
     Ok(())
 }
 
-voting
+//voting.rs
 use anchor_lang::{prelude::*, system_program};
 use crate::{
     state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
@@ -808,7 +801,7 @@ pub struct CastVote<'info> {
     pub member: Option<Account<'info, Member>>,
     /// CHECK: This account is validated through PDA derivation and program ownership
     pub staking_position: Option<UncheckedAccount<'info>>,
-    /// CHECK: This should be the main FLDAO staking pool from staking program
+    /// CHECK: This should be the main FLDAO staking pool from staking program - unused but kept for future use
     pub staking_pool: Option<UncheckedAccount<'info>>,
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
@@ -866,10 +859,10 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
     }
     
     // Add staking bonus if position exists and is valid
-    if let (Some(staking_position), Some(staking_pool)) = (&ctx.accounts.staking_position, &ctx.accounts.staking_pool) {
+    if let Some(staking_position) = &ctx.accounts.staking_position {
         // Verify the account is owned by the staking program
         if staking_position.owner == &STAKING_PROGRAM_ID {
-            // Try to read the staked amount from the position (this is your original logic)
+            // Try to read the staked amount from the position
             let position_data = staking_position.try_borrow_data()?;
             if position_data.len() >= 8 + 32 + 32 + 8 { // discriminator + staker + pool + amount
                 // Skip discriminator (8 bytes), staker (32 bytes), pool (32 bytes)
@@ -925,13 +918,13 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
     Ok(())
 }
 
-utils folder
-mod.rs
+//utils folder
+//mod.rs
 pub mod staking;
 
 pub use staking::*;
 
-staking.rs
+//staking.rs
 use anchor_lang::prelude::*;
 use crate::constants::STAKING_PROGRAM_ID;
 
@@ -964,8 +957,7 @@ pub fn calculate_vote_weight(
         .ok_or(anchor_lang::error::ErrorCode::ArithmeticError.into())
 }
 
-outside utils folder
-constants
+///constants.rs
 use anchor_lang::prelude::*;
 
 // Cross-program IDs - these MUST match your Anchor.toml
@@ -977,8 +969,7 @@ pub const BASE_VOTE_WEIGHT: u64 = 1;
 pub const PREMIUM_BONUS_WEIGHT: u64 = 1;
 pub const STAKING_WEIGHT_DIVISOR: u64 = 1_000_000; // 1 FLDAO = 1 additional vote weight
 
-
-errors
+//errors.rs
 use anchor_lang::prelude::*;
 
 #[error_code]
@@ -1037,8 +1028,7 @@ pub enum ErrorCode {
     InvalidStakingProgram,
 }
 
-events
-// UPDATED events.rs
+//events.rs
 use anchor_lang::prelude::*;
 use crate::state::{ProposalKind, ProposalState, VoteChoice};
 
@@ -1091,8 +1081,7 @@ pub struct TreasuryWithdrawal {
     pub admin: Pubkey,
 }
 
-lib
-// FIXED lib.rs - Simple version without complex integration
+//lib.rs
 use anchor_lang::prelude::*;
 
 pub mod state_accounts;
@@ -1220,8 +1209,7 @@ pub mod governance {
     }
 }
 
-state_accounts
-// programs/governance/src/state_accounts.rs
+//state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -1344,9 +1332,7 @@ impl Member {
         16; // padding for safety
 }
 
-state
-// UPDATED state.rs
-// ============================================
+//state.rs
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Default)]
@@ -1486,6 +1472,7 @@ export async function castVote(
 }
 */
 
+//cargo
 [package]
 name = "governance"
 version = "0.1.0"

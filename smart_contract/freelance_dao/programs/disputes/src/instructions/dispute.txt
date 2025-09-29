@@ -992,7 +992,7 @@ package_manager = "npm"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
+[programs.devnet]
 governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
 staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
 disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
@@ -1001,7 +1001,7 @@ disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
