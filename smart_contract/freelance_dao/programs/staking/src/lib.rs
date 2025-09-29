@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 
-pub mod state_accounts;
+pub mod constants;
 pub mod errors;
 pub mod events;
 pub mod instructions;
 pub mod math;
-pub mod constants;
+pub mod state_accounts;
 pub mod utils;
 
 use instructions::*;
@@ -31,8 +31,15 @@ pub mod staking {
         mint: Pubkey,
         is_lp: bool,
         points_per_token_per_second: u64,
+        max_stake_per_user: u64, // ADD THIS
     ) -> Result<()> {
-        instructions::init::init_pool(ctx, mint, is_lp, points_per_token_per_second)
+        instructions::init::init_pool(
+            ctx,
+            mint,
+            is_lp,
+            points_per_token_per_second,
+            max_stake_per_user,
+        )
     }
 
     // Staking functions
@@ -54,11 +61,20 @@ pub mod staking {
     }
 
     // Admin functions
-    pub fn set_pool_params(ctx: Context<SetPoolParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
-        instructions::admin::set_pool_params(ctx, rate, paused)
+    pub fn set_pool_params(
+        ctx: Context<SetPoolParams>,
+        rate: Option<u64>,
+        paused: Option<bool>,
+        max_stake_per_user: Option<u64>, // ADD THIS
+    ) -> Result<()> {
+        instructions::admin::set_pool_params(ctx, rate, paused, max_stake_per_user)
     }
 
-    pub fn set_rewards_params(ctx: Context<SetRewardsParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+    pub fn set_rewards_params(
+        ctx: Context<SetRewardsParams>,
+        rate: Option<u64>,
+        paused: Option<bool>,
+    ) -> Result<()> {
         instructions::admin::set_rewards_params(ctx, rate, paused)
     }
 
@@ -66,7 +82,7 @@ pub mod staking {
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
     }
-        
+
     pub fn get_position(ctx: Context<GetPosition>) -> Result<(u64, u128)> {
         instructions::query::get_position(ctx)
     }

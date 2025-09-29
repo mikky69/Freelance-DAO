@@ -26,4 +26,6 @@ pub enum StakingError {
     InvalidMint,
     #[msg("Invalid vault")]
     InvalidVault,
+    #[msg("Stake limit exceeded")]
+    StakeLimitExceeded,
 }

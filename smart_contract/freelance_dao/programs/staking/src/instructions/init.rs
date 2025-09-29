@@ -1,9 +1,10 @@
-use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, TokenAccount, Mint};
 use crate::{
+    errors::StakingError,
+    events::{PoolInitialized, RewardsConfigInitialized},
     state_accounts::{RewardsConfig, StakePool},
-    events::{RewardsConfigInitialized, PoolInitialized},
 };
+use anchor_lang::prelude::*;
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct InitRewardsConfig<'info> {
@@ -38,9 +39,13 @@ pub fn init_rewards_config(
     exchange_rate: u64,
     admin: Pubkey,
 ) -> Result<()> {
+    require!(exchange_rate > 0, StakingError::InvalidExchangeRate);
+    require!(admin != Pubkey::default(), StakingError::Unauthorized);
+    require!(fl_dao_mint != Pubkey::default(), StakingError::InvalidMint);
+
     let rewards_config = &mut ctx.accounts.rewards_config;
     let clock = Clock::get()?;
-    
+
     rewards_config.admin = admin;
     rewards_config.fl_dao_mint = fl_dao_mint;
     rewards_config.exchange_rate = exchange_rate;
@@ -50,14 +55,14 @@ pub fn init_rewards_config(
     rewards_config.global_fldao_minted = 0;
     rewards_config.paused = false;
     rewards_config.bump = ctx.bumps.rewards_config;
-    
+
     emit!(RewardsConfigInitialized {
         admin,
         fl_dao_mint,
         exchange_rate,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -92,10 +97,15 @@ pub fn init_pool(
     mint: Pubkey,
     is_lp: bool,
     points_per_token_per_second: u64,
+    max_stake_per_user: u64, // ADD THIS PARAMETER
 ) -> Result<()> {
+    require!(points_per_token_per_second > 0, StakingError::InvalidAmount);
+    require!(max_stake_per_user > 0, StakingError::InvalidAmount);
+    require!(mint != Pubkey::default(), StakingError::InvalidMint);
+
     let pool = &mut ctx.accounts.pool;
     let clock = Clock::get()?;
-    
+
     pool.mint = mint;
     pool.vault = ctx.accounts.vault.key();
     pool.is_lp = is_lp;
@@ -105,7 +115,8 @@ pub fn init_pool(
     pool.created_at = clock.unix_timestamp;
     pool.paused = false;
     pool.bump = ctx.bumps.pool;
-    
+    pool.max_stake_per_user = max_stake_per_user; // ADD THIS
+
     emit!(PoolInitialized {
         pool: pool.key(),
         mint,
@@ -113,6 +124,6 @@ pub fn init_pool(
         points_per_token_per_second,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }

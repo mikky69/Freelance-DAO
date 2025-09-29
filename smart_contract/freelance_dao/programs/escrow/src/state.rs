@@ -42,11 +42,10 @@ impl EscrowAccount {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub enum EscrowState {
-    Proposed,      // Client created proposal
-    Accepted,      // Freelancer accepted
-    AwaitingSigs,  // Both parties need to sign
-    Active,        // Both signed, work can begin
-    Completed,     // Work completed, funds released
-    Disputed,      // Dispute raised
-    Cancelled,     // Cancelled before completion
+    Proposed,     // Client created proposal
+    AwaitingSigs, // Freelancer accepted, both parties need to sign
+    Active,       // Both signed, work can begin
+    Completed,    // Work completed, funds released
+    Disputed,     // Dispute raised (future use)
+    Cancelled,    // Cancelled before completion
 }

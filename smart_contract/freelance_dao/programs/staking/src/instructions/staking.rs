@@ -57,6 +57,22 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.bump = ctx.bumps.position;
     }
 
+    // ADD THIS CHECK:
+    let new_amount = position
+        .amount
+        .checked_add(amount)
+        .ok_or(StakingError::MathOverflow)?;
+
+    require!(
+        new_amount <= pool.max_stake_per_user,
+        StakingError::StakeLimitExceeded
+    );
+
+    require!(
+        ctx.accounts.staker_token_account.amount >= amount,
+        StakingError::InsufficientStaked
+    );
+
     // Transfer tokens to vault
     token::transfer(
         CpiContext::new(
@@ -71,10 +87,7 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
     )?;
 
     // Update amounts
-    position.amount = position
-        .amount
-        .checked_add(amount)
-        .ok_or(StakingError::MathOverflow)?;
+    position.amount = new_amount; // CHANGE THIS LINE
 
     pool.total_staked = pool
         .total_staked
@@ -123,6 +136,10 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
+
+    // NOTE: Intentionally allowing unstake even when pool is paused
+    // This ensures users can always withdraw their funds
+    // Only staking is blocked when paused
 
     require!(amount > 0, StakingError::AmountTooSmall);
     require!(position.amount >= amount, StakingError::InsufficientStaked);

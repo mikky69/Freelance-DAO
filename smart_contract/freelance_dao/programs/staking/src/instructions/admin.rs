@@ -33,9 +33,13 @@ pub fn set_pool_params(
     ctx: Context<SetPoolParams>,
     rate: Option<u64>,
     paused: Option<bool>,
+    max_stake_per_user: Option<u64>, // ADD THIS
 ) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let clock = Clock::get()?;
+
+    let old_rate = pool.points_per_token_per_second;
+    let old_paused = pool.paused;
 
     if let Some(new_rate) = rate {
         require!(new_rate > 0, StakingError::InvalidAmount);
@@ -46,10 +50,17 @@ pub fn set_pool_params(
         pool.paused = pause_state;
     }
 
+    if let Some(new_max) = max_stake_per_user {
+        require!(new_max > 0, StakingError::InvalidAmount);
+        pool.max_stake_per_user = new_max;
+    }
+
     // Emit event for tracking
     emit!(crate::events::PoolParamsUpdated {
         pool: pool.key(),
+        old_rate, // ADD THIS
         new_rate: rate,
+        old_paused, // ADD THIS
         paused,
         timestamp: clock.unix_timestamp,
     });
@@ -65,6 +76,9 @@ pub fn set_rewards_params(
     let rewards_config = &mut ctx.accounts.rewards_config;
     let clock = Clock::get()?;
 
+    let old_exchange_rate = rewards_config.exchange_rate;
+    let old_paused = rewards_config.paused;
+
     if let Some(new_rate) = exchange_rate {
         require!(new_rate > 0, StakingError::InvalidExchangeRate);
         rewards_config.exchange_rate = new_rate;
@@ -76,7 +90,9 @@ pub fn set_rewards_params(
 
     // Emit event for tracking
     emit!(crate::events::RewardsParamsUpdated {
+        old_exchange_rate, // ADD THIS
         new_exchange_rate: exchange_rate,
+        old_paused, // ADD THIS
         paused,
         timestamp: clock.unix_timestamp,
     });

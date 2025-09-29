@@ -56,14 +56,18 @@ pub struct PointsExchanged {
 #[event]
 pub struct PoolParamsUpdated {
     pub pool: Pubkey,
+    pub old_rate: u64, // ADD THIS
     pub new_rate: Option<u64>,
+    pub old_paused: bool, // ADD THIS
     pub paused: Option<bool>,
     pub timestamp: i64,
 }
 
 #[event]
 pub struct RewardsParamsUpdated {
+    pub old_exchange_rate: u64, // ADD THIS
     pub new_exchange_rate: Option<u64>,
+    pub old_paused: bool, // ADD THIS
     pub paused: Option<bool>,
     pub timestamp: i64,
 }

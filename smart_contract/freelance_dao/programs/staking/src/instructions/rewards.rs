@@ -1,3 +1,4 @@
+// programs/staking/src/instructions/rewards.rs
 use crate::{
     errors::StakingError,
     events::PointsExchanged,
@@ -16,9 +17,11 @@ pub struct ExchangePoints<'info> {
     )]
     pub rewards_config: Account<'info, RewardsConfig>,
     #[account(
-        mut,
-        has_one = staker @ StakingError::Unauthorized
-    )]
+    mut,
+    has_one = staker @ StakingError::Unauthorized,
+    // Ensure position is associated with a valid pool (not default/uninitialized)
+    constraint = position.pool != Pubkey::default() @ StakingError::InvalidPool,
+)]
     pub position: Account<'info, StakePosition>,
     #[account(
         mut,
@@ -59,6 +62,11 @@ pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64)
     // EFFECTS (update state BEFORE external calls)
     position.accum_points = position
         .accum_points
+        .checked_sub(points)
+        .ok_or(StakingError::MathOverflow)?;
+
+    rewards_config.global_points_issued = rewards_config
+        .global_points_issued
         .checked_sub(points)
         .ok_or(StakingError::MathOverflow)?;
 
