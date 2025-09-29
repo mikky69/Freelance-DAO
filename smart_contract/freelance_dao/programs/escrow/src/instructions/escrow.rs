@@ -70,7 +70,6 @@ pub struct CompleteEscrow<'info> {
         bump = escrow.bump,
         constraint = escrow.state == EscrowState::Active @ EscrowError::InvalidState,
         constraint = escrow.client == client.key() @ EscrowError::Unauthorized,
-        close = client
     )]
     pub escrow: Account<'info, EscrowAccount>,
 
@@ -82,7 +81,7 @@ pub struct CompleteEscrow<'info> {
         constraint = freelancer.key() == escrow.freelancer @ EscrowError::InvalidFreelancer
     )]
     /// CHECK: Validated in constraint above
-    pub freelancer: AccountInfo<'info>,
+    pub freelancer: SystemAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -98,7 +97,6 @@ pub struct CancelEscrow<'info> {
         ],
         bump = escrow.bump,
         constraint = can_cancel(&escrow, &authority.key()) @ EscrowError::CannotCancel,
-        close = client
     )]
     pub escrow: Account<'info, EscrowAccount>,
 
@@ -110,7 +108,7 @@ pub struct CancelEscrow<'info> {
         constraint = client.key() == escrow.client @ EscrowError::Unauthorized
     )]
     /// CHECK: Validated in constraint above
-    pub client: AccountInfo<'info>,
+    pub client: SystemAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -123,10 +121,26 @@ pub fn create_proposal(ctx: Context<CreateProposal>, escrow_id: u64, amount: u64
     let client = &ctx.accounts.client;
     let freelancer = &ctx.accounts.freelancer;
 
-    // Validate freelancer is a valid pubkey (not system program, etc.)
+    // Validate freelancer is a valid pubkey
     require!(
-        freelancer.key() != System::id() && freelancer.key() != Pubkey::default(),
+        freelancer.key() != System::id()
+            && freelancer.key() != Pubkey::default()
+            && freelancer.key() != client.key(),
         EscrowError::InvalidFreelancer
+    );
+
+    // Calculate rent exemption
+    let rent = Rent::get()?;
+    let rent_exempt_balance = rent.minimum_balance(EscrowAccount::SIZE);
+
+    // Verify we have enough for rent + escrow (not enforced, just logged for safety)
+    let _total_required = amount
+        .checked_add(rent_exempt_balance)
+        .ok_or(EscrowError::ArithmeticOverflow)?;
+
+    msg!(
+        "Rent exemption requirement: {} lamports",
+        rent_exempt_balance
     );
 
     // Transfer SOL to escrow PDA
@@ -139,6 +153,8 @@ pub fn create_proposal(ctx: Context<CreateProposal>, escrow_id: u64, amount: u64
     );
     system_program::transfer(cpi_context, amount)?;
 
+    let clock = Clock::get()?;
+
     // Initialize escrow account
     escrow.escrow_id = escrow_id;
     escrow.client = client.key();
@@ -147,13 +163,13 @@ pub fn create_proposal(ctx: Context<CreateProposal>, escrow_id: u64, amount: u64
     escrow.state = EscrowState::Proposed;
     escrow.client_signature = None;
     escrow.freelancer_signature = None;
-    escrow.created_at = Clock::get()?.unix_timestamp;
+    escrow.created_at = clock.unix_timestamp;
     escrow.signed_at = None;
     escrow.completed_at = None;
     escrow.bump = ctx.bumps.escrow;
 
-    // Update counter
-    counter.count += 1;
+    // Update counter with checked arithmetic
+    counter.increment()?;
 
     emit!(EscrowCreated {
         escrow_id,
@@ -171,7 +187,6 @@ pub fn accept_proposal(ctx: Context<AcceptProposal>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow;
     let freelancer = &ctx.accounts.freelancer;
 
-    // Change state to AwaitingSigs (signatures required before Active)
     escrow.state = EscrowState::AwaitingSigs;
 
     emit!(ProposalAccepted {
@@ -185,78 +200,109 @@ pub fn accept_proposal(ctx: Context<AcceptProposal>) -> Result<()> {
 }
 
 pub fn complete_escrow(ctx: Context<CompleteEscrow>) -> Result<()> {
-    let escrow = &ctx.accounts.escrow;
     let clock = Clock::get()?;
 
-    // Store values we need
-    let escrow_amount = escrow.amount;
-    let escrow_id = escrow.escrow_id;
-    let rent_lamports = Rent::get()?.minimum_balance(EscrowAccount::SIZE);
+    // Store immutable values first (before any mutable borrows)
+    let escrow_id = ctx.accounts.escrow.escrow_id;
+    let escrow_amount = ctx.accounts.escrow.amount;
+    let escrow_bump = ctx.accounts.escrow.bump;
+    let escrow_client = ctx.accounts.escrow.client;
 
-    // CRITICAL FIX: Ensure we don't transfer rent-exempt lamports
-    let transferable_amount = escrow_amount;
-    let escrow_balance = ctx.accounts.escrow.to_account_info().lamports();
+    require!(escrow_amount > 0, EscrowError::InsufficientFunds);
 
-    require!(
-        escrow_balance >= rent_lamports + transferable_amount,
-        EscrowError::InsufficientFunds
-    );
+    // Calculate rent to retain
+    let rent = Rent::get()?;
+    let rent_exempt_balance = rent.minimum_balance(EscrowAccount::SIZE);
+    let escrow_lamports = ctx.accounts.escrow.to_account_info().lamports();
 
-    // Update state BEFORE transfer (prevent reentrancy)
-    let escrow_mut = &mut ctx.accounts.escrow;
-    escrow_mut.state = EscrowState::Completed;
-    escrow_mut.completed_at = Some(clock.unix_timestamp);
+    // Ensure we keep rent exemption
+    let transferable = escrow_lamports
+        .checked_sub(rent_exempt_balance)
+        .ok_or(EscrowError::InsufficientFunds)?;
 
-    // Transfer funds to freelancer (excluding rent)
-    **ctx
-        .accounts
-        .escrow
-        .to_account_info()
-        .try_borrow_mut_lamports()? -= transferable_amount;
-    **ctx.accounts.freelancer.try_borrow_mut_lamports()? += transferable_amount;
+    require!(transferable > 0, EscrowError::InsufficientFunds);
+
+    // Now get mutable reference and update state BEFORE transfer (CEI pattern)
+    let escrow = &mut ctx.accounts.escrow;
+    escrow.state = EscrowState::Completed;
+    escrow.completed_at = Some(clock.unix_timestamp);
+    escrow.amount = 0; // Mark as withdrawn
+
+    // Transfer using direct lamport manipulation
+    let escrow_info = ctx.accounts.escrow.to_account_info();
+    let freelancer_info = ctx.accounts.freelancer.to_account_info();
+
+    **escrow_info.try_borrow_mut_lamports()? = escrow_info
+        .lamports()
+        .checked_sub(transferable)
+        .ok_or(EscrowError::InsufficientFunds)?;
+
+    **freelancer_info.try_borrow_mut_lamports()? = freelancer_info
+        .lamports()
+        .checked_add(transferable)
+        .ok_or(EscrowError::InsufficientFunds)?;
 
     emit!(EscrowCompleted {
         escrow_id,
-        amount: transferable_amount,
+        amount: transferable,
         timestamp: clock.unix_timestamp,
     });
 
     msg!(
-        "Escrow completed, {} lamports released to freelancer",
-        transferable_amount
+        "Escrow {} completed, {} lamports released",
+        escrow_id,
+        transferable
     );
     Ok(())
 }
 
 pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
-    let escrow = &ctx.accounts.escrow;
     let clock = Clock::get()?;
+    let authority = &ctx.accounts.authority;
 
-    // Store values we need
-    let escrow_amount = escrow.amount;
-    let escrow_id = escrow.escrow_id;
-    let rent_lamports = Rent::get()?.minimum_balance(EscrowAccount::SIZE);
+    // Store immutable values first (before any mutable borrows)
+    let escrow_id = ctx.accounts.escrow.escrow_id;
+    let escrow_amount = ctx.accounts.escrow.amount;
+    let escrow_bump = ctx.accounts.escrow.bump;
+    let escrow_client = ctx.accounts.escrow.client;
 
-    // CRITICAL FIX: Ensure we don't transfer rent-exempt lamports
-    let transferable_amount = escrow_amount;
-    let escrow_balance = ctx.accounts.escrow.to_account_info().lamports();
-
+    // Validate authority
     require!(
-        escrow_balance >= rent_lamports + transferable_amount,
-        EscrowError::InsufficientFunds
+        can_cancel(&ctx.accounts.escrow, &authority.key()),
+        EscrowError::CannotCancel
     );
 
-    // Update state BEFORE transfer (prevent reentrancy)
-    let escrow_mut = &mut ctx.accounts.escrow;
-    escrow_mut.state = EscrowState::Cancelled;
+    require!(escrow_amount > 0, EscrowError::InsufficientFunds);
 
-    // Transfer funds back to client (excluding rent)
-    **ctx
-        .accounts
-        .escrow
-        .to_account_info()
-        .try_borrow_mut_lamports()? -= transferable_amount;
-    **ctx.accounts.client.try_borrow_mut_lamports()? += transferable_amount;
+    // Calculate rent to retain
+    let rent = Rent::get()?;
+    let rent_exempt_balance = rent.minimum_balance(EscrowAccount::SIZE);
+    let escrow_lamports = ctx.accounts.escrow.to_account_info().lamports();
+
+    let transferable = escrow_lamports
+        .checked_sub(rent_exempt_balance)
+        .ok_or(EscrowError::InsufficientFunds)?;
+
+    require!(transferable > 0, EscrowError::InsufficientFunds);
+
+    // Now get mutable reference and update state BEFORE transfer (CEI pattern)
+    let escrow = &mut ctx.accounts.escrow;
+    escrow.state = EscrowState::Cancelled;
+    escrow.amount = 0; // Mark as withdrawn
+
+    // Transfer back to client
+    let escrow_info = ctx.accounts.escrow.to_account_info();
+    let client_info = ctx.accounts.client.to_account_info();
+
+    **escrow_info.try_borrow_mut_lamports()? = escrow_info
+        .lamports()
+        .checked_sub(transferable)
+        .ok_or(EscrowError::InsufficientFunds)?;
+
+    **client_info.try_borrow_mut_lamports()? = client_info
+        .lamports()
+        .checked_add(transferable)
+        .ok_or(EscrowError::InsufficientFunds)?;
 
     emit!(EscrowCancelled {
         escrow_id,
@@ -264,23 +310,17 @@ pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
     });
 
     msg!(
-        "Escrow cancelled, {} lamports returned to client",
-        transferable_amount
+        "Escrow {} cancelled, {} lamports returned",
+        escrow_id,
+        transferable
     );
     Ok(())
 }
 
-// Helper function to determine if escrow can be cancelled
 fn can_cancel(escrow: &EscrowAccount, authority: &Pubkey) -> bool {
     match escrow.state {
-        EscrowState::Proposed | EscrowState::AwaitingSigs => {
-            // Only client can cancel before Active
-            escrow.client == *authority
-        }
-        EscrowState::Active => {
-            // Both parties can cancel when Active
-            escrow.client == *authority || escrow.freelancer == *authority
-        }
-        _ => false, // Cannot cancel if already completed or cancelled
+        EscrowState::Proposed | EscrowState::AwaitingSigs => escrow.client == *authority,
+        EscrowState::Active => escrow.client == *authority || escrow.freelancer == *authority,
+        _ => false,
     }
 }
