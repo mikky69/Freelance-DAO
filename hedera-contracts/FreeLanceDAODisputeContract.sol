@@ -210,91 +210,41 @@ contract FreelanceDAODisputeContract is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Return metadata for all disputes (parallel arrays)
-     * WARNING: can be expensive if many disputes exist — consider pagination.
+     * @notice Return all disputes as an array of structs.
      */
     function getAllDisputes()
         external
         view
-        returns (
-            uint256[] memory ids,
-            string[] memory titles,
-            uint256[] memory amounts,
-            string[] memory categories,
-            address[] memory clients,
-            address[] memory freelancers,
-            DisputeStatus[] memory statuses,
-            address[] memory winners
-        )
+        returns (Dispute[] memory)
     {
         uint256 total = nextDisputeId - 1;
-        ids = new uint256[](total);
-        titles = new string[](total);
-        amounts = new uint256[](total);
-        categories = new string[](total);
-        clients = new address[](total);
-        freelancers = new address[](total);
-        statuses = new DisputeStatus[](total);
-        winners = new address[](total);
+        Dispute[] memory allDisputes = new Dispute[](total);
 
         for (uint256 i = 0; i < total; i++) {
             uint256 did = i + 1;
-            Dispute storage d = disputes[did];
-            ids[i] = d.disputeId;
-            titles[i] = d.title;
-            amounts[i] = d.amount;
-            categories[i] = d.category;
-            clients[i] = d.client;
-            freelancers[i] = d.freelancer;
-            statuses[i] = d.status;
-            winners[i] = d.winner;
+            allDisputes[i] = disputes[did];
         }
 
-        return (ids, titles, amounts, categories, clients, freelancers, statuses, winners);
+        return allDisputes;
     }
 
     /**
-     * @notice Return metadata for disputes involving a specific user (client or freelancer)
+     * @notice Return disputes involving a specific user as an array of structs.
      */
     function getUserDisputes(address user)
         external
         view
-        returns (
-            uint256[] memory ids,
-            string[] memory titles,
-            uint256[] memory amounts,
-            string[] memory categories,
-            address[] memory clients,
-            address[] memory freelancers,
-            DisputeStatus[] memory statuses,
-            address[] memory winners
-        )
+        returns (Dispute[] memory)
     {
         uint256[] storage userIds = disputeIdsByUser[user];
         uint256 count = userIds.length;
-
-        ids = new uint256[](count);
-        titles = new string[](count);
-        amounts = new uint256[](count);
-        categories = new string[](count);
-        clients = new address[](count);
-        freelancers = new address[](count);
-        statuses = new DisputeStatus[](count);
-        winners = new address[](count);
+        Dispute[] memory userDisputes = new Dispute[](count);
 
         for (uint256 i = 0; i < count; i++) {
             uint256 did = userIds[i];
-            Dispute storage d = disputes[did];
-            ids[i] = d.disputeId;
-            titles[i] = d.title;
-            amounts[i] = d.amount;
-            categories[i] = d.category;
-            clients[i] = d.client;
-            freelancers[i] = d.freelancer;
-            statuses[i] = d.status;
-            winners[i] = d.winner;
+            userDisputes[i] = disputes[did];
         }
 
-        return (ids, titles, amounts, categories, clients, freelancers, statuses, winners);
+        return userDisputes;
     }
 }
