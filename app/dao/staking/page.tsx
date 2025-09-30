@@ -70,7 +70,8 @@ export default function StakingPage() {
   const [stakeAmount, setStakeAmount] = useState("")
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-
+  
+  
   // Contract details
   const stakingAddress = stakingContractDeployment.FreeLanceDAOStaking.evmAddress
   const stakingAbi = stakingContractABI.abi
@@ -92,7 +93,7 @@ export default function StakingPage() {
   })
 
   // Read total staked
-  const { data: totalStaked } = useReadContract({
+  const { data: totalStaked, refetch: refetchTotalStaked } = useReadContract({
     address: stakingAddress as `0x${string}`,
     abi: stakingAbi,
     functionName: "totalStaked",
@@ -106,7 +107,14 @@ export default function StakingPage() {
     functionName: "rewardRate",
     chainId: 296,
   })
-
+  // Refetch totalStaked after successful staking transaction
+  useEffect(() => {
+    if (isTxSuccess) {
+      setTimeout(() => {
+        refetchTotalStaked();
+      }, 1000);
+    }
+  }, [isTxSuccess, refetchTotalStaked]);
 
   //IMPORTANT
   // User's staked amount
@@ -134,6 +142,7 @@ export default function StakingPage() {
       setStakeAmount("")
       reset()
       refetchStake()
+      refetchTotalStaked()
     },
   })
 
