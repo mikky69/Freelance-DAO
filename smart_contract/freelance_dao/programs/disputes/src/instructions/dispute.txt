@@ -39,7 +39,6 @@ pub struct ExecuteJudgment<'info> {
     #[account(
         mut,
         constraint = escrow_account.owner == &escrow_program.key() @ DisputeError::InvalidEscrowAccount,
-        constraint = escrow_account.key() == linked_escrow.unwrap() @ DisputeError::InvalidEscrowAccount
     )]
     pub escrow_account: UncheckedAccount<'info>,
 
