@@ -1,58 +1,84 @@
-import { Button } from "@/components/ui/button"
-import { Zap, Sparkles } from "lucide-react"
-import Link from "next/link"
+"use client";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
-export function HeroSection() {
+export default function HeroSection() {
   return (
-    <section className="py-12 md:py-24 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 animate-pulse" />
-      <div className="container mx-auto px-4 relative">
-        <div className="text-center max-w-5xl mx-auto animate-fade-in">
-          {/* <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium mb-8 animate-float shadow-lg">
-            <Zap className="w-4 h-4 mr-2 animate-pulse" />
-            Powered by Hedera Hashgraph
-            <Sparkles className="w-4 h-4 ml-2 text-purple-500" />
-          </div> */}
+		<section className="relative min-h-screen flex items-center justify-center bg-[#1D0225] text-white overflow-hidden">
+			{/* Grid Pattern Background */}
+			<div
+				className="absolute inset-0 opacity-60"
+				style={{
+					backgroundImage:
+						"linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
+					backgroundSize: "40px 40px",
+				}}
+			/>
 
-          <h1 className="text-4xl md:text-7xl font-bold text-slate-800 mb-6 text-shadow leading-tight">
-            Hire smarter. Work freely. <br />
-            <span className="gradient-text animate-glow">Own the outcome.</span>
-          </h1>
+			{/* Gradient Overlay for Depth */}
+			<div className="absolute inset-0 bg-gradient-to-b from-[#1D0225] via-[#1D0225]/95 to-[#1D0225]" />
 
-          <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed font-medium">
-            A decentralized freelance ecosystem for <span className="text-blue-600 font-semibold">human talents</span>
-            ,<span className="text-purple-600 font-semibold"> AI agents</span> &
-            <span className="text-green-600 font-semibold"> hybrid teams</span>.
-          </p>
+			<div className="container mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center relative z-10">
+				{/* Left Content */}
+				<motion.div
+					initial={{ opacity: 0, y: 40 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.8, ease: "easeOut" }}
+					className="flex-1 text-center lg:text-left"
+				>
+					<h1 className="text-4xl md:text-6xl font-bold leading-tight">
+						The Future of <span className="text-[#AE16A7]">Freelancing</span> is{" "}
+						<span className="text-[#FA5F04]">Decentralized</span>
+					</h1>
+					<p className="mt-6 text-lg md:text-xl text-gray-300 max-w-lg mx-auto lg:mx-0">
+						FreelanceDAO is your Web3 Job Marketplace powered by smart
+						contracts, escrow payments, and a trust-first reputation system.
+					</p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link href="/jobs">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-lg px-8 py-4 w-full sm:w-auto shadow-lg interactive-scale"
-              >
-                👉 Find Talent
-              </Button>
-            </Link>
-            <Link href="/onboarding">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-lg px-8 py-4 w-full sm:w-auto shadow-lg interactive-scale"
-              >
-                👉 Get Work
-              </Button>
-            </Link>
-            <Link href="/dao">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-lg px-8 py-4 w-full sm:w-auto shadow-lg interactive-scale"
-              >
-                👉 Join the DAO
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
+					<div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+						<Button className="px-8 py-4 rounded-2xl text-lg font-semibold bg-[#AE16A7] hover:bg-[#FF068D] transition">
+							Get Started
+						</Button>
+						<Button
+							variant="outline"
+							className="px-8 py-4 rounded-2xl text-lg font-semibold border-2 border-[#FA5F04] text-[#FA5F04] hover:bg-[#FA5F04] hover:text-white transition"
+						>
+							Learn More
+						</Button>
+					</div>
+				</motion.div>
+
+				{/* Right Illustration */}
+				<motion.div
+					initial={{ opacity: 0, x: 60 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 1, ease: "easeOut" }}
+					className="flex-1 mt-12 lg:mt-0 flex justify-center lg:justify-end"
+				>
+					<div className="relative w-[350px] h-[350px] md:w-[450px] md:h-[450px]">
+						<Image
+							src="/images/freelance-hero-image.png"
+							alt="FreelanceDAO illustration"
+							fill
+							priority
+							className="object-contain"
+						/>
+					</div>
+				</motion.div>
+			</div>
+
+			{/* Animated Floating Accent Shapes */}
+			<motion.div
+				className="absolute top-10 left-10 w-24 h-24 bg-[#FF068D] rounded-full opacity-20"
+				animate={{ y: [0, 20, 0] }}
+				transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+			/>
+			<motion.div
+				className="absolute bottom-16 right-16 w-32 h-32 bg-[#FA5F04] rounded-full opacity-20"
+				animate={{ y: [0, -25, 0] }}
+				transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+			/>
+		</section>
+	);
 }

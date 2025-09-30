@@ -244,9 +244,7 @@ export function TopNavigation() {
 								<span className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">
 									FreeLanceDAO
 								</span>
-								<div className="text-xs text-slate-500 font-medium">
-									Decentralized Freelancing
-								</div>
+								
 							</div>
 						</Link>
 

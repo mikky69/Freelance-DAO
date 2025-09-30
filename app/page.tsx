@@ -1,4 +1,4 @@
-import { HeroSection } from "@/components/homepage/hero-section"
+import  HeroSection  from "@/components/homepage/hero-section"
 import { WhatIsFreeLanceDAO } from "@/components/homepage/what-is-freelancedao"
 import { UserTypeCards } from "@/components/homepage/user-type-cards"
 import { WhyFreeLanceDAO } from "@/components/homepage/why-freelancedao"
