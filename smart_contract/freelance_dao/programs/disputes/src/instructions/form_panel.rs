@@ -71,6 +71,12 @@ pub fn handler(
 
     let weights = vec![1u16; members.len()];
 
+    let total_weight: u32 = weights.iter().map(|&w| w as u32).sum();
+    require!(
+        total_weight > 0 && total_weight <= u32::MAX,
+        DisputeError::InvalidPanelWeights
+    );
+
     panel.dispute_id = dispute.id;
     panel.members = members.clone();
     panel.weights = weights;

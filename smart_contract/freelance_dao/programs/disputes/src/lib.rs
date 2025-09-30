@@ -8,6 +8,7 @@ pub mod state;
 use instructions::*;
 
 declare_id!("AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn");
+pub const ESCROW_PROGRAM_ID: Pubkey = pubkey!("5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg");
 
 #[program]
 pub mod disputes {
@@ -48,5 +49,10 @@ pub mod disputes {
 
     pub fn execute_judgment(ctx: Context<ExecuteJudgment>) -> Result<()> {
         instructions::execute_judgment::handler(ctx)
+    }
+
+    // ADD THIS NEW INSTRUCTION
+    pub fn cancel_dispute(ctx: Context<CancelDispute>) -> Result<()> {
+        instructions::cancel_dispute::handler(ctx)
     }
 }

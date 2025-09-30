@@ -38,7 +38,6 @@ pub enum DisputeError {
     #[msg("Judgment already executed")]
     JudgmentAlreadyExecuted,
 
-    // NEW ERROR CODES
     #[msg("Unauthorized: Only admin can perform this action")]
     Unauthorized,
 
@@ -56,4 +55,17 @@ pub enum DisputeError {
 
     #[msg("Judgment already finalized")]
     JudgmentAlreadyFinalized,
+
+    // ADD THESE NEW ERROR CODES
+    #[msg("Invalid escrow account provided")]
+    InvalidEscrowAccount,
+
+    #[msg("Cannot cancel dispute in current state")]
+    CannotCancel,
+
+    #[msg("Only dispute opener can cancel before panel formation")]
+    UnauthorizedCancel,
+
+    #[msg("Invalid panel weights")]
+    InvalidPanelWeights,
 }

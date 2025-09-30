@@ -71,11 +71,21 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, FinalizeJudgment<'info>
             DisputeError::NotPanelMember
         );
 
-        // Tally votes
+        // UPDATED SECTION: Enhanced overflow protection
         let weight = vote_record.weight as u32;
-        total_weighted = total_weighted
+
+        // Add overflow check before adding
+        let new_total = total_weighted
             .checked_add(weight)
             .ok_or(DisputeError::ArithmeticOverflow)?;
+
+        // Also check against expected maximum to prevent vote stuffing
+        require!(
+            new_total <= panel.weighted_votes_cast,
+            DisputeError::VoteMismatch
+        );
+
+        total_weighted = new_total;
 
         match vote_record.choice {
             JudgmentChoice::Client => {
@@ -96,7 +106,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, FinalizeJudgment<'info>
         }
     }
 
-    // Verify vote count matches panel records
+    // Verify vote count matches panel records exactly
     require!(
         total_weighted == panel.weighted_votes_cast,
         DisputeError::VoteMismatch
