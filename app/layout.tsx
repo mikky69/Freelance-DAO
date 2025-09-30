@@ -9,6 +9,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
 import Image from "next/image"
+import RainbowkitHederaProvider from "@/RainbowkitHederaProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -159,12 +160,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
+          <RainbowkitHederaProvider>
           <ConditionalNavigation />
           <main className="pb-20 md:pb-0">{children}</main>
           <ConditionalBottomNavigation />
           <ConditionalFooter />
           <ContractNotification />
           <Toaster position="top-right" richColors />
+          </RainbowkitHederaProvider>
         </AuthProvider>
       </body>
     </html>

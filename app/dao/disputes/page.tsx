@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,161 +18,101 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Gavel,
   Plus,
   Search,
   Filter,
-  CheckCircle,
-  Users,
-  FileText,
-  MessageSquare,
-  ExternalLink,
-  Upload,
-  X,
   Shield,
-  Scale,
-  Eye,
-  DollarSign,
-  Calendar,
-  User,
-  Bot,
-  Building2,
-  Award,
   AlertCircle,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, useReadContract, useChainId } from "wagmi"
+// Hedera testnet chainId (296)
+const HEDERA_TESTNET_CHAIN_ID = 296;
+import disputeContractABI from "@/hedera-frontend-abi/FreelanceDAODisputeContract.json"
+import disputeContractDeployment from "@/hedera-deployments/hedera-dispute-testnet.json"
 
 export default function DisputesPage() {
-  const { user, isAuthenticated, isWalletConnected } = useAuth()
+  const { user, isAuthenticated } = useAuth()
+  const { isConnected, address } = useAccount()
+
+  if (address) {
+    console.log("Connected address:", address)
+  }
+
   const [selectedTab, setSelectedTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
 
-  // Form state
-  const [disputeForm, setDisputeForm] = useState({
-    title: "",
-    client: "",
-    freelancer: "",
-    aiAgent: "",
-    category: "",
-    amount: "",
-    description: "",
-  })
+  // Form state for creating new dispute
+  const [jobId, setJobId] = useState("");
+  const [freelancer, setFreelancer] = useState("");
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
 
-  // Mock dispute data
-  const disputes = [
-    {
-      id: "DSP-2024-001",
-      title: "Payment not released after project completion",
-      category: "Payment",
-      status: "Under Investigation",
-      priority: "High",
-      amount: 2500,
-      submittedBy: "Sarah Chen",
-      submittedDate: "2024-01-20",
-      parties: {
-        client: "TechCorp Inc.",
-        freelancer: "Sarah Chen",
-        aiAgent: null,
-      },
-      arbitrators: [
-        { name: "Dr. Michael Rodriguez", avatar: "/placeholder.svg", reputation: 98 },
-        { name: "Lisa Thompson", avatar: "/placeholder.svg", reputation: 95 },
-        { name: "James Wilson", avatar: "/placeholder.svg", reputation: 92 },
-      ],
-      evidence: {
-        files: 3,
-        messages: 12,
-      },
-      blockchainTx: "5KJp7z8X9mN2qR4vW1sT3uY6bH8cD9eF2gA5iL7oP3mQ1nR8vX4",
-      description: "Project was completed according to specifications but client refuses to release escrow payment.",
+
+  const contractAddress = disputeContractDeployment.evmAddress;
+  const contractAbi = disputeContractABI.abi;
+
+  const { writeContract, data: txData, error: writeError, isPending: isSubmitting, isSuccess: isWriteSuccess, reset } = useWriteContract();
+
+  // Extract hash from txData (WriteContractReturnType)
+  const txHash = typeof txData === 'object' && txData !== null && 'hash' in txData ? (txData as any).hash : undefined;
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    data: txReceipt,
+    error: txReceiptError
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+
+  useEffect(() => {
+    if (writeError) {
+      toast.error(writeError.message || "error creating dispute");
+      console.error("error:", writeError);
+    }
+  }, [writeError])
+
+  useWatchContractEvent({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    eventName: "DisputeCreated",
+    chainId: HEDERA_TESTNET_CHAIN_ID,
+    onLogs: (logs: any[]) => {
+      if (logs && logs.length > 0) {
+        toast.success("Dispute created successfully!");
+        setIsSubmitModalOpen(false);
+        setJobId("");
+        setFreelancer("");
+        setTitle("");
+        setAmount("");
+        setCategory("");
+        setDescription("");
+        reset();
+        refetchDisputes();
+      }
     },
-    {
-      id: "DSP-2024-002",
-      title: "AI Agent delivered subpar code quality",
-      category: "Quality",
-      status: "Resolved",
-      priority: "Medium",
-      amount: 1200,
-      submittedBy: "Marcus Johnson",
-      submittedDate: "2024-01-18",
-      parties: {
-        client: "Marcus Johnson",
-        freelancer: null,
-        aiAgent: "CodeMaster AI",
-      },
-      arbitrators: [
-        { name: "Dr. Emily Zhang", avatar: "/placeholder.svg", reputation: 97 },
-        { name: "Robert Kim", avatar: "/placeholder.svg", reputation: 94 },
-      ],
-      evidence: {
-        files: 5,
-        messages: 8,
-      },
-      blockchainTx: "8mN2qR4vW1sT3uY6bH8cD9eF2gA5iL7oP3mQ1nR8vX4z5KJp7",
-      description:
-        "AI agent provided code that failed basic testing requirements and contained security vulnerabilities.",
-      resolution: "Partial refund of 60% issued to client. AI agent performance rating adjusted.",
-    },
-    {
-      id: "DSP-2024-003",
-      title: "Scope creep without additional compensation",
-      category: "Scope",
-      status: "In Mediation",
-      priority: "Medium",
-      amount: 3200,
-      submittedBy: "Alex Rivera",
-      submittedDate: "2024-01-22",
-      parties: {
-        client: "StartupXYZ",
-        freelancer: "Alex Rivera",
-        aiAgent: null,
-      },
-      arbitrators: [
-        { name: "Dr. Michael Rodriguez", avatar: "/placeholder.svg", reputation: 98 },
-        { name: "Sarah Mitchell", avatar: "/placeholder.svg", reputation: 96 },
-      ],
-      evidence: {
-        files: 7,
-        messages: 25,
-      },
-      blockchainTx: null,
-      description:
-        "Client requested significant additional features beyond original scope without agreeing to additional payment.",
-    },
-    {
-      id: "DSP-2024-004",
-      title: "Missed deadline due to unclear requirements",
-      category: "Timeline",
-      status: "Escalated",
-      priority: "Critical",
-      amount: 4500,
-      submittedBy: "Jennifer Walsh",
-      submittedDate: "2024-01-19",
-      parties: {
-        client: "Enterprise Solutions Ltd",
-        freelancer: "Jennifer Walsh",
-        aiAgent: null,
-      },
-      arbitrators: [
-        { name: "Dr. Emily Zhang", avatar: "/placeholder.svg", reputation: 97 },
-        { name: "Lisa Thompson", avatar: "/placeholder.svg", reputation: 95 },
-        { name: "Robert Kim", avatar: "/placeholder.svg", reputation: 94 },
-      ],
-      evidence: {
-        files: 12,
-        messages: 45,
-      },
-      blockchainTx: null,
-      description: "Project deadline missed due to constantly changing and unclear requirements from client side.",
-    },
-  ]
+  });
+
+  // Query blockchain for disputes
+  const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: "getAllDisputes",
+    chainId: HEDERA_TESTNET_CHAIN_ID,
+  });
+  console.log(" getAllDisputes fn", disputesData);
+
+
+  // Use contract result directly: array of Dispute objects
+  const disputes: any[] = Array.isArray(disputesData) ? disputesData : [];
 
   const disputeStats = {
     total: 156,
@@ -196,102 +135,62 @@ export default function DisputesPage() {
     { value: "other", label: "Other" },
   ]
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pending Review":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "Under Investigation":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "In Mediation":
-        return "bg-purple-100 text-purple-800 border-purple-200"
-      case "Resolved":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "Escalated":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+  const handleCreateDispute = async () => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet.");
+      console.warn("Wallet not connected");
+      return;
     }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Critical":
-        return "border-l-red-500"
-      case "High":
-        return "border-l-orange-500"
-      case "Medium":
-        return "border-l-yellow-500"
-      case "Low":
-        return "border-l-green-500"
-      default:
-        return "border-l-gray-300"
+    if (!jobId || !freelancer || !title || !amount || !category || !description) {
+      toast.error("Please fill in all fields.");
+      console.warn("Missing fields", { jobId, freelancer, title, amount, category, description });
+      return;
     }
-  }
-
-  const handleSubmitDispute = async () => {
-    setIsSubmitting(true)
-
     try {
-      // Simulate form validation
-      if (!disputeForm.title || !disputeForm.description || !disputeForm.category) {
-        throw new Error("Please fill in all required fields")
-      }
-
-      // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
-      const disputeId = `DSP-2024-${String(disputes.length + 1).padStart(3, "0")}`
-
-      toast.success(
-        <div className="flex flex-col space-y-2">
-          <div className="font-semibold">Dispute Submitted Successfully! ⚖️</div>
-          <div className="text-sm">Dispute ID: {disputeId}</div>
-          <div className="text-xs text-muted-foreground">All parties have been notified</div>
-        </div>,
-      )
-
-      // Reset form
-      setDisputeForm({
-        title: "",
-        client: "",
-        freelancer: "",
-        aiAgent: "",
-        category: "",
-        amount: "",
-        description: "",
-      })
-      setUploadedFiles([])
-      setIsSubmitModalOpen(false)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to submit dispute")
-    } finally {
-      setIsSubmitting(false)
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: "createDispute",
+        args: [
+          BigInt(jobId),
+          freelancer,
+          title,
+          BigInt(amount),
+          category,
+          description,
+        ],
+      });
+      //display success after 5 secs
+      setTimeout(() => {
+        toast.success("Dispute submitted successfully!");
+      }, 5000); // 5 seconds
+    } catch (err: any) {
+      toast.error(err?.message || "Error submitting dispute.");
+      console.error("Dispute submit error:", err);
     }
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    setUploadedFiles((prev) => [...prev, ...files])
-  }
+  const filteredDisputes = React.useMemo(() => {
+    const result = disputes.filter((dispute) => {
+      // Defensive: ensure title and id are strings before calling .toLowerCase
+      const titleStr = typeof dispute.title === "string" ? dispute.title : String(dispute.title ?? "");
+      const idStr = typeof dispute.id === "string" ? dispute.id : String(dispute.id ?? "");
+      const matchesSearch =
+        titleStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        idStr.toLowerCase().includes(searchQuery.toLowerCase());
+      const categoryStr = typeof dispute.category === "string" ? dispute.category : String(dispute.category ?? "");
+      const matchesCategory = selectedCategory === "all" || categoryStr.toLowerCase() === selectedCategory;
+      const matchesTab =
+        selectedTab === "all" ||
+        (selectedTab === "pending" &&
+          dispute.status === 0) ||
+        (selectedTab === "resolved" && dispute.status === 1) ||
+        (selectedTab === "escalated" && dispute.status === 2);
 
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const filteredDisputes = disputes.filter((dispute) => {
-    const matchesSearch =
-      dispute.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dispute.id.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || dispute.category.toLowerCase() === selectedCategory
-    const matchesTab =
-      selectedTab === "all" ||
-      (selectedTab === "pending" &&
-        ["Pending Review", "Under Investigation", "In Mediation"].includes(dispute.status)) ||
-      (selectedTab === "resolved" && dispute.status === "Resolved") ||
-      (selectedTab === "escalated" && dispute.status === "Escalated")
-
-    return matchesSearch && matchesCategory && matchesTab
-  })
+      return matchesSearch && matchesCategory && matchesTab;
+    });
+    return result;
+  }, [disputes, searchQuery, selectedCategory, selectedTab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -330,7 +229,7 @@ export default function DisputesPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Wallet Connection Warning */}
-        {isAuthenticated && !isWalletConnected && (
+        {isAuthenticated && !isConnected && (
           <Card className="mb-8 bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -379,7 +278,7 @@ export default function DisputesPage() {
 
           <Dialog open={isSubmitModalOpen} onOpenChange={setIsSubmitModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg" disabled={!isWalletConnected}>
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg" disabled={!isConnected}>
                 <Plus className="w-4 h-4 mr-2" />
                 Submit Dispute
               </Button>
@@ -391,169 +290,74 @@ export default function DisputesPage() {
                   Submit a Dispute
                 </DialogTitle>
                 <DialogDescription>
-                  Provide detailed information about your dispute. All parties will be notified and high-ranking DAO
-                  members will review your case.
+                  Provide the contract ID and a reason for the dispute. This will be recorded on the blockchain.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Dispute Title *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Brief summary of the dispute"
-                      value={disputeForm.title}
-                      onChange={(e) => setDisputeForm({ ...disputeForm, title: e.target.value })}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="category">Category *</Label>
-                      <Select
-                        value={disputeForm.category}
-                        onValueChange={(value) => setDisputeForm({ ...disputeForm, category: value })}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="payment">Payment</SelectItem>
-                          <SelectItem value="quality">Quality</SelectItem>
-                          <SelectItem value="scope">Scope</SelectItem>
-                          <SelectItem value="timeline">Timeline</SelectItem>
-                          <SelectItem value="ip-rights">IP Rights</SelectItem>
-                          <SelectItem value="ai-agent">AI Agent</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="amount">Disputed Amount (HBAR)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="0.00"
-                        value={disputeForm.amount}
-                        onChange={(e) => setDisputeForm({ ...disputeForm, amount: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Parties Involved */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Parties Involved</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="client">Client</Label>
-                      <Input
-                        id="client"
-                        placeholder="Client name or ID"
-                        value={disputeForm.client}
-                        onChange={(e) => setDisputeForm({ ...disputeForm, client: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="freelancer">Freelancer</Label>
-                      <Input
-                        id="freelancer"
-                        placeholder="Freelancer name or ID"
-                        value={disputeForm.freelancer}
-                        onChange={(e) => setDisputeForm({ ...disputeForm, freelancer: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="aiAgent">AI Agent (if applicable)</Label>
-                      <Input
-                        id="aiAgent"
-                        placeholder="AI Agent name or ID"
-                        value={disputeForm.aiAgent}
-                        onChange={(e) => setDisputeForm({ ...disputeForm, aiAgent: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description */}
+              <div className="space-y-6 py-4">
                 <div>
-                  <Label htmlFor="description">Detailed Description *</Label>
+                  <Label htmlFor="jobId">Job ID *</Label>
+                  <Input
+                    id="jobId"
+                    type="number"
+                    placeholder="Enter the job ID"
+                    value={jobId}
+                    onChange={(e) => setJobId(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="freelancer">Freelancer Address *</Label>
+                  <Input
+                    id="freelancer"
+                    placeholder="Enter the freelancer's address"
+                    value={freelancer}
+                    onChange={(e) => setFreelancer(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Dispute title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="amount">Amount *</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="Amount in smallest unit (wei, hbar, etc)"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Input
+                    id="category"
+                    placeholder="Category (e.g. payment, quality, etc)"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description *</Label>
                   <Textarea
                     id="description"
-                    placeholder="Provide a comprehensive explanation of the dispute, including timeline, expectations, and what went wrong..."
-                    value={disputeForm.description}
-                    onChange={(e) => setDisputeForm({ ...disputeForm, description: e.target.value })}
+                    placeholder="Provide a detailed description for the dispute..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     className="mt-1 min-h-32"
                   />
-                  <p className="text-xs text-gray-600 mt-1">
-                    Be as detailed as possible. Include relevant dates, communications, and specific issues.
-                  </p>
                 </div>
 
-                {/* File Upload */}
-                <div>
-                  <Label>Supporting Evidence</Label>
-                  <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Upload screenshots, contracts, communications, or other relevant files
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Label htmlFor="file-upload" className="cursor-pointer">
-                      <Button type="button" variant="outline" size="sm">
-                        Choose Files
-                      </Button>
-                    </Label>
-                  </div>
-
-                  {/* Uploaded Files */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center">
-                            <FileText className="w-4 h-4 text-gray-500 mr-2" />
-                            <span className="text-sm text-gray-700">{file.name}</span>
-                            <span className="text-xs text-gray-500 ml-2">({(file.size / 1024).toFixed(1)} KB)</span>
-                          </div>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => removeFile(index)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* What Happens Next */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">What Happens Next?</h4>
-                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                    <li>Your dispute will be assigned a unique ID and logged on the blockchain</li>
-                    <li>All parties involved will receive notifications</li>
-                    <li>High-ranking DAO members will be selected as arbitrators</li>
-                    <li>Arbitrators will review evidence and facilitate resolution</li>
-                    <li>Final judgment will be recorded on-chain and automatically executed</li>
-                  </ol>
-                </div>
-
-                {/* Submit Button */}
                 <div className="flex gap-3 pt-4">
                   <Button
                     variant="outline"
@@ -564,17 +368,17 @@ export default function DisputesPage() {
                     Cancel
                   </Button>
                   <Button
-                    onClick={handleSubmitDispute}
-                    disabled={isSubmitting || !disputeForm.title || !disputeForm.description || !disputeForm.category}
+                    onClick={handleCreateDispute}
+                    disabled={isSubmitting || isTxLoading}
                     className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600"
                   >
-                    {isSubmitting ? (
+                    {(isSubmitting || isTxLoading) ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Submitting...
                       </div>
                     ) : (
-                      "Submit Dispute"
+                      "Submit Dispute to Blockchain"
                     )}
                   </Button>
                 </div>
@@ -583,7 +387,7 @@ export default function DisputesPage() {
           </Dialog>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs and Dispute List */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
           <TabsList className="grid w-full grid-cols-4 lg:w-96">
             <TabsTrigger value="all">All ({disputeStats.total})</TabsTrigger>
@@ -596,166 +400,52 @@ export default function DisputesPage() {
             <div className="space-y-6">
               {filteredDisputes.map((dispute) => (
                 <Card
-                  key={dispute.id}
-                  className={`shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 ${getPriorityColor(dispute.priority)}`}
+                  key={dispute.disputeId}
+                  className={`shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-blue-500`}
                 >
                   <CardHeader>
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <CardTitle className="text-lg">{dispute.title}</CardTitle>
-                          <Badge className={`${getStatusColor(dispute.status)} border`}>{dispute.status}</Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {dispute.priority}
-                          </Badge>
-                        </div>
-                        <CardDescription className="flex items-center gap-4 text-sm">
-                          <span className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {dispute.submittedDate}
-                          </span>
-                          <span className="flex items-center">
-                            <User className="w-4 h-4 mr-1" />
-                            {dispute.submittedBy}
-                          </span>
-                          <span className="flex items-center">
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            {dispute.amount.toLocaleString()} HBAR
-                          </span>
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {dispute.id}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {dispute.category}
-                        </Badge>
-                      </div>
-                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gavel className="w-5 h-5 text-blue-600" />
+                      {dispute.title}
+                      <Badge variant="outline" className="ml-2">
+                        {dispute.disputeId}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-500">
+                      Status: <span className="font-mono">{
+                        dispute.status === 0 || dispute.status === "0"
+                          ? "Pending"
+                          : (dispute.status === 1 || dispute.status === "1"
+                            ? "Resolved"
+                            : "Escalated")
+                      }</span>
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Description */}
-                      <p className="text-gray-700 text-sm leading-relaxed">{dispute.description}</p>
-
-                      {/* Parties Involved */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <Users className="w-4 h-4 mr-1" />
-                          Parties Involved
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          {dispute.parties.client && (
-                            <div className="flex items-center">
-                              <Building2 className="w-4 h-4 text-blue-600 mr-2" />
-                              <div>
-                                <p className="font-medium">Client</p>
-                                <p className="text-gray-600">{dispute.parties.client}</p>
-                              </div>
-                            </div>
-                          )}
-                          {dispute.parties.freelancer && (
-                            <div className="flex items-center">
-                              <User className="w-4 h-4 text-green-600 mr-2" />
-                              <div>
-                                <p className="font-medium">Freelancer</p>
-                                <p className="text-gray-600">{dispute.parties.freelancer}</p>
-                              </div>
-                            </div>
-                          )}
-                          {dispute.parties.aiAgent && (
-                            <div className="flex items-center">
-                              <Bot className="w-4 h-4 text-purple-600 mr-2" />
-                              <div>
-                                <p className="font-medium">AI Agent</p>
-                                <p className="text-gray-600">{dispute.parties.aiAgent}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Arbitrators */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                        <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                          <Scale className="w-4 h-4 mr-1" />
-                          Assigned Arbitrators
-                        </h4>
-                        <div className="flex flex-wrap gap-3">
-                          {dispute.arbitrators.map((arbitrator, index) => (
-                            <div key={index} className="flex items-center bg-white rounded-lg p-2 shadow-sm">
-                              <Avatar className="w-8 h-8 mr-2">
-                                <AvatarImage src={arbitrator.avatar || "/placeholder.svg"} alt={arbitrator.name} />
-                                <AvatarFallback>{arbitrator.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{arbitrator.name}</p>
-                                <div className="flex items-center">
-                                  <Award className="w-3 h-3 text-yellow-500 mr-1" />
-                                  <span className="text-xs text-gray-600">{arbitrator.reputation}% rep</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Evidence & Actions */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className="flex items-center">
-                            <FileText className="w-4 h-4 mr-1" />
-                            {dispute.evidence.files} files
-                          </span>
-                          <span className="flex items-center">
-                            <MessageSquare className="w-4 h-4 mr-1" />
-                            {dispute.evidence.messages} messages
-                          </span>
-                          {dispute.blockchainTx && (
-                            <span className="flex items-center">
-                              <ExternalLink className="w-4 h-4 mr-1" />
-                              <a
-                                href={`https://hashscan.io/mainnet/transaction/${dispute.blockchainTx}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                              >
-                                View on Blockchain
-                              </a>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            View Details
-                          </Button>
-                          {dispute.status !== "Resolved" && user?.role === "admin" && (
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                              <Gavel className="w-4 h-4 mr-1" />
-                              Review Case
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Resolution (if resolved) */}
-                      {dispute.resolution && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <h4 className="font-semibold text-green-900 mb-2 flex items-center">
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Resolution
-                          </h4>
-                          <p className="text-sm text-green-800">{dispute.resolution}</p>
-                        </div>
-                      )}
+                  <CardContent className="space-y-2">
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <span><strong>Client:</strong> {typeof dispute.client === 'string' && dispute.client.length > 10 ? `${dispute.client.slice(0, 6)}...${dispute.client.slice(-4)}` : dispute.client}</span>
+                      <span><strong>Freelancer:</strong> {typeof dispute.freelancer === 'string' && dispute.freelancer.length > 10 ? `${dispute.freelancer.slice(0, 6)}...${dispute.freelancer.slice(-4)}` : dispute.freelancer}</span>
+                      <span><strong>Amount:</strong> {dispute.amount?.toString()}</span>
+                      <span><strong>Category:</strong> {dispute.category}</span>
+                    </div>
+                    <div className="mt-2">
+                      <strong>Description:</strong>
+                      <div className="text-gray-700 whitespace-pre-line">{dispute.description}</div>
+                    </div>
+                    <div className="flex gap-6 mt-2 text-sm">
+                      <span><strong>Votes for Client:</strong> {dispute.votesForClient?.toString()}</span>
+                      <span><strong>Votes for Freelancer:</strong> {dispute.votesForFreelancer?.toString()}</span>
+                      <span><strong>Winner:</strong> {
+                        dispute.winner === "0x0000000000000000000000000000000000000000"
+                          ? "TBD"
+                          : (typeof dispute.winner === 'string' && dispute.winner.length > 10
+                            ? `${dispute.winner.slice(0, 6)}...${dispute.winner.slice(-4)}`
+                            : dispute.winner)
+                      }</span>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-
               {filteredDisputes.length === 0 && (
                 <Card className="text-center py-12">
                   <CardContent>
@@ -766,16 +456,6 @@ export default function DisputesPage() {
                         ? "Try adjusting your search or filter criteria."
                         : "No disputes match the selected tab."}
                     </p>
-                    {!searchQuery && selectedCategory === "all" && (
-                      <Button
-                        onClick={() => setIsSubmitModalOpen(true)}
-                        disabled={!isWalletConnected}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Submit First Dispute
-                      </Button>
-                    )}
                   </CardContent>
                 </Card>
               )}

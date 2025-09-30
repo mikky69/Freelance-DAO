@@ -49,6 +49,7 @@ import { SidebarNavigation } from "./sidebar-navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Copy } from "lucide-react";
 import { walletManager } from "@/lib/hedera-wallet";
+import { CustomHederaConnectButton } from "./CustomHederaConnectButton";
 
 type NavigationItem = {
 	href: string;
@@ -321,7 +322,8 @@ export function TopNavigation() {
 									</Button>
 								</Link>
 							)}
-
+							{/* Main Wallet Connection */}
+							<CustomHederaConnectButton />
 							{/* Wallet Connect Button for authenticated users */}
 							{isAuthenticated && (
 								<>
