@@ -207,7 +207,7 @@ export default function StakingPage() {
         </div>
       </div>
       {/* Wallet Connection Warning */}
-      {isAuthenticated && !isWalletConnected && (
+      {isAuthenticated && !isConnected && (
         <Card className="mb-8 bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -377,7 +377,7 @@ export default function StakingPage() {
                     <DialogTrigger asChild>
                       <Button
                         className={`bg-gradient-to-r ${option.color} hover:opacity-90 shadow-lg`}
-                        disabled={!isWalletConnected}                      >
+                        disabled={!isConnected}                      >
                         <ArrowUpRight className="w-4 h-4 mr-2" />
                         Stake {option.asset}
                       </Button>
@@ -555,7 +555,7 @@ export default function StakingPage() {
 
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="outline" disabled={!isWalletConnected} className="shadow-lg bg-transparent">
+                      <Button variant="outline" disabled={!isConnected} className="shadow-lg bg-transparent">
                         <ArrowDownRight className="w-4 h-4 mr-2" />
                         Unstake
                       </Button>

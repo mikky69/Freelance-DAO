@@ -7,8 +7,7 @@ import {
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import {
-  hederaTestnet,
-  mainnet,
+  hederaTestnet, hedera, hederaPreviewnet
 } from 'wagmi/chains';
 import {
   QueryClientProvider,
@@ -18,7 +17,7 @@ import {
 const config = getDefaultConfig({
   appName: 'Freelance DAO',
   projectId: 'YOUR_PROJECT_ID',
-  chains: [hederaTestnet, mainnet],
+  chains: [hederaTestnet, hederaPreviewnet, hedera],
   ssr: true,
 });
 

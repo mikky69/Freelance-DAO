@@ -50,6 +50,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sparkles, Copy } from "lucide-react";
 import { walletManager } from "@/lib/hedera-wallet";
 import { CustomHederaConnectButton } from "./CustomHederaConnectButton";
+import { useAccount } from "wagmi";
 
 type NavigationItem = {
 	href: string;
@@ -72,7 +73,8 @@ export function TopNavigation() {
 	const [walletBalance, setWalletBalance] = useState<string | null>(null);
 	const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 	const pathname = usePathname();
-	const { user, isAuthenticated, isWalletConnected, signOut, disconnectWallet } = useAuth();
+	const { user, isAuthenticated, signOut, disconnectWallet } = useAuth();
+	const { isConnected, address } = useAccount() //correct way of checking wallet connection details
 
 	const maskAddress = (address: string) => {
 		if (!address) return "";
@@ -187,8 +189,8 @@ export function TopNavigation() {
 
 		fetchUnreadCount();
 
-		// Refresh count every 30 seconds
-		const interval = setInterval(fetchUnreadCount, 30000);
+		// Refresh count every 300 seconds
+		const interval = setInterval(fetchUnreadCount, 300000);
 		return () => clearInterval(interval);
 	}, [isAuthenticated]);
 
@@ -201,7 +203,7 @@ export function TopNavigation() {
 
 	// Fetch balance when dropdown opens and wallet is connected
 	useEffect(() => {
-		if (isWalletConnected && user?.walletAddress) {
+		if (isConnected && address) {
 			setIsBalanceLoading(true);
 			getHederaBalance().then((bal) => {
 				setWalletBalance(bal);
@@ -211,7 +213,7 @@ export function TopNavigation() {
 			setWalletBalance(null);
 		}
 		// Only run when wallet connection changes
-	}, [isWalletConnected, user?.walletAddress]);
+	}, [isConnected, address]);
 
 	return (
 		<>
@@ -324,103 +326,7 @@ export function TopNavigation() {
 							)}
 							{/* Main Wallet Connection */}
 							<CustomHederaConnectButton />
-							{/* Wallet Connect Button for authenticated users */}
-							{isAuthenticated && (
-								<>
-									{isWalletConnected ? (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="outline"
-													className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-												>
-													<Wallet className="w-4 h-4" />
-													<span className="font-mono">
-														{user?.walletAddress ? maskAddress(user.walletAddress) : "Connected"}
-													</span>
-													<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-													<ChevronDown className="w-3 h-3" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end" className="w-64">
-												<DropdownMenuSeparator />
-												<div className="p-3">
-													<div className="flex items-center justify-between mb-2">
-														<span className="text-sm text-slate-600">Connected Address:</span>
-
-													</div>
-													<div className="font-mono text-sm bg-slate-100 p-2 rounded border break-all flex justify-between items-center">
-														{user?.walletAddress || "No address"}
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() => {
-																if (user?.walletAddress) {
-																	navigator.clipboard.writeText(user.walletAddress);
-																	toast.success("Address copied to clipboard");
-																}
-															}}
-															className="h-6 w-6 p-0"
-														>
-															<Copy className="w-3 h-3" />
-														</Button>
-													</div>
-													{user?.walletAddress && (
-														<div className="text-sm mt-4 text-slate-600 ">
-															Balance: {isBalanceLoading ? (
-																<span className="font-mono text-slate-400">0.00</span>
-															) : (
-																<span className="font-mono bg-slate-100 p-2 rounded border break-all">{walletBalance ?? 0} HBAR</span>
-															)}
-														</div>
-													)}
-												</div>
-												<DropdownMenuSeparator />
-												<DropdownMenuItem
-													onClick={() => {
-														disconnectWallet();
-														toast.success("Wallet disconnected successfully");
-													}}
-													className="text-red-600 focus:text-red-600"
-												>
-													Disconnect Wallet
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									) : (
-										<Button
-											variant="outline"
-											className="hidden sm:flex items-center space-x-2 transition-all duration-200 border-blue-200 text-blue-600 hover:bg-blue-50"
-											onClick={() => setShowWalletDialog(true)}
-										>
-											<Wallet className="w-4 h-4" />
-											<span>Connect Wallet</span>
-										</Button>
-									)}
-
-									<Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
-										<DialogContent className="max-w-md">
-											<DialogHeader>
-												<DialogTitle className="flex items-center space-x-2">
-													<Sparkles className="w-5 h-5 text-blue-500" />
-													<span>Choose Wallet Type</span>
-												</DialogTitle>
-												<DialogDescription>Select your preferred blockchain wallet</DialogDescription>
-											</DialogHeader>
-											<div className="p-4">
-												<MultiWalletConnect
-													showDialog={false}
-													onConnectionChange={() => {
-														setShowWalletDialog(false)
-														setShowWalletConnect(false)
-													}}
-												/>
-											</div>
-										</DialogContent>
-									</Dialog>
-								</>
-							)}
-
+							
 							{/* User Menu or Auth Buttons */}
 							{isAuthenticated ? (
 								<DropdownMenu>
