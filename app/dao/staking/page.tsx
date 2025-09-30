@@ -338,7 +338,7 @@ export default function StakingPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-blue-600 flex items-center">
                       <Coins className="w-4 h-4 mr-1" />
-                      Your Staked Amount
+                      Total Staked Amount
                     </span>
                     <span className="text-sm font-bold text-blue-800">
                       {totalStakedAmount} HBAR

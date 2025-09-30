@@ -114,15 +114,27 @@ export default function DisputesPage() {
   // Use contract result directly: array of Dispute objects
   const disputes: any[] = Array.isArray(disputesData) ? disputesData : [];
 
-  const disputeStats = {
-    total: 156,
-    pending: 23,
-    resolved: 125,
-    escalated: 8,
-    totalValue: 2300000,
-    avgResolutionTime: 3.2,
-    satisfactionRate: 94,
-  }
+  // Calculate dispute stats dynamically from disputes array
+  const disputeStats = React.useMemo(() => {
+    const total = disputes.length;
+    let pending = 0, resolved = 0, escalated = 0;
+    let totalValue = 0;
+    disputes.forEach((d) => {
+      if (d.status === 0 || d.status === "0") pending++;
+      else if (d.status === 1 || d.status === "1") resolved++;
+      else if (d.status === 2 || d.status === "2") escalated++;
+      if (d.amount) totalValue += Number(d.amount);
+    });
+    return {
+      total,
+      pending,
+      resolved,
+      escalated,
+      totalValue,
+      avgResolutionTime: 0, // Not available from contract
+      satisfactionRate: 0, // Not available from contract
+    };
+  }, [disputes]);
 
   const categories = [
     { value: "all", label: "All Categories" },
