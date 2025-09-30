@@ -1,3 +1,4 @@
+"use client";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -17,7 +18,6 @@ export const CustomHederaConnectButton = () => {
         throw new Error("Failed to resolve Hedera account from EVM address")
       }
       const data = await response.json()
-      console.log("Resolved Hedera account data:", data)
       const accountId = data.account || data.evm_address
       return accountId
     } catch {
@@ -84,10 +84,8 @@ export const CustomHederaConnectButton = () => {
               }
               return (
                 <Button variant={'outline'} className=' border-green-200 bg-green-50 text-green-700 hover:bg-green-100 flex gap-4 items-center'>
-                  <button
-                    onClick={openChainModal}
-                    type="button"
-                  >
+                  <div
+                    onClick={openChainModal}>
                     <div className='overflow-hidden'
                     >
                       {/* hardcoded hedera icon, change it if you switch chain */}
@@ -100,14 +98,14 @@ export const CustomHederaConnectButton = () => {
                       />
                     </div>
 
-                  </button>
-                  <button onClick={openAccountModal} type="button" className='flex gap-2 items-center'>
+                  </div>
+                  <div onClick={openAccountModal} className='flex gap-2 items-center'>
                     {accountId}
                     {/* {account.displayBalance
                       ? ` (${account.displayBalance})`
                       : ''} */}
                     <ChevronDown/>
-                  </button>
+                  </div>
                 </Button>
               );
             })()}
