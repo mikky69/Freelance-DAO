@@ -7,11 +7,11 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
-staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
-disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
-shared = "4vvGqQjKWJmAmNx1iuNNwpSJrjgVxgr1wSWWA2ZEkfA6"
-escrow = "5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg"
+disputes = "ABBDsuMJ3nNy17F53dAGDacXBtL5yUSB7ZjhebyRHmkH"
+escrow = "B4M6bDUnFcRJfGkzCVEict55vPqdwxFXnUBenZcCe7wr"
+governance = "BjBY39wjLfMvAQDpKZajwNm75msab2ie5k7b2tQYFFjC"
+shared = "9W5ksWrT4kqmLUuR6knhsWdsp7Kbd1hiKSDAkDwwVAF7"
+staking = "C5pXuWR2uPwLdVpqcUVREwcra2sA9cbC1YEPNrWtk7LU"
 
 [registry]
 url = "https://api.apr.dev"

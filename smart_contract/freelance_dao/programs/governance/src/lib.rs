@@ -11,7 +11,7 @@ pub mod utils;
 use instructions::*;
 pub use utils::*;
 
-declare_id!("GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf");
+declare_id!("BjBY39wjLfMvAQDpKZajwNm75msab2ie5k7b2tQYFFjC");
 
 #[program]
 pub mod governance {
