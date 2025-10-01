@@ -57,6 +57,43 @@ export interface IFreelancer extends Document {
     url?: string
   }[]
 
+  // Settings
+  settings?: {
+    // Privacy Settings
+    privacy?: {
+      profileVisibility?: string
+      showEmail?: boolean
+      showPhone?: boolean
+      showLocation?: boolean
+      showEarnings?: boolean
+      allowDirectContact?: boolean
+    }
+    // Notification Settings
+    notifications?: {
+      email?: {
+        jobAlerts?: boolean
+        messageAlerts?: boolean
+        paymentAlerts?: boolean
+        marketingEmails?: boolean
+      }
+      push?: {
+        jobAlerts?: boolean
+        messageAlerts?: boolean
+        paymentAlerts?: boolean
+      }
+      sms?: {
+        jobAlerts?: boolean
+        paymentAlerts?: boolean
+      }
+    }
+    // Security Settings
+    security?: {
+      twoFactorEnabled?: boolean
+      loginAlerts?: boolean
+      sessionTimeout?: number
+    }
+  }
+
   createdAt: Date
   updatedAt: Date
 
@@ -82,6 +119,44 @@ export interface IClient extends Document {
   suspended: boolean
   rating: number
   reviewCount: number
+
+  // Settings
+  settings?: {
+    // Privacy Settings
+    privacy?: {
+      profileVisibility?: string
+      showEmail?: boolean
+      showPhone?: boolean
+      showLocation?: boolean
+      showSpent?: boolean
+      allowDirectContact?: boolean
+    }
+    // Notification Settings
+    notifications?: {
+      email?: {
+        jobAlerts?: boolean
+        messageAlerts?: boolean
+        paymentAlerts?: boolean
+        marketingEmails?: boolean
+      }
+      push?: {
+        jobAlerts?: boolean
+        messageAlerts?: boolean
+        paymentAlerts?: boolean
+      }
+      sms?: {
+        jobAlerts?: boolean
+        paymentAlerts?: boolean
+      }
+    }
+    // Security Settings
+    security?: {
+      twoFactorEnabled?: boolean
+      loginAlerts?: boolean
+      sessionTimeout?: number
+    }
+  }
+
   createdAt: Date
   updatedAt: Date
 
@@ -179,6 +254,95 @@ const FreelancerSchema = new Schema<IFreelancer>(
       min: 0,
       default: 0,
     },
+
+    // Settings
+    settings: {
+      privacy: {
+        profileVisibility: {
+          type: String,
+          enum: ["public", "clients-only", "private"],
+          default: "public",
+        },
+        showEmail: {
+          type: Boolean,
+          default: false,
+        },
+        showPhone: {
+          type: Boolean,
+          default: false,
+        },
+        showLocation: {
+          type: Boolean,
+          default: true,
+        },
+        showSpent: {
+          type: Boolean,
+          default: false,
+        },
+        allowDirectContact: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      notifications: {
+        email: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          marketingEmails: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        push: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+        },
+        sms: {
+          jobAlerts: {
+            type: Boolean,
+            default: false,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      },
+      security: {
+        twoFactorEnabled: {
+          type: Boolean,
+          default: false,
+        },
+        loginAlerts: {
+          type: Boolean,
+          default: true,
+        },
+        sessionTimeout: {
+          type: Number,
+          default: 30, // minutes
+        },
+      },
+    },
     completedJobs: {
       type: Number,
       min: 0,
@@ -231,6 +395,95 @@ const FreelancerSchema = new Schema<IFreelancer>(
         },
       },
     ],
+
+    // Settings
+    settings: {
+      privacy: {
+        profileVisibility: {
+          type: String,
+          enum: ["public", "freelancers-only", "private"],
+          default: "public",
+        },
+        showEmail: {
+          type: Boolean,
+          default: false,
+        },
+        showPhone: {
+          type: Boolean,
+          default: false,
+        },
+        showLocation: {
+          type: Boolean,
+          default: true,
+        },
+        showEarnings: {
+          type: Boolean,
+          default: false,
+        },
+        allowDirectContact: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      notifications: {
+        email: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          marketingEmails: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        push: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+        },
+        sms: {
+          jobAlerts: {
+            type: Boolean,
+            default: false,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      },
+      security: {
+        twoFactorEnabled: {
+          type: Boolean,
+          default: false,
+        },
+        loginAlerts: {
+          type: Boolean,
+          default: true,
+        },
+        sessionTimeout: {
+          type: Number,
+          default: 30, // minutes
+        },
+      },
+    },
   },
   {
     timestamps: true,
