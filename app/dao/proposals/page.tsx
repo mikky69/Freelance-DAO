@@ -82,8 +82,15 @@ export default function ProposalsPage() {
     abi: contractAbi,
     functionName: "getAllProposals",
     chainId: 296,
+    query: {
+      enabled: typeof window !== 'undefined' && !!contractAddress
+    }
   })
-  console.log("Proposals data from contract:", proposalsData)
+  
+  // Only log on client side to avoid build errors
+  if (typeof window !== 'undefined') {
+    console.log("Proposals data from contract:", proposalsData)
+  }
 
   useWatchContractEvent({
     address: contractAddress as `0x${string}`,

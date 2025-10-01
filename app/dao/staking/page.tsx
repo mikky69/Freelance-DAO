@@ -132,9 +132,15 @@ export default function StakingPage() {
     abi: stakingAbi,
     functionName: "lockTime",
     chainId: 296,
+    query: {
+      enabled: typeof window !== 'undefined' && !!stakingAddress
+    }
   })
 
-  console.log("lock time in millisecs", lockTime)
+  // Only log on client side to avoid build errors
+  if (typeof window !== 'undefined') {
+    console.log("lock time in millisecs", lockTime)
+  }
   // Refetch totalStaked after successful staking transaction
   useEffect(() => {
     if (isTxSuccess) {
@@ -146,7 +152,10 @@ export default function StakingPage() {
 
   //IMPORTANT
   // User's staked amount
-  console.log("Your stakes: ", userStakeData)
+  // Only log on client side to avoid build errors
+  if (typeof window !== 'undefined') {
+    console.log("Your stakes: ", userStakeData)
+  }
 
   const stakedAmount = Array.isArray(userStakeData) && userStakeData[0] ? Number(userStakeData[0]) / 1e8 : 0 // convert tinybar to HBAR. Very important and dont delete
 

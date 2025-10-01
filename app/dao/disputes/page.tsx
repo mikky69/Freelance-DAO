@@ -107,8 +107,15 @@ export default function DisputesPage() {
     abi: contractAbi,
     functionName: "getAllDisputes",
     chainId: HEDERA_TESTNET_CHAIN_ID,
+    query: {
+      enabled: typeof window !== 'undefined' && !!contractAddress
+    }
   });
-  console.log(" getAllDisputes fn", disputesData);
+  
+  // Only log on client side to avoid build errors
+  if (typeof window !== 'undefined') {
+    console.log(" getAllDisputes fn", disputesData);
+  }
 
 
   // Use contract result directly: array of Dispute objects
