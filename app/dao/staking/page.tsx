@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAccount } from "wagmi"
+import { useAccount, useBalance } from "wagmi"
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useWatchContractEvent } from "wagmi"
 import stakingContractDeployment from "../../../hedera-deployments/hedera-staking-testnet.json"
 import stakingContractABI from "../../../hedera-frontend-abi/FreeLanceDAOStaking.json"
@@ -52,26 +52,27 @@ const stakingOptions = [
     asset: "HBAR",
     apy: 12.5,
     description: "Stake HBAR for steady, predictable returns",
-    minStake: 10,
-    lockPeriod: "None",
+    minStake: 5,
+    lockPeriod: "7 days",
     pointsRate: "10 points per HBAR per day",
     totalStaked: 2450000,
     maxCapacity: 5000000,
     color: "from-green-500 to-green-600",
     icon: DollarSign,
     riskLevel: "Low",
-    features: ["No lock period", "Instant withdrawals", "Stable returns"],
+    features: ["Low lock period", "Instant withdrawals", "Stable returns"],
     howToAcquire:
       "Purchase HBAR from any major exchange like Coinbase, Binance, or directly through your HashPack wallet.",
   }
 ]
 export default function StakingPage() {
-  const { user, isAuthenticated, isWalletConnected } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const [stakeAmount, setStakeAmount] = useState("")
+  const [unstakeAmount, setUnstakeAmount] = useState("")
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  
-  
+
+
   // Contract details
   const stakingAddress = stakingContractDeployment.FreeLanceDAOStaking.evmAddress
   const stakingAbi = stakingContractABI.abi
@@ -82,14 +83,21 @@ export default function StakingPage() {
   const txHash = typeof txData === 'object' && txData !== null && 'hash' in txData ? (txData as any).hash : undefined
   const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash: txHash })
 
+  // Get user's HBAR balance
+  const { data: userBalanceData } = useBalance({
+    address,
+    chainId: 296,
+    token: undefined // native HBAR
+  })
+  const availableBalance = userBalanceData ? (Number(userBalanceData.value) / 1e18) : 0 //divide by 1e18
+
   // Read user's stake
   const { data: userStakeData, refetch: refetchStake } = useReadContract({
     address: stakingAddress as `0x${string}`,
     abi: stakingAbi,
     functionName: "stakes",
     args: [address],
-    chainId: 296,
-    // enabled: !!address,
+    chainId: 296, //hedera testnet
   })
 
   // Read total staked
@@ -100,6 +108,16 @@ export default function StakingPage() {
     chainId: 296,
   })
 
+  // Read total staked of the logged in user
+  const { data: userStakes, refetch: refetchUserStaked } = useReadContract({
+    address: stakingAddress as `0x${string}`,
+    abi: stakingAbi,
+    functionName: "getUserStaking",
+    chainId: 296,
+    args: [address]
+
+  })
+
   // Read daily reward rate
   const { data: rewardRate } = useReadContract({
     address: stakingAddress as `0x${string}`,
@@ -107,6 +125,16 @@ export default function StakingPage() {
     functionName: "rewardRate",
     chainId: 296,
   })
+
+  // Read staking lock time in millisecs
+  const { data: lockTime } = useReadContract({
+    address: stakingAddress as `0x${string}`,
+    abi: stakingAbi,
+    functionName: "lockTime",
+    chainId: 296,
+  })
+
+  console.log("lock time in millisecs", lockTime)
   // Refetch totalStaked after successful staking transaction
   useEffect(() => {
     if (isTxSuccess) {
@@ -126,7 +154,6 @@ export default function StakingPage() {
   const dateStaked = Array.isArray(userStakeData) && userStakeData[1]
     ? new Date(Number(userStakeData[1]) * 1000).toLocaleString()
     : "-"
-  console.log("Date staked: ", dateStaked)
 
   const totalStakedAmount = totalStaked ? Number(totalStaked) / 1e8 : 0 // convert tinybar to HBAR. Very important and dont delete
   const dailyRewardRate = rewardRate ? Number(rewardRate) : 0
@@ -143,6 +170,7 @@ export default function StakingPage() {
       reset()
       refetchStake()
       refetchTotalStaked()
+      refetchUserStaked()
     },
   })
 
@@ -164,8 +192,69 @@ export default function StakingPage() {
         functionName: "stake",
         value: BigInt(amount * 1e18),
       })
+      console.log("Staking transaction submitted", amount)
     } catch (err: any) {
+      console.error("Staking error:", err)
       toast.error(err?.message || "Staking failed. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const userTotalStake = Array.isArray(userStakes) && userStakes[0] ? Number(userStakes[0]) / 1e8 : 0
+  const lastStakedTimestamp = Array.isArray(userStakes) && userStakes[1] ? Number(userStakes[1]) : 0
+  const lockTimeMs = lockTime ? Number(lockTime) * 1000 : 0 // lockTime is in seconds, convert to ms
+  // Unstake handler
+  const handleUnstake = async () => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet first")
+      return
+    }
+    const amount = Number(unstakeAmount)
+    const now = Date.now()
+    const unlockTime = lastStakedTimestamp * 1000 + lockTimeMs
+    console.log("Unstake requested:", amount, "User total stake:", userTotalStake)
+    console.log("Last staked timestamp:", lastStakedTimestamp, "Lock time (ms):", lockTimeMs, "Unlock time:", unlockTime, "Now:", now)
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid unstake amount")
+      return
+    }
+    if (amount > userTotalStake) {
+      toast.error("Unstake amount exceeds your total staked amount")
+      return
+    }
+    if (now < unlockTime) {
+      const msLeft = unlockTime - now;
+      const totalSeconds = Math.floor(msLeft / 1000);
+      const days = Math.floor(totalSeconds / (24 * 3600));
+      const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      let timeStr = '';
+      if (days > 0) timeStr += `${days}d `;
+      if (hours > 0) timeStr += `${hours}h `;
+      if (minutes > 0) timeStr += `${minutes}m`;
+      if (!timeStr) timeStr = 'less than a minute';
+      toast.error(`Tokens still locked. Please wait until the lock period has elapsed in ${timeStr} before unstaking.`)
+      return;
+    }
+    setIsProcessing(true)
+    try {
+      // Contract expects tinybar, so convert
+      writeContract({
+        address: stakingAddress as `0x${string}`,
+        abi: stakingAbi,
+        functionName: "unstake",
+        args: [BigInt(amount * 1e8)],
+      })
+      console.log("Unstake transaction submitted", amount)
+      toast.success("Unstake transaction submitted!")
+      setUnstakeAmount("")
+      refetchStake()
+      refetchUserStaked()
+      refetchTotalStaked()
+    } catch (err: any) {
+      console.error("Unstake error:", err)
+      toast.error(err?.message || "Unstake failed. Please try again.")
     } finally {
       setIsProcessing(false)
     }
@@ -247,13 +336,10 @@ export default function StakingPage() {
               <div className="flex-1">
                 <div className="mb-2 text-lg font-semibold">Stake HBAR to earn rewards and participate in DAO governance.</div>
                 <div className="mb-4 text-sm text-gray-600">Staked HBAR is locked for a period and earns daily rewards. You can unstake after the lock period.</div>
-                <div className="mb-2 text-sm text-gray-600">Date Staked: {dateStaked}</div>
-                <Button className="bg-green-600 text-white px-4 py-2 rounded" onClick={() => setIsStakeModalOpen(true)} disabled={!isConnected}>
+                {/* <Button className="bg-green-600 text-white px-4 py-2 rounded" onClick={() => setIsStakeModalOpen(true)} disabled={!isConnected}>
                   Stake HBAR
-                </Button>
-                <Button className="bg-gray-300 text-black px-4 py-2 rounded ml-2" onClick={() => console.log('Unstake clicked')} disabled={!isConnected}>
-                  Unstake
-                </Button>
+                </Button> */}
+
               </div>
             </div>
           </CardContent>
@@ -264,6 +350,7 @@ export default function StakingPage() {
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Stake HBAR</h2>
+              <div className="mb-2 text-sm text-gray-600">Available Balance: <span className="font-bold">{availableBalance.toFixed(4)} HBAR</span></div>
               <Input
                 className="w-full mb-4"
                 type="number"
@@ -275,10 +362,10 @@ export default function StakingPage() {
                 disabled={isProcessing}
               />
               <div className="flex gap-2 mt-4">
-                <Button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleStake} disabled={isProcessing}>
+                <Button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleStake} disabled={isProcessing || Number(stakeAmount) > availableBalance}>
                   {isProcessing ? "Staking..." : "Stake"}
                 </Button>
-                <Button className="bg-gray-300 px-4 py-2 rounded" onClick={() => setIsStakeModalOpen(false)} disabled={isProcessing}>
+                <Button className="bg-gray-300 px-4 py-2 rounded" onClick={() => { setIsStakeModalOpen(false); setStakeAmount(""); }} disabled={isProcessing}>
                   Cancel
                 </Button>
               </div>
@@ -416,7 +503,7 @@ export default function StakingPage() {
                             </span>
                             <span>
                               Available:
-                              {option.asset || 0}
+                              {availableBalance.toFixed(4) || 0}
                             </span>
                           </div>
                         </div>
@@ -429,6 +516,7 @@ export default function StakingPage() {
                               variant="outline"
                               size="sm"
                               className="text-xs"
+                              onClick={() => setStakeAmount(((availableBalance * percentage) / 100).toFixed(2))}
                             >
                               {percentage}%
                             </Button>
@@ -436,8 +524,9 @@ export default function StakingPage() {
                         </div>
 
                         {/* Projection Calculator */}
+                        {/* HIDDEN AT THE MOMENT. CALCULATION NOT DONE */}
                         {stakeAmount && Number(stakeAmount) >= option.minStake && (
-                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                          <div className="hidden bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
                             <h4 className="font-semibold text-green-900 mb-3 flex items-center">
                               <Calculator className="w-4 h-4 mr-1" />
                               Staking Projections
@@ -514,7 +603,7 @@ export default function StakingPage() {
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
                               <span>APY:</span>
-                              <span className="font-medium">{option.apy}%</span>
+                              <span className="font-medium">{dailyRewardRate}%</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Lock Period:</span>
@@ -522,7 +611,7 @@ export default function StakingPage() {
                             </div>
                             <div className="flex justify-between">
                               <span>Network Fee:</span>
-                              <span className="font-medium">~0.001 HBAR</span>
+                              <span className="font-medium">~1 HBAR</span>
                             </div>
                           </div>
                         </div>
@@ -530,14 +619,15 @@ export default function StakingPage() {
                         <div className="flex gap-3">
                           <Button
                             variant="outline"
-
                             className="flex-1"
+                            onClick={() => { setStakeAmount(""); setIsStakeModalOpen(false); }}
                           >
                             Cancel
                           </Button>
                           <Button
-                            disabled={!stakeAmount || Number(stakeAmount) < option.minStake || isProcessing}
+                            disabled={!stakeAmount || Number(stakeAmount) < option.minStake || isProcessing || Number(stakeAmount) > availableBalance}
                             className={`flex-1 bg-gradient-to-r ${option.color}`}
+                            onClick={handleStake}
                           >
                             {isProcessing ? (
                               <div className="flex items-center">
@@ -574,14 +664,13 @@ export default function StakingPage() {
                             id="unstakeAmount"
                             type="number"
                             placeholder="0.00"
-                            // value={unstakeAmount}
+                            value={unstakeAmount}
+                            onChange={e => setUnstakeAmount(e.target.value)}
                             step="0.01"
                             className="mt-1"
                           />
                           <p className="text-xs text-slate-600 mt-1">
-                            Available:{" "}
-
-                            {option.asset}
+                            Withdrawable Amount:{userTotalStake} {option.asset}
                           </p>
                         </div>
 
@@ -592,7 +681,7 @@ export default function StakingPage() {
                               <div>
                                 <h4 className="font-semibold text-yellow-900">Lock Period Notice</h4>
                                 <p className="text-sm text-yellow-800">
-                                  Funds will be available {option.lockPeriod} after unstaking
+                                  Funds will be available {option.lockPeriod} after staking
                                 </p>
                               </div>
                             </div>
@@ -600,12 +689,11 @@ export default function StakingPage() {
                         )}
 
                         <div className="flex gap-3">
-                          <Button variant="outline" className="flex-1">
-                            Cancel
-                          </Button>
+                          <Button variant="outline" className="flex-1" onClick={() => setUnstakeAmount("")}>Cancel</Button>
                           <Button
-
                             className="flex-1"
+                            onClick={handleUnstake}
+                            disabled={isProcessing || !unstakeAmount}
                           >
                             {isProcessing ? (
                               <div className="flex items-center">
@@ -627,6 +715,41 @@ export default function StakingPage() {
         ))}
       </div>
 
+
+      {/* Staking History Card */}
+      <div className="container mx-auto px-4 pb-12">
+        <Card className="max-w-xl mx-auto shadow-lg mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-blue-600" />
+              Staking History
+            </CardTitle>
+            <CardDescription>
+              Your staking activity and rewards
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {Array.isArray(userStakes) ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Staked Amount:</span>
+                  <span className="font-bold text-green-700">{userStakes[0] ? Number(userStakes[0]) / 1e8 : 0} HBAR</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Last Staked Time:</span>
+                  <span className="font-bold text-blue-700">{userStakes[1] ? new Date(Number(userStakes[1]) * 1000).toLocaleString() : '-'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Staking Rewards Earned:</span>
+                  <span className="font-bold text-emerald-700">{userStakes[2] ? (Number(userStakes[2]) / 1e8).toFixed(4) : 0} HBAR</span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">No staking history found.</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
