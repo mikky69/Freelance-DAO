@@ -2,6 +2,7 @@ import  HeroSection  from "@/components/homepage/hero-section"
 import { AnimatedMarquee } from "@/components/homepage/animated-marquee"
 import {TestimonialsSection} from "@/components/homepage/testimonials-section"
 import { WhatIsFreeLanceDAO } from "@/components/homepage/what-is-freelancedao"
+import {FaqSection} from "@/components/homepage/faq-section"
 import { UserTypeCards } from "@/components/homepage/user-type-cards"
 import { WhyFreeLanceDAO } from "@/components/homepage/why-freelancedao"
 import { FeaturedJobs } from "@/components/homepage/featured-jobs"
@@ -16,6 +17,7 @@ export default function HomePage() {
       <WhatIsFreeLanceDAO />
       <TestimonialsSection/>
       <FeaturedJobs />
+      <FaqSection/>
       {/* <UserTypeCards />
       <WhyFreeLanceDAO />
       <HowItWorks />

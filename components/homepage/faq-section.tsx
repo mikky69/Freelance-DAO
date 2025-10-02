@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, HelpCircle, Mail, LifeBuoy } from "lucide-react";
 import { useState } from "react";
 
 interface FAQ {
@@ -61,49 +61,45 @@ export function FaqSection() {
 	};
 
 	return (
-		<section
-			className="py-20"
-			style={{ backgroundColor: "rgba(174, 22, 167, 0.05)" }}
-		>
+		<section className="py-20 relative bg-gradient-to-b from-[#1D0225] via-[#2A0632] to-[#1D0225]">
 			<div className="container mx-auto px-4">
 				<div className="max-w-4xl mx-auto">
+					{/* Section Header */}
 					<div className="text-center mb-16">
-						<h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+						<h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4 flex justify-center items-center gap-3">
+							<HelpCircle className="w-8 h-8 text-[#FA5F04]" />
 							Frequently Asked Questions
 						</h2>
-						<p className="text-xl text-gray-300">
+						<p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
 							Everything you need to know about FreeLanceDAO
 						</p>
 					</div>
 
+					{/* FAQ Cards */}
 					<div className="space-y-4">
 						{faqs.map((faq, index) => (
 							<Card
 								key={index}
-								className="glass-effect border-2 cursor-pointer transition-all duration-300 hover:shadow-xl"
+								className={`rounded-2xl overflow-hidden border transition-all duration-300 ${
+									openFAQ === index
+										? "border-[#FF068D] shadow-xl"
+										: "border-white/10 hover:border-[#AE16A7]"
+								}`}
 								style={{
-									backgroundColor: "rgba(255, 255, 255, 0.05)",
-									borderColor:
-										openFAQ === index ? "#FF068D" : "rgba(174, 22, 167, 0.3)",
+									backgroundColor: "rgba(255,255,255,0.03)",
 								}}
 								onClick={() => toggleFAQ(index)}
 							>
 								<CardContent className="p-6">
-									<div className="flex items-center justify-between">
-										<h3 className="text-lg font-semibold text-white pr-4">
+									<div className="flex items-center justify-between cursor-pointer">
+										<h3 className="text-lg md:text-xl font-semibold text-white pr-4">
 											{faq.question}
 										</h3>
 										<div className="flex-shrink-0">
 											{openFAQ === index ? (
-												<ChevronUp
-													className="w-6 h-6 transition-colors duration-300"
-													style={{ color: "#FF068D" }}
-												/>
+												<ChevronUp className="w-6 h-6 text-[#FF068D] transition-colors" />
 											) : (
-												<ChevronDown
-													className="w-6 h-6 transition-colors duration-300"
-													style={{ color: "#AE16A7" }}
-												/>
+												<ChevronDown className="w-6 h-6 text-[#AE16A7] transition-colors" />
 											)}
 										</div>
 									</div>
@@ -115,7 +111,7 @@ export function FaqSection() {
 												: "max-h-0 opacity-0"
 										}`}
 									>
-										<div className="border-t border-gray-600 pt-4">
+										<div className="border-t border-white/10 pt-4">
 											<p className="text-gray-300 leading-relaxed">
 												{faq.answer}
 											</p>
@@ -127,15 +123,16 @@ export function FaqSection() {
 					</div>
 
 					{/* Contact Section */}
-					<div className="mt-16 text-center">
+					<div className="mt-20 text-center">
 						<Card
-							className="glass-effect border-2 shadow-xl"
+							className="rounded-2xl shadow-xl border"
 							style={{
-								backgroundColor: "rgba(250, 95, 4, 0.1)",
-								borderColor: "#FA5F04",
+								background:
+									"linear-gradient(135deg, rgba(250,95,4,0.15), rgba(174,22,167,0.1))",
+								borderColor: "rgba(250,95,4,0.4)",
 							}}
 						>
-							<CardContent className="p-8">
+							<CardContent className="p-10">
 								<h3 className="text-2xl font-bold text-white mb-4">
 									Still have questions?
 								</h3>
@@ -146,16 +143,18 @@ export function FaqSection() {
 								<div className="flex flex-col sm:flex-row gap-4 justify-center">
 									<a
 										href="mailto:support@freelancedao.com"
-										className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg"
+										className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg"
 										style={{ backgroundColor: "#FA5F04", color: "white" }}
 									>
+										<Mail className="w-5 h-5" />
 										Contact Support
 									</a>
 									<a
 										href="/help"
-										className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 border-2 text-white hover:bg-white/10"
+										className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 border-2 text-white hover:bg-white/10"
 										style={{ borderColor: "#AE16A7" }}
 									>
+										<LifeBuoy className="w-5 h-5" />
 										Visit Help Center
 									</a>
 								</div>
