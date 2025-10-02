@@ -1,4 +1,6 @@
 import  HeroSection  from "@/components/homepage/hero-section"
+import { AnimatedMarquee } from "@/components/homepage/animated-marquee"
+import {TestimonialsSection} from "@/components/homepage/testimonials-section"
 import { WhatIsFreeLanceDAO } from "@/components/homepage/what-is-freelancedao"
 import { UserTypeCards } from "@/components/homepage/user-type-cards"
 import { WhyFreeLanceDAO } from "@/components/homepage/why-freelancedao"
@@ -10,12 +12,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <HeroSection />
+      <AnimatedMarquee/>
+      <TestimonialsSection/>
       <WhatIsFreeLanceDAO />
-      <UserTypeCards />
+      {/* <UserTypeCards />
       <WhyFreeLanceDAO />
       <FeaturedJobs />
       <HowItWorks />
-      <FinalCTA />
+      <FinalCTA /> */}
     </div>
   )
 }

@@ -6,15 +6,24 @@ import Image from "next/image";
 export default function HeroSection() {
   return (
 		<section className="relative min-h-screen flex items-center justify-center bg-[#1D0225] text-white overflow-hidden">
-			{/* Grid Pattern Background */}
-			<div
-				className="absolute inset-0 opacity-60"
-				style={{
-					backgroundImage:
-						"linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
-					backgroundSize: "40px 40px",
-				}}
-			/>
+			 {/* Background pattern */}
+      <div className="absolute inset-0 -z-10 opacity-70">
+        <svg
+          className="h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
+          width="100%"
+          height="100%"
+          viewBox="0 0 1000 1000"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
 
 			{/* Gradient Overlay for Depth */}
 			<div className="absolute inset-0 bg-gradient-to-b from-[#1D0225] via-[#1D0225]/95 to-[#1D0225]" />
@@ -28,12 +37,11 @@ export default function HeroSection() {
 					className="flex-1 text-center lg:text-left"
 				>
 					<h1 className="text-4xl md:text-6xl font-bold leading-tight">
-						The Future of <span className="text-[#AE16A7]">Freelancing</span> is{" "}
-						<span className="text-[#FA5F04]">Decentralized</span>
+						The First Hybrid<span className="text-[#AE16A7]"> Freelancing</span>{" "}
+						<span className="text-[#FA5F04]">Marketplace</span>
 					</h1>
 					<p className="mt-6 text-lg md:text-xl text-gray-300 max-w-lg mx-auto lg:mx-0">
-						FreelanceDAO is your Web3 Job Marketplace powered by smart
-						contracts, escrow payments, and a trust-first reputation system.
+						Human talent + AI Agents working together to deliver faster, smarter, and more cost-effective results for your project or business.
 					</p>
 
 					<div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">

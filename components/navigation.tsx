@@ -46,7 +46,13 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { MultiWalletConnect } from "./multi-wallet-connect";
 import { SidebarNavigation } from "./sidebar-navigation";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Sparkles, Copy } from "lucide-react";
 import { walletManager } from "@/lib/hedera-wallet";
 import { CustomHederaConnectButton } from "./CustomHederaConnectButton";
@@ -72,9 +78,10 @@ export function TopNavigation() {
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [walletBalance, setWalletBalance] = useState<string | null>(null);
 	const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 	const pathname = usePathname();
 	const { user, isAuthenticated, signOut, disconnectWallet } = useAuth();
-	const { isConnected, address } = useAccount() //correct way of checking wallet connection details
+	const { isConnected, address } = useAccount(); //correct way of checking wallet connection details
 
 	const maskAddress = (address: string) => {
 		if (!address) return "";
@@ -194,9 +201,6 @@ export function TopNavigation() {
 		return () => clearInterval(interval);
 	}, [isAuthenticated]);
 
-	// Dropdown state for desktop DAO menu
-	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
 	const handleDropdownToggle = (href: string) => {
 		setOpenDropdown((prev) => (prev === href ? null : href));
 	};
@@ -225,26 +229,47 @@ export function TopNavigation() {
 				/>
 			)}
 
-			<nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95 shadow-sm">
-				<div className="container mx-auto px-4">
-					<div className="flex items-center justify-between h-16">
+			<nav
+				className="border-b border-purple-500/20 sticky top-0 z-50 backdrop-blur-sm shadow-lg relative"
+				style={{ backgroundColor: "#1D0225" }}
+			>
+				{/* Background gradient overlay */}
+				<div className="absolute inset-0 bg-gradient-to-r from-[#1D0225] via-purple-900/10 to-[#1D0225]"></div>
+
+				{/* Background decorative elements */}
+				<div className="absolute inset-0 opacity-5">
+					<div className="absolute top-0 left-10 w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-purple-500/30 to-transparent blur-lg animate-pulse"></div>
+					<div className="absolute top-0 right-10 w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-orange-500/30 to-transparent blur-lg animate-pulse delay-700"></div>
+				</div>
+
+				<div className="container mx-auto px-3 md:px-4 relative z-10">
+					<div className="flex items-center justify-between h-14 md:h-16">
 						{/* Logo */}
-						<Link href="/" className="flex items-center space-x-3 group">
+						<Link
+							href="/"
+							className="flex items-center space-x-2 md:space-x-3 group"
+						>
 							<div className="relative">
 								<Image
 									src="/images/freelancedao-logo.png"
 									alt="FreeLanceDAO"
-									width={40}
-									height={40}
-									className="rounded-lg shadow-md group-hover:scale-105 transition-transform duration-200"
+									width={32}
+									height={32}
+									className="md:w-10 md:h-10 rounded-lg shadow-md group-hover:scale-105 transition-transform duration-200"
 								/>
-								<div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg blur opacity-25 group-hover:opacity-40 transition-opacity duration-300" />
+								<div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg blur opacity-25 group-hover:opacity-40 transition-opacity duration-300" />
 							</div>
 							<div className="hidden sm:block">
-								<span className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">
+								<span
+									className="text-lg md:text-xl font-bold group-hover:scale-105 transition-all duration-200 bg-gradient-to-r bg-clip-text text-transparent"
+									style={{
+										backgroundImage: "linear-gradient(45deg, #FF068D, #AE16A7)",
+										WebkitBackgroundClip: "text",
+										WebkitTextFillColor: "transparent",
+									}}
+								>
 									FreeLanceDAO
 								</span>
-								
 							</div>
 						</Link>
 
@@ -257,26 +282,42 @@ export function TopNavigation() {
 										<div key={item.href} className="relative">
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${isActive(item.href)
-													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-													}`}
+												className={`flex items-center space-x-2 px-3 md:px-4 py-2 transition-all duration-200 relative text-white hover:bg-purple-500/20 ${
+													isActive(item.href)
+														? "bg-purple-500/30 text-white scale-105 shadow-sm"
+														: "hover:text-purple-200"
+												}`}
 												onClick={() => handleDropdownToggle(item.href)}
 											>
 												<item.icon className="w-4 h-4" />
 												<span className="font-medium">{item.label}</span>
 												<ChevronDown
-													className={`w-4 h-4 transition-transform ${openDropdown === item.href ? "rotate-180" : ""
-														}`}
+													className={`w-4 h-4 transition-transform ${
+														openDropdown === item.href ? "rotate-180" : ""
+													}`}
 												/>
 											</Button>
 											{openDropdown === item.href && (
-												<div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+												<div
+													className="absolute left-0 mt-2 w-48 border border-purple-500/30 rounded-lg shadow-xl z-50"
+													style={{ backgroundColor: "#1D0225" }}
+												>
 													{item.subItems.map((sub) => (
 														<Link key={sub.href} href={sub.href}>
-															<div className="flex items-center px-4 py-2 hover:bg-blue-50 cursor-pointer">
-																<sub.icon className="w-4 h-4 mr-2 text-blue-500" />
-																<span className="text-slate-700 font-medium">
+															<div className="flex items-center px-4 py-3 hover:bg-purple-500/20 cursor-pointer transition-colors">
+																<sub.icon
+																	className="w-4 h-4 mr-3"
+																	style={{ color: "#FA5F04" }}
+																/>
+																<span
+																	className="font-medium bg-gradient-to-r bg-clip-text text-transparent"
+																	style={{
+																		backgroundImage:
+																			"linear-gradient(45deg, #FF068D, #AE16A7)",
+																		WebkitBackgroundClip: "text",
+																		WebkitTextFillColor: "transparent",
+																	}}
+																>
 																	{sub.name}
 																</span>
 															</div>
@@ -289,15 +330,16 @@ export function TopNavigation() {
 										<Link key={item.href} href={item.href}>
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 relative ${isActive(item.href)
-													? "bg-blue-100 text-blue-600 scale-105 shadow-sm"
-													: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-													}`}
+												className={`flex items-center space-x-2 px-3 md:px-4 py-2 transition-all duration-200 relative text-white hover:bg-purple-500/20 ${
+													isActive(item.href)
+														? "bg-purple-500/30 text-white scale-105 shadow-sm"
+														: "hover:text-purple-200"
+												}`}
 											>
 												<item.icon className="w-4 h-4" />
 												<span className="font-medium">{item.label}</span>
 												{isActive(item.href) && (
-													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse" />
 												)}
 											</Button>
 										</Link>
@@ -307,15 +349,18 @@ export function TopNavigation() {
 						)}
 
 						{/* Right Side Actions */}
-						<div className="flex items-center space-x-3">
-
+						<div className="flex items-center space-x-2 md:space-x-3">
 							{/* Notifications for authenticated users */}
 							{isAuthenticated && (
 								<Link href="/notifications">
-									<Button variant="ghost" size="sm" className="relative group">
-										<Bell className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
+									<Button
+										variant="ghost"
+										size="sm"
+										className="relative group text-white hover:bg-purple-500/20 p-2"
+									>
+										<Bell className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
 										{unreadCount > 0 && (
-											<Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white text-xs animate-bounce shadow-lg">
+											<Badge className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 p-0 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white text-xs animate-bounce shadow-lg">
 												{unreadCount > 99 ? "99+" : unreadCount}
 											</Badge>
 										)}
@@ -323,18 +368,20 @@ export function TopNavigation() {
 								</Link>
 							)}
 							{/* Main Wallet Connection */}
-							<CustomHederaConnectButton />
-							
+							<div className="hidden sm:block">
+								<CustomHederaConnectButton />
+							</div>
+
 							{/* User Menu or Auth Buttons */}
 							{isAuthenticated ? (
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
 										<Button
 											variant="ghost"
-											className="flex items-center space-x-2 hover:bg-slate-100 px-3 py-2"
+											className="flex items-center space-x-2 hover:bg-purple-500/20 px-2 md:px-3 py-2 text-white"
 										>
-											<Avatar className="w-8 h-8">
-												<AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold">
+											<Avatar className="w-6 h-6 md:w-8 md:h-8">
+												<AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-xs md:text-sm">
 													{user?.name
 														?.split(" ")
 														.map((n) => n[0])
@@ -342,23 +389,24 @@ export function TopNavigation() {
 												</AvatarFallback>
 											</Avatar>
 											<div className="hidden sm:block text-left">
-												{/* <div className="text-sm font-medium text-slate-800">
-													{user?.name}
-												</div> */}
 												<div className="flex items-center space-x-1">
 													{user?.isVerified && (
-														<CheckCircle className="w-3 h-3 text-green-500" />
+														<CheckCircle className="w-3 h-3 text-green-400" />
 													)}
-													<span className="text-xs text-slate-500 capitalize">
+													<span className="text-xs text-purple-200 capitalize">
 														{user?.role}{" "}
 														{user?.isVerified ? "• Verified" : "• Unverified"}
 													</span>
 												</div>
 											</div>
-											<ChevronDown className="w-4 h-4 text-slate-400" />
+											<ChevronDown className="w-4 h-4 text-purple-300" />
 										</Button>
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-64">
+									<DropdownMenuContent
+										align="end"
+										className="w-56 md:w-64 border-purple-500/30"
+										style={{ backgroundColor: "#1D0225" }}
+									>
 										<DropdownMenuLabel className="flex items-center space-x-3 p-3">
 											<Avatar className="w-10 h-10">
 												<AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold">
@@ -383,8 +431,9 @@ export function TopNavigation() {
 														<span>
 															{user?.role === "freelancer"
 																? `${user?.profile?.completedJobs || 0} Jobs`
-																: `${user?.profile?.projectsPosted || 0
-																} Projects`}
+																: `${
+																		user?.profile?.projectsPosted || 0
+																  } Projects`}
 														</span>
 													</div>
 												</div>
@@ -583,10 +632,11 @@ export function TopNavigation() {
 								>
 									<Button
 										variant="ghost"
-										className={`w-full justify-start transition-all duration-200 ${isActive(item.href)
-											? "bg-blue-100 text-blue-600"
-											: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-											}`}
+										className={`w-full justify-start transition-all duration-200 ${
+											isActive(item.href)
+												? "bg-blue-100 text-blue-600"
+												: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+										}`}
 									>
 										<item.icon className="w-4 h-4 mr-3" />
 										{item.label}
@@ -726,10 +776,11 @@ export function BottomNavigation() {
 						<Button
 							variant="ghost"
 							size="sm"
-							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-200 relative ${isActive(item.href)
-								? "bg-blue-100 text-blue-600 scale-105"
-								: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-								}`}
+							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-200 relative ${
+								isActive(item.href)
+									? "bg-blue-100 text-blue-600 scale-105"
+									: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+							}`}
 						>
 							<item.icon className="w-5 h-5" />
 							<span className="text-xs font-medium">{item.label}</span>
