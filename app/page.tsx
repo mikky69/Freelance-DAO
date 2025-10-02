@@ -13,11 +13,11 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <HeroSection />
       <AnimatedMarquee/>
-      <TestimonialsSection/>
       <WhatIsFreeLanceDAO />
+      <TestimonialsSection/>
+      <FeaturedJobs />
       {/* <UserTypeCards />
       <WhyFreeLanceDAO />
-      <FeaturedJobs />
       <HowItWorks />
       <FinalCTA /> */}
     </div>
