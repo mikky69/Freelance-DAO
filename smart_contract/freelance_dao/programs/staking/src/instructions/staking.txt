@@ -1,8 +1,11 @@
 for the staking program
 instructions folder
 admin.rs
+use crate::{
+    errors::StakingError,
+    state_accounts::{RewardsConfig, StakePool},
+};
 use anchor_lang::prelude::*;
-use crate::{state_accounts::{RewardsConfig, StakePool}, errors::StakingError};
 
 #[derive(Accounts)]
 pub struct SetPoolParams<'info> {
@@ -29,42 +32,68 @@ pub struct SetRewardsParams<'info> {
     pub admin: Signer<'info>,
 }
 
-pub fn set_pool_params(ctx: Context<SetPoolParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+pub fn set_pool_params(
+    ctx: Context<SetPoolParams>,
+    rate: Option<u64>,
+    paused: Option<bool>,
+) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
-    
+    let clock = Clock::get()?;
+
     if let Some(new_rate) = rate {
+        require!(new_rate > 0, StakingError::InvalidAmount);
         pool.points_per_token_per_second = new_rate;
     }
-    
+
     if let Some(pause_state) = paused {
         pool.paused = pause_state;
     }
-    
+
+    // Emit event for tracking
+    emit!(crate::events::PoolParamsUpdated {
+        pool: pool.key(),
+        new_rate: rate,
+        paused,
+        timestamp: clock.unix_timestamp,
+    });
+
     Ok(())
 }
 
-pub fn set_rewards_params(ctx: Context<SetRewardsParams>, exchange_rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+pub fn set_rewards_params(
+    ctx: Context<SetRewardsParams>,
+    exchange_rate: Option<u64>,
+    paused: Option<bool>,
+) -> Result<()> {
     let rewards_config = &mut ctx.accounts.rewards_config;
-    
+    let clock = Clock::get()?;
+
     if let Some(new_rate) = exchange_rate {
+        require!(new_rate > 0, StakingError::InvalidExchangeRate);
         rewards_config.exchange_rate = new_rate;
     }
-    
+
     if let Some(pause_state) = paused {
         rewards_config.paused = pause_state;
     }
-    
+
+    // Emit event for tracking
+    emit!(crate::events::RewardsParamsUpdated {
+        new_exchange_rate: exchange_rate,
+        paused,
+        timestamp: clock.unix_timestamp,
+    });
+
     Ok(())
 }
 
 init.rs
-// programs/staking/src/instructions/init.rs
-use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, TokenAccount, Mint};
 use crate::{
+    events::{PoolInitialized, RewardsConfigInitialized},
     state_accounts::{RewardsConfig, StakePool},
-    events::{RewardsConfigInitialized, PoolInitialized},
 };
+use anchor_lang::prelude::*;
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct InitRewardsConfig<'info> {
@@ -101,7 +130,7 @@ pub fn init_rewards_config(
 ) -> Result<()> {
     let rewards_config = &mut ctx.accounts.rewards_config;
     let clock = Clock::get()?;
-    
+
     rewards_config.admin = admin;
     rewards_config.fl_dao_mint = fl_dao_mint;
     rewards_config.exchange_rate = exchange_rate;
@@ -111,14 +140,14 @@ pub fn init_rewards_config(
     rewards_config.global_fldao_minted = 0;
     rewards_config.paused = false;
     rewards_config.bump = ctx.bumps.rewards_config;
-    
+
     emit!(RewardsConfigInitialized {
         admin,
         fl_dao_mint,
         exchange_rate,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -153,10 +182,11 @@ pub fn init_pool(
     mint: Pubkey,
     is_lp: bool,
     points_per_token_per_second: u64,
+    max_stake_per_user: u64, // ADD THIS PARAMETER
 ) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let clock = Clock::get()?;
-    
+
     pool.mint = mint;
     pool.vault = ctx.accounts.vault.key();
     pool.is_lp = is_lp;
@@ -166,7 +196,8 @@ pub fn init_pool(
     pool.created_at = clock.unix_timestamp;
     pool.paused = false;
     pool.bump = ctx.bumps.pool;
-    
+    pool.max_stake_per_user = max_stake_per_user; // ADD THIS
+
     emit!(PoolInitialized {
         pool: pool.key(),
         mint,
@@ -174,7 +205,7 @@ pub fn init_pool(
         points_per_token_per_second,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -236,35 +267,45 @@ pub fn view_position(ctx: Context<ViewPosition>) -> Result<u64> {
 
 rewards
 // programs/staking/src/instructions/rewards.rs
-use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, MintTo, Mint};
 use crate::{
-    state_accounts::{RewardsConfig, StakePosition},
     errors::StakingError,
     events::PointsExchanged,
     math::points_to_fldao,
+    state_accounts::{RewardsConfig, StakePosition},
 };
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct ExchangePoints<'info> {
     #[account(
+        mut,
         seeds = [b"rewards_config"],
         bump = rewards_config.bump
     )]
     pub rewards_config: Account<'info, RewardsConfig>,
     #[account(
         mut,
-        has_one = staker @ StakingError::Unauthorized
+        has_one = staker @ StakingError::Unauthorized,
+        constraint = position.pool != Pubkey::default() @ StakingError::InvalidPool
     )]
     pub position: Account<'info, StakePosition>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = fl_dao_mint.key() == rewards_config.fl_dao_mint @ StakingError::InvalidMint
+    )]
     pub fl_dao_mint: Account<'info, Mint>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = user_fl_dao_account.owner == staker.key() @ StakingError::Unauthorized,
+        constraint = user_fl_dao_account.mint == rewards_config.fl_dao_mint @ StakingError::InvalidMint
+    )]
     pub user_fl_dao_account: Account<'info, TokenAccount>,
-    /// CHECK: This is the mint authority PDA
+    /// CHECK: Validated via seeds and constraint
     #[account(
         seeds = [b"mint_authority"],
-        bump
+        bump,
+        constraint = mint_authority.key() == rewards_config.mint_authority @ StakingError::Unauthorized
     )]
     pub mint_authority: UncheckedAccount<'info>,
     pub staker: Signer<'info>,
@@ -272,36 +313,34 @@ pub struct ExchangePoints<'info> {
 }
 
 pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64) -> Result<()> {
-    let rewards_config = &ctx.accounts.rewards_config;
+    // CHECKS
+    let rewards_config = &mut ctx.accounts.rewards_config;
     let position = &mut ctx.accounts.position;
-    
-    if rewards_config.paused {
-        return Err(StakingError::Unauthorized.into());
-    }
-    
-    if position.accum_points < points {
-        return Err(StakingError::InsufficientPoints.into());
-    }
-    
-    // Calculate FL-DAO tokens to mint
+
+    require!(!rewards_config.paused, StakingError::Unauthorized);
+    require!(
+        position.accum_points >= points,
+        StakingError::InsufficientPoints
+    );
+
     let fldao_amount = points_to_fldao(points, rewards_config.exchange_rate)?;
-    
-    if fldao_amount < min_out {
-        return Err(StakingError::InvalidAmount.into());
-    }
-    
-    // Burn points from position
-    position.accum_points = position.accum_points
+    require!(fldao_amount >= min_out, StakingError::InvalidAmount);
+
+    // EFFECTS (update state BEFORE external calls)
+    position.accum_points = position
+        .accum_points
         .checked_sub(points)
         .ok_or(StakingError::MathOverflow)?;
-    
-    // Get the bump from the PDA derivation (Anchor provides this automatically)
+
+    rewards_config.global_fldao_minted = rewards_config
+        .global_fldao_minted
+        .checked_add(fldao_amount)
+        .ok_or(StakingError::MathOverflow)?;
+
+    // INTERACTIONS (external calls last)
     let mint_authority_bump = ctx.bumps.mint_authority;
-    let mint_authority_seeds = &[
-        b"mint_authority".as_ref(), 
-        &[mint_authority_bump]
-    ];
-    
+    let mint_authority_seeds = &[b"mint_authority".as_ref(), &[mint_authority_bump]];
+
     token::mint_to(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -314,9 +353,9 @@ pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64)
         ),
         fldao_amount,
     )?;
-    
+
     let clock = Clock::get()?;
-    
+
     emit!(PointsExchanged {
         staker: position.staker,
         points_burned: points,
@@ -324,24 +363,27 @@ pub fn exchange_points(ctx: Context<ExchangePoints>, points: u128, min_out: u64)
         exchange_rate: rewards_config.exchange_rate,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
-staking
-// programs/staking/src/instructions/staking.rs
-use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use crate::state_accounts::{StakePool, StakePosition};
+staking.rs
 use crate::errors::StakingError;
 use crate::events::{Staked, Unstaked};
+use crate::state_accounts::{StakePool, StakePosition};
 use crate::utils::update_position_points;
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct Stake<'info> {
     #[account(mut)]
     pub pool: Account<'info, StakePool>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault.key() == pool.vault @ StakingError::InvalidVault,
+        constraint = vault.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub vault: Account<'info, TokenAccount>,
     #[account(
         init_if_needed,
@@ -353,29 +395,27 @@ pub struct Stake<'info> {
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
     pub staker: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = staker_token_account.owner == staker.key() @ StakingError::Unauthorized,
+        constraint = staker_token_account.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub staker_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
-// programs/staking/src/instructions/staking.rs (stake function only)
 pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
-    if pool.paused {
-        return Err(StakingError::PoolPaused.into());
-    }
-    
-    if amount == 0 {
-        return Err(StakingError::AmountTooSmall.into());
-    }
-    
+
+    require!(!pool.paused, StakingError::PoolPaused);
+    require!(amount > 0, StakingError::AmountTooSmall);
+
     // Update points before changing stake amount
     update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     // Initialize position if first stake
     if position.staker == Pubkey::default() {
         position.staker = ctx.accounts.staker.key();
@@ -384,9 +424,20 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.accum_points = 0;
         position.created_at = clock.unix_timestamp;
         position.last_update_ts = clock.unix_timestamp;
-        position.bump = ctx.bumps.position; // Use ctx.bumps directly
+        position.bump = ctx.bumps.position;
     }
-    
+
+    // ADD THIS CHECK:
+    let new_amount = position
+        .amount
+        .checked_add(amount)
+        .ok_or(StakingError::MathOverflow)?;
+
+    require!(
+        new_amount <= pool.max_stake_per_user,
+        StakingError::StakeLimitExceeded
+    );
+
     // Transfer tokens to vault
     token::transfer(
         CpiContext::new(
@@ -399,16 +450,15 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         ),
         amount,
     )?;
-    
+
     // Update amounts
-    position.amount = position.amount
+    position.amount = new_amount; // CHANGE THIS LINE
+
+    pool.total_staked = pool
+        .total_staked
         .checked_add(amount)
         .ok_or(StakingError::MathOverflow)?;
-        
-    pool.total_staked = pool.total_staked
-        .checked_add(amount)
-        .ok_or(StakingError::MathOverflow)?;
-    
+
     emit!(Staked {
         pool: pool.key(),
         staker: position.staker,
@@ -416,7 +466,7 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         new_total: position.amount,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -424,7 +474,11 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
 pub struct Unstake<'info> {
     #[account(mut)]
     pub pool: Account<'info, StakePool>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault.key() == pool.vault @ StakingError::InvalidVault,
+        constraint = vault.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
@@ -434,7 +488,11 @@ pub struct Unstake<'info> {
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
     pub staker: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = staker_token_account.owner == staker.key() @ StakingError::Unauthorized,
+        constraint = staker_token_account.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub staker_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }
@@ -443,25 +501,20 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
-    if amount == 0 {
-        return Err(StakingError::AmountTooSmall.into());
-    }
-    
-    if position.amount < amount {
-        return Err(StakingError::InsufficientStaked.into());
-    }
-    
+
+    // NOTE: Intentionally allowing unstake even when pool is paused
+    // This ensures users can always withdraw their funds
+    // Only staking is blocked when paused
+
+    require!(amount > 0, StakingError::AmountTooSmall);
+    require!(position.amount >= amount, StakingError::InsufficientStaked);
+
     // Update points before changing stake amount
     update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     // Transfer tokens back to user
-    let pool_seeds = &[
-        b"pool",
-        pool.mint.as_ref(),
-        &[pool.bump],
-    ];
-    
+    let pool_seeds = &[b"pool", pool.mint.as_ref(), &[pool.bump]];
+
     token::transfer(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -474,16 +527,18 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         ),
         amount,
     )?;
-    
+
     // Update amounts
-    position.amount = position.amount
+    position.amount = position
+        .amount
         .checked_sub(amount)
         .ok_or(StakingError::MathOverflow)?;
-        
-    pool.total_staked = pool.total_staked
+
+    pool.total_staked = pool
+        .total_staked
         .checked_sub(amount)
         .ok_or(StakingError::MathOverflow)?;
-    
+
     emit!(Unstaked {
         pool: pool.key(),
         staker: position.staker,
@@ -491,12 +546,13 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         remaining: position.amount,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct SyncPosition<'info> {
+    #[account(mut)]
     pub pool: Account<'info, StakePool>,
     #[account(
         mut,
@@ -508,12 +564,12 @@ pub struct SyncPosition<'info> {
 }
 
 pub fn sync_position(ctx: Context<SyncPosition>) -> Result<()> {
-    let pool = &ctx.accounts.pool;
+    let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
+
     let points_earned = update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     if points_earned > 0 {
         emit!(crate::events::PointsAccrued {
             pool: pool.key(),
@@ -523,11 +579,11 @@ pub fn sync_position(ctx: Context<SyncPosition>) -> Result<()> {
             timestamp: clock.unix_timestamp,
         });
     }
-    
+
     Ok(())
 }
 
-utils
+utils.rs
 use anchor_lang::prelude::*;
 use crate::state_accounts::StakePosition;
 use crate::errors::StakingError;
@@ -554,7 +610,7 @@ pub const GOVERNANCE_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("GgkLgFNYnDsCo4w9
 pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");
 
 
-errors
+errors.rs
 use anchor_lang::prelude::*;
 
 #[error_code]
@@ -579,18 +635,95 @@ pub enum StakingError {
     PositionNotFound,
     #[msg("Invalid amount")]
     InvalidAmount,
+    #[msg("Invalid mint")]
+    InvalidMint,
+    #[msg("Invalid vault")]
+    InvalidVault,
+    #[msg("Stake limit exceeded")]
+    StakeLimitExceeded,
 }
 
-lib
-// programs/staking/src/lib.rs
+//events
 use anchor_lang::prelude::*;
 
-pub mod state_accounts;
+#[event]
+pub struct RewardsConfigInitialized {
+    pub admin: Pubkey,
+    pub fl_dao_mint: Pubkey,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PoolInitialized {
+    pub pool: Pubkey,
+    pub mint: Pubkey,
+    pub is_lp: bool,
+    pub points_per_token_per_second: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct Staked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub new_total: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct Unstaked {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub amount: u64,
+    pub remaining: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsAccrued {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub delta_points: u128,
+    pub total_points: u128,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PointsExchanged {
+    pub staker: Pubkey,
+    pub points_burned: u128,
+    pub fldao_minted: u64,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PoolParamsUpdated {
+    pub pool: Pubkey,
+    pub new_rate: Option<u64>,
+    pub paused: Option<bool>,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct RewardsParamsUpdated {
+    pub new_exchange_rate: Option<u64>,
+    pub paused: Option<bool>,
+    pub timestamp: i64,
+}
+
+
+lib.rs
+use anchor_lang::prelude::*;
+
+pub mod constants;
 pub mod errors;
 pub mod events;
 pub mod instructions;
 pub mod math;
-pub mod constants;
+pub mod state_accounts;
 pub mod utils;
 
 use instructions::*;
@@ -616,8 +749,15 @@ pub mod staking {
         mint: Pubkey,
         is_lp: bool,
         points_per_token_per_second: u64,
+        max_stake_per_user: u64, // ADD THIS
     ) -> Result<()> {
-        instructions::init::init_pool(ctx, mint, is_lp, points_per_token_per_second)
+        instructions::init::init_pool(
+            ctx,
+            mint,
+            is_lp,
+            points_per_token_per_second,
+            max_stake_per_user,
+        )
     }
 
     // Staking functions
@@ -639,11 +779,19 @@ pub mod staking {
     }
 
     // Admin functions
-    pub fn set_pool_params(ctx: Context<SetPoolParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+    pub fn set_pool_params(
+        ctx: Context<SetPoolParams>,
+        rate: Option<u64>,
+        paused: Option<bool>,
+    ) -> Result<()> {
         instructions::admin::set_pool_params(ctx, rate, paused)
     }
 
-    pub fn set_rewards_params(ctx: Context<SetRewardsParams>, rate: Option<u64>, paused: Option<bool>) -> Result<()> {
+    pub fn set_rewards_params(
+        ctx: Context<SetRewardsParams>,
+        rate: Option<u64>,
+        paused: Option<bool>,
+    ) -> Result<()> {
         instructions::admin::set_rewards_params(ctx, rate, paused)
     }
 
@@ -651,7 +799,7 @@ pub mod staking {
     pub fn get_staked_amount(ctx: Context<GetStakedAmount>) -> Result<u64> {
         instructions::utils::get_staked_amount(ctx)
     }
-        
+
     pub fn get_position(ctx: Context<GetPosition>) -> Result<(u64, u128)> {
         instructions::query::get_position(ctx)
     }
@@ -661,78 +809,130 @@ pub mod staking {
     }
 }
 
-math
+math.rs
 // programs/staking/src/math.rs
-use anchor_lang::prelude::*;
 use crate::errors::StakingError;
+use anchor_lang::prelude::*;
 
 // Q32.32 fixed point for precise points calculation
 pub const Q32: u64 = 1u64 << 32;
 
+// Maximum duration to prevent overflow (10 years in seconds)
+// This protects against: u64::MAX seconds (~584 billion years) causing overflow
+pub const MAX_DURATION_SECONDS: i64 = 10 * 365 * 86400; // 315,360,000 seconds
+
+// Maximum rate to prevent overflow in calculations
+// With Q32 format: (2^32 = 4,294,967,296)
+// This allows rates up to ~1000 tokens per token per second when properly scaled
+pub const MAX_RATE_PER_SECOND: u64 = u64::MAX / 1000;
+
 pub fn calculate_points_accrued(
     amount: u64,
-    rate_per_second: u64,  // Q32.32 format
+    rate_per_second: u64, // Q32.32 format
     duration_seconds: i64,
 ) -> Result<u128> {
-    if duration_seconds < 0 {
+    // Handle negative or zero duration
+    if duration_seconds <= 0 {
         return Ok(0);
     }
-    
-    let duration = duration_seconds as u128;
+
+    // Cap duration to prevent overflow attacks
+    // If someone stakes for 10+ years, they'll need to sync periodically
+    let capped_duration = if duration_seconds > MAX_DURATION_SECONDS {
+        MAX_DURATION_SECONDS
+    } else {
+        duration_seconds
+    };
+
+    let duration = capped_duration as u128;
     let amount_expanded = amount as u128;
     let rate_expanded = rate_per_second as u128;
-    
-    // points = (amount * rate * duration) / Q32
-    let points = amount_expanded
+
+    // Validate inputs before calculation
+    require!(
+        rate_per_second <= MAX_RATE_PER_SECOND,
+        StakingError::InvalidAmount
+    );
+
+    // Calculate: points = (amount * rate * duration) / Q32
+    // Break into steps to detect overflow early
+
+    // Step 1: amount * rate
+    let amount_times_rate = amount_expanded
         .checked_mul(rate_expanded)
-        .ok_or(StakingError::MathOverflow)?
+        .ok_or(StakingError::MathOverflow)?;
+
+    // Step 2: (amount * rate) * duration
+    let numerator = amount_times_rate
         .checked_mul(duration)
-        .ok_or(StakingError::MathOverflow)?
+        .ok_or(StakingError::MathOverflow)?;
+
+    // Step 3: divide by Q32 to get final points
+    let points = numerator
         .checked_div(Q32 as u128)
         .ok_or(StakingError::MathOverflow)?;
-        
+
     Ok(points)
 }
 
 pub fn points_to_fldao(points: u128, exchange_rate: u64) -> Result<u64> {
-    if exchange_rate == 0 {
-        return Err(StakingError::InvalidExchangeRate.into());
-    }
-    
+    // Validate exchange rate
+    require!(exchange_rate > 0, StakingError::InvalidExchangeRate);
+
+    // Calculate FLDAO tokens: fldao = points / exchange_rate
     let fldao_amount = points
         .checked_div(exchange_rate as u128)
         .ok_or(StakingError::MathOverflow)?;
-        
-    if fldao_amount > u64::MAX as u128 {
-        return Err(StakingError::MathOverflow.into());
-    }
-    
+
+    // Ensure result fits in u64
+    require!(fldao_amount <= u64::MAX as u128, StakingError::MathOverflow);
+
     Ok(fldao_amount as u64)
 }
 
 // Convert daily rate to per-second Q32.32 format
-pub fn daily_rate_to_per_second(daily_rate: u64) -> u64 {
-    // daily_rate / 86400 * Q32
-    let rate_per_second = (daily_rate as u128 * Q32 as u128) / 86400u128;
-    rate_per_second as u64
+// daily_rate: tokens earned per token per day
+// Returns: Q32.32 formatted rate per second
+pub fn daily_rate_to_per_second(daily_rate: u64) -> Result<u64> {
+    require!(daily_rate > 0, StakingError::InvalidAmount);
+
+    // rate_per_second = (daily_rate * Q32) / 86400
+    // Break into steps for safety
+    let daily_rate_expanded = daily_rate as u128;
+    let q32_expanded = Q32 as u128;
+
+    let numerator = daily_rate_expanded
+        .checked_mul(q32_expanded)
+        .ok_or(StakingError::MathOverflow)?;
+
+    let rate_per_second = numerator
+        .checked_div(86400u128)
+        .ok_or(StakingError::MathOverflow)?;
+
+    // Ensure result fits in u64
+    require!(
+        rate_per_second <= u64::MAX as u128,
+        StakingError::MathOverflow
+    );
+
+    Ok(rate_per_second as u64)
 }
 
-state_accounts
-// programs/staking/src/state_accounts.rs
+state_accounts.rs
 use anchor_lang::prelude::*;
 
 #[account]
 #[derive(Default)]
 pub struct RewardsConfig {
-    pub admin: Pubkey,                    // 32
-    pub fl_dao_mint: Pubkey,             // 32  
-    pub exchange_rate: u64,              // 8   (points per $FLDAO)
-    pub treasury: Pubkey,                // 32  (treasury PDA)
-    pub mint_authority: Pubkey,          // 32  (PDA for minting)
-    pub global_points_issued: u128,      // 16  (tracking)
-    pub global_fldao_minted: u64,        // 8   (tracking)
-    pub paused: bool,                    // 1
-    pub bump: u8,                        // 1
+    pub admin: Pubkey,              // 32
+    pub fl_dao_mint: Pubkey,        // 32
+    pub exchange_rate: u64,         // 8   (points per $FLDAO)
+    pub treasury: Pubkey,           // 32  (treasury PDA)
+    pub mint_authority: Pubkey,     // 32  (PDA for minting)
+    pub global_points_issued: u128, // 16  (tracking)
+    pub global_fldao_minted: u64,   // 8   (tracking)
+    pub paused: bool,               // 1
+    pub bump: u8,                   // 1
 }
 
 impl RewardsConfig {
@@ -742,55 +942,50 @@ impl RewardsConfig {
 #[account]
 #[derive(Default)]
 pub struct StakePool {
-    pub mint: Pubkey,                    // 32  (USDC or LP token)
-    pub vault: Pubkey,                   // 32  (token account PDA)
-    pub is_lp: bool,                     // 1
-    pub points_per_token_per_second: u64, // 8   (Q32.32 fixed point)
-    pub total_staked: u64,               // 8
-    pub total_points_issued: u128,       // 16
-    pub created_at: i64,                 // 8
-    pub paused: bool,                    // 1
-    pub bump: u8,                        // 1
+    pub mint: Pubkey,                     // 32
+    pub vault: Pubkey,                    // 32
+    pub is_lp: bool,                      // 1
+    pub points_per_token_per_second: u64, // 8
+    pub total_staked: u64,                // 8
+    pub total_points_issued: u128,        // 16
+    pub created_at: i64,                  // 8
+    pub paused: bool,                     // 1
+    pub bump: u8,                         // 1
+    pub max_stake_per_user: u64,          // 8  <- ADD THIS
 }
 
 impl StakePool {
-    pub const SPACE: usize = 8 + 32 * 2 + 1 + 8 + 8 + 16 + 8 + 1 + 1; // 115 bytes
+    pub const SPACE: usize = 8 + 32 * 2 + 1 + 8 * 4 + 16 + 1 + 1; // 123 bytes (was 115)
 }
 
 #[account]
 #[derive(Default)]
 pub struct StakePosition {
-    pub staker: Pubkey,                  // 32
-    pub pool: Pubkey,                    // 32  (StakePool PDA)
-    pub amount: u64,                     // 8   (tokens staked)
-    pub accum_points: u128,              // 16  (accrued staking points)
-    pub last_update_ts: i64,             // 8   (for point calculation)
-    pub created_at: i64,                 // 8
-    pub bump: u8,                        // 1
+    pub staker: Pubkey,      // 32
+    pub pool: Pubkey,        // 32  (StakePool PDA)
+    pub amount: u64,         // 8   (tokens staked)
+    pub accum_points: u128,  // 16  (accrued staking points)
+    pub last_update_ts: i64, // 8   (for point calculation)
+    pub created_at: i64,     // 8
+    pub bump: u8,            // 1
 }
 
 impl StakePosition {
     pub const SPACE: usize = 8 + 32 * 2 + 8 + 16 + 8 + 8 + 1; // 113 bytes
 }
 
-state
-// CLEANED state.rs - Remove unused PoolType enum
-use anchor_lang::prelude::*;
-
-// Remove the unused PoolType enum since we use bool is_lp in StakePool instead
-
-utils
+utils.rs
 // FIXED utils.rs - Add missing import
-use anchor_lang::prelude::*;
 use crate::{
-    state_accounts::{StakePool, StakePosition},
     errors::StakingError,
     math::calculate_points_accrued,
+    state_accounts::{StakePool, StakePosition},
 };
+use anchor_lang::prelude::*;
 
 pub fn update_position_points(
     position: &mut StakePosition,
-    pool: &StakePool,
+    pool: &mut StakePool,
     current_timestamp: i64,
 ) -> Result<u128> {
     if position.amount == 0 {
@@ -803,13 +998,16 @@ pub fn update_position_points(
         return Ok(0);
     }
 
-    let points_earned = calculate_points_accrued(
-        position.amount,
-        pool.points_per_token_per_second,
-        duration,
-    )?;
+    let points_earned =
+        calculate_points_accrued(position.amount, pool.points_per_token_per_second, duration)?;
 
-    position.accum_points = position.accum_points
+    position.accum_points = position
+        .accum_points
+        .checked_add(points_earned)
+        .ok_or(StakingError::MathOverflow)?;
+
+    pool.total_points_issued = pool
+        .total_points_issued
         .checked_add(points_earned)
         .ok_or(StakingError::MathOverflow)?;
 

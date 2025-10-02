@@ -1,0 +1,661 @@
+escrow smart contract for freelance dao
+instructions folder
+//escrow.rs
+use crate::{
+    constants::{ESCROW_SEED, MIN_ESCROW_AMOUNT},
+    errors::EscrowError,
+    events::*,
+    state::{Counter, EscrowAccount, EscrowState},
+};
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
+
+#[derive(Accounts)]
+#[instruction(escrow_id: u64)]
+pub struct CreateProposal<'info> {
+    #[account(
+        init,
+        payer = client,
+        space = EscrowAccount::SIZE,
+        seeds = [
+            ESCROW_SEED,
+            client.key().as_ref(),
+            escrow_id.to_le_bytes().as_ref()
+        ],
+        bump
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(
+        mut,
+        seeds = [b"counter"],
+        bump = counter.bump
+    )]
+    pub counter: Account<'info, Counter>,
+
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    /// CHECK: Validated as valid pubkey in instruction logic
+    pub freelancer: AccountInfo<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptProposal<'info> {
+    #[account(
+        mut,
+        seeds = [
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref()
+        ],
+        bump = escrow.bump,
+        constraint = escrow.state == EscrowState::Proposed @ EscrowError::InvalidState,
+        constraint = escrow.freelancer == freelancer.key() @ EscrowError::InvalidFreelancer
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(mut)]
+    pub freelancer: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct CompleteEscrow<'info> {
+    #[account(
+        mut,
+        seeds = [
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref()
+        ],
+        bump = escrow.bump,
+        constraint = escrow.state == EscrowState::Active @ EscrowError::InvalidState,
+        constraint = escrow.client == client.key() @ EscrowError::Unauthorized,
+        close = client
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = freelancer.key() == escrow.freelancer @ EscrowError::InvalidFreelancer
+    )]
+    /// CHECK: Validated in constraint above
+    pub freelancer: AccountInfo<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CancelEscrow<'info> {
+    #[account(
+        mut,
+        seeds = [
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref()
+        ],
+        bump = escrow.bump,
+        constraint = can_cancel(&escrow, &authority.key()) @ EscrowError::CannotCancel,
+        close = client
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = client.key() == escrow.client @ EscrowError::Unauthorized
+    )]
+    /// CHECK: Validated in constraint above
+    pub client: AccountInfo<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+pub fn create_proposal(ctx: Context<CreateProposal>, escrow_id: u64, amount: u64) -> Result<()> {
+    require!(amount >= MIN_ESCROW_AMOUNT, EscrowError::AmountTooSmall);
+
+    let escrow = &mut ctx.accounts.escrow;
+    let counter = &mut ctx.accounts.counter;
+    let client = &ctx.accounts.client;
+    let freelancer = &ctx.accounts.freelancer;
+
+    // Validate freelancer is a valid pubkey
+    require!(
+        freelancer.key() != System::id() && freelancer.key() != Pubkey::default(),
+        EscrowError::InvalidFreelancer
+    );
+
+    // Transfer SOL to escrow PDA
+    let cpi_context = CpiContext::new(
+        ctx.accounts.system_program.to_account_info(),
+        system_program::Transfer {
+            from: client.to_account_info(),
+            to: escrow.to_account_info(),
+        },
+    );
+    system_program::transfer(cpi_context, amount)?;
+
+    // Initialize escrow account
+    escrow.escrow_id = escrow_id;
+    escrow.client = client.key();
+    escrow.freelancer = freelancer.key();
+    escrow.amount = amount;
+    escrow.state = EscrowState::Proposed;
+    escrow.client_signature = None;
+    escrow.freelancer_signature = None;
+    escrow.created_at = Clock::get()?.unix_timestamp;
+    escrow.signed_at = None;
+    escrow.completed_at = None;
+    escrow.bump = ctx.bumps.escrow;
+
+    // Update counter with checked arithmetic
+    counter.increment()?;
+
+    emit!(EscrowCreated {
+        escrow_id,
+        client: client.key(),
+        freelancer: freelancer.key(),
+        amount,
+        timestamp: escrow.created_at,
+    });
+
+    msg!("Escrow proposal created with ID: {}", escrow_id);
+    Ok(())
+}
+
+pub fn accept_proposal(ctx: Context<AcceptProposal>) -> Result<()> {
+    let escrow = &mut ctx.accounts.escrow;
+    let freelancer = &ctx.accounts.freelancer;
+
+    escrow.state = EscrowState::AwaitingSigs;
+
+    emit!(ProposalAccepted {
+        escrow_id: escrow.escrow_id,
+        freelancer: freelancer.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
+    msg!("Proposal accepted, awaiting signatures");
+    Ok(())
+}
+
+pub fn complete_escrow(ctx: Context<CompleteEscrow>) -> Result<()> {
+    let escrow = &ctx.accounts.escrow;
+    let clock = Clock::get()?;
+
+    // Store values before mutations
+    let escrow_amount = escrow.amount;
+    let escrow_id = escrow.escrow_id;
+
+    require!(escrow_amount > 0, EscrowError::InsufficientFunds);
+
+    // Transfer using CPI with PDA signer
+    let escrow_info = ctx.accounts.escrow.to_account_info();
+    let freelancer_info = ctx.accounts.freelancer.to_account_info();
+
+    let transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+        &escrow_info.key(),
+        &freelancer_info.key(),
+        escrow_amount,
+    );
+
+    anchor_lang::solana_program::program::invoke_signed(
+        &transfer_ix,
+        &[
+            escrow_info.clone(),
+            freelancer_info.clone(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        &[&[
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref(),
+            &[escrow.bump],
+        ]],
+    )?;
+
+    // Update state AFTER transfer
+    let escrow_mut = &mut ctx.accounts.escrow;
+    escrow_mut.state = EscrowState::Completed;
+    escrow_mut.completed_at = Some(clock.unix_timestamp);
+
+    emit!(EscrowCompleted {
+        escrow_id,
+        amount: escrow_amount,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!(
+        "Escrow {} completed, {} lamports released",
+        escrow_id,
+        escrow_amount
+    );
+    Ok(())
+}
+
+pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
+    let escrow = &ctx.accounts.escrow;
+    let clock = Clock::get()?;
+
+    // Store values before mutations
+    let escrow_amount = escrow.amount;
+    let escrow_id = escrow.escrow_id;
+
+    require!(escrow_amount > 0, EscrowError::InsufficientFunds);
+
+    // Transfer using CPI with PDA signer
+    let escrow_info = ctx.accounts.escrow.to_account_info();
+    let client_info = ctx.accounts.client.to_account_info();
+
+    let transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+        &escrow_info.key(),
+        &client_info.key(),
+        escrow_amount,
+    );
+
+    anchor_lang::solana_program::program::invoke_signed(
+        &transfer_ix,
+        &[
+            escrow_info.clone(),
+            client_info.clone(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        &[&[
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref(),
+            &[escrow.bump],
+        ]],
+    )?;
+
+    // Update state AFTER transfer
+    let escrow_mut = &mut ctx.accounts.escrow;
+    escrow_mut.state = EscrowState::Cancelled;
+
+    emit!(EscrowCancelled {
+        escrow_id,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!(
+        "Escrow {} cancelled, {} lamports returned",
+        escrow_id,
+        escrow_amount
+    );
+    Ok(())
+}
+
+fn can_cancel(escrow: &EscrowAccount, authority: &Pubkey) -> bool {
+    match escrow.state {
+        EscrowState::Proposed | EscrowState::AwaitingSigs => escrow.client == *authority,
+        EscrowState::Active => escrow.client == *authority || escrow.freelancer == *authority,
+        _ => false,
+    }
+}
+
+init.rs
+use crate::constants::COUNTER_SEED;
+use crate::state::Counter;
+use anchor_lang::prelude::*;
+
+#[derive(Accounts)]
+pub struct InitCounter<'info> {
+    #[account(
+        init,
+        payer = payer,
+        space = Counter::SIZE,
+        seeds = [COUNTER_SEED],
+        bump
+    )]
+    pub counter: Account<'info, Counter>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+pub fn init_counter(ctx: Context<InitCounter>) -> Result<()> {
+    let counter = &mut ctx.accounts.counter;
+    counter.count = 0;
+    counter.bump = ctx.bumps.counter;
+
+    msg!("Counter initialized at slot: {}", Clock::get()?.slot);
+    Ok(())
+}
+
+//mod.rs
+pub mod init;
+pub mod escrow;
+pub mod signatures;
+
+pub use init::*;
+pub use escrow::*;
+pub use signatures::*;
+
+//signatures.rs
+use crate::{
+    constants::ESCROW_SEED,
+    errors::EscrowError,
+    events::*,
+    state::{EscrowAccount, EscrowState},
+};
+use anchor_lang::prelude::*;
+
+#[derive(Accounts)]
+pub struct SubmitSignature<'info> {
+    #[account(
+        mut,
+        seeds = [
+            ESCROW_SEED,
+            escrow.client.as_ref(),
+            escrow.escrow_id.to_le_bytes().as_ref()
+        ],
+        bump = escrow.bump,
+        constraint = escrow.state == EscrowState::AwaitingSigs @ EscrowError::InvalidState
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(mut)]
+    pub signer: Signer<'info>,
+}
+
+pub fn submit_signature(ctx: Context<SubmitSignature>, signature_data: [u8; 64]) -> Result<()> {
+    let escrow = &mut ctx.accounts.escrow;
+    let signer = &ctx.accounts.signer;
+    let clock = Clock::get()?;
+
+    // Enhanced signature validation
+    require!(signature_data != [0u8; 64], EscrowError::InvalidSignature);
+
+    // Check if signature has some entropy (basic sanity check)
+    let non_zero_bytes = signature_data.iter().filter(|&&b| b != 0).count();
+    require!(non_zero_bytes >= 32, EscrowError::InvalidSignature);
+
+    let is_client = escrow.client == signer.key();
+    let is_freelancer = escrow.freelancer == signer.key();
+
+    require!(is_client || is_freelancer, EscrowError::Unauthorized);
+
+    if is_client {
+        require!(
+            escrow.client_signature.is_none(),
+            EscrowError::SignatureAlreadySubmitted
+        );
+        escrow.client_signature = Some(signature_data);
+    } else {
+        require!(
+            escrow.freelancer_signature.is_none(),
+            EscrowError::SignatureAlreadySubmitted
+        );
+        escrow.freelancer_signature = Some(signature_data);
+    }
+
+    emit!(SignatureSubmitted {
+        escrow_id: escrow.escrow_id,
+        signer: signer.key(),
+        is_client,
+        timestamp: clock.unix_timestamp,
+    });
+
+    // Check if both signatures are now present
+    if escrow.client_signature.is_some() && escrow.freelancer_signature.is_some() {
+        escrow.state = EscrowState::Active;
+        escrow.signed_at = Some(clock.unix_timestamp);
+
+        emit!(EscrowActivated {
+            escrow_id: escrow.escrow_id,
+            timestamp: escrow.signed_at.unwrap(),
+        });
+
+        msg!(
+            "Both signatures received, escrow {} is now active",
+            escrow.escrow_id
+        );
+    } else {
+        msg!(
+            "Signature submitted for escrow {}, waiting for the other party",
+            escrow.escrow_id
+        );
+    }
+
+    Ok(())
+}
+
+//outside instructions folder
+//constants.rs
+use anchor_lang::prelude::*;
+
+#[constant]
+pub const ESCROW_SEED: &[u8] = b"escrow";
+
+#[constant]
+pub const COUNTER_SEED: &[u8] = b"counter";
+
+#[constant]
+pub const MIN_ESCROW_AMOUNT: u64 = 1000000; // 0.001 SOL in lamports
+
+// Regular const for usize - don't use #[constant] with usize
+pub const SIGNATURE_SIZE: usize = 64;
+
+//errors.rs
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum EscrowError {
+    #[msg("Unauthorized action")]
+    Unauthorized,
+    #[msg("Invalid escrow state")]
+    InvalidState,
+    #[msg("Signature already submitted")]
+    SignatureAlreadySubmitted,
+    #[msg("Insufficient funds")]
+    InsufficientFunds,
+    #[msg("Invalid signature format")]
+    InvalidSignature,
+    #[msg("Escrow amount too small")]
+    AmountTooSmall,
+    #[msg("Both signatures required")]
+    BothSignaturesRequired,
+    #[msg("Invalid freelancer")]
+    InvalidFreelancer,
+    #[msg("Cannot cancel escrow in current state or you're not authorized")]
+    CannotCancel,
+}
+
+//events.rs
+use anchor_lang::prelude::*;
+
+#[event]
+pub struct EscrowCreated {
+    pub escrow_id: u64,
+    pub client: Pubkey,
+    pub freelancer: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ProposalAccepted {
+    pub escrow_id: u64,
+    pub freelancer: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct SignatureSubmitted {
+    pub escrow_id: u64,
+    pub signer: Pubkey,
+    pub is_client: bool,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowActivated {
+    pub escrow_id: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowCompleted {
+    pub escrow_id: u64,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowCancelled {
+    pub escrow_id: u64,
+    pub timestamp: i64,
+}
+
+
+//lib.rs
+#![allow(unused_imports)]
+
+use anchor_lang::prelude::*;
+use instructions::*;
+use state::{EscrowAccount, EscrowState, Counter};
+use events::{EscrowCreated, ProposalAccepted, SignatureSubmitted, EscrowActivated, EscrowCompleted, EscrowCancelled};
+
+pub mod constants;
+pub mod errors;
+pub mod events;
+pub mod instructions;
+pub mod state;
+
+declare_id!("5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg");
+
+#[program]
+pub mod escrow {
+    use super::*;
+
+    pub fn init_counter(ctx: Context<InitCounter>) -> Result<()> {
+        instructions::init::init_counter(ctx)
+    }
+
+    pub fn create_proposal(
+        ctx: Context<CreateProposal>,
+        escrow_id: u64,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::escrow::create_proposal(ctx, escrow_id, amount)
+    }
+
+    pub fn accept_proposal(ctx: Context<AcceptProposal>) -> Result<()> {
+        instructions::escrow::accept_proposal(ctx)
+    }
+
+    pub fn submit_signature(
+        ctx: Context<SubmitSignature>,
+        signature_data: [u8; 64],
+    ) -> Result<()> {
+        instructions::signatures::submit_signature(ctx, signature_data)
+    }
+
+    pub fn complete_escrow(ctx: Context<CompleteEscrow>) -> Result<()> {
+        instructions::escrow::complete_escrow(ctx)
+    }
+
+    pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
+        instructions::escrow::cancel_escrow(ctx)
+    }
+}
+
+//state.rs
+use anchor_lang::prelude::*;
+
+#[account]
+pub struct Counter {
+    pub count: u64,
+    pub bump: u8,
+}
+
+impl Counter {
+    pub const SIZE: usize = 8 + 8 + 1;
+
+    /// Safely increment counter with overflow check
+    pub fn increment(&mut self) -> Result<()> {
+        self.count = self
+            .count
+            .checked_add(1)
+            .ok_or(error!(crate::errors::EscrowError::InsufficientFunds))?;
+        Ok(())
+    }
+}
+
+#[account]
+pub struct EscrowAccount {
+    pub escrow_id: u64,
+    pub client: Pubkey,
+    pub freelancer: Pubkey,
+    pub amount: u64,
+    pub state: EscrowState,
+    pub client_signature: Option<[u8; 64]>,
+    pub freelancer_signature: Option<[u8; 64]>,
+    pub created_at: i64,
+    pub signed_at: Option<i64>,
+    pub completed_at: Option<i64>,
+    pub bump: u8,
+}
+
+impl EscrowAccount {
+    pub const SIZE: usize = 8 + // discriminator
+        8 + // escrow_id
+        32 + // client
+        32 + // freelancer  
+        8 + // amount
+        1 + // state enum
+        (1 + 64) + // client_signature Option<[u8; 64]>
+        (1 + 64) + // freelancer_signature Option<[u8; 64]>
+        8 + // created_at
+        (1 + 8) + // signed_at Option<i64>
+        (1 + 8) + // completed_at Option<i64>
+        1; // bump
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum EscrowState {
+    Proposed,
+    AwaitingSigs,
+    Active,
+    Completed,
+    Disputed,
+    Cancelled,
+}
+
+//cargo.toml
+[package]
+name = "escrow"
+version = "0.1.0"
+description = "Escrow smart contract for FreelanceDao"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "escrow"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = [
+    "anchor-lang/idl-build",
+    "anchor-spl/idl-build",
+]
+custom-heap = []
+custom-panic = []
+anchor-debug = []
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token"] }

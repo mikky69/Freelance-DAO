@@ -22,4 +22,10 @@ pub enum StakingError {
     PositionNotFound,
     #[msg("Invalid amount")]
     InvalidAmount,
+    #[msg("Invalid mint")]
+    InvalidMint,
+    #[msg("Invalid vault")]
+    InvalidVault,
+    #[msg("Stake limit exceeded")]
+    StakeLimitExceeded,
 }

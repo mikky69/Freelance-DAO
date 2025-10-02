@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
-use crate::state_accounts::DaoConfig;
 use crate::errors::ErrorCode;
+use crate::state_accounts::DaoConfig;
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct InitDaoConfig<'info> {
@@ -12,10 +12,10 @@ pub struct InitDaoConfig<'info> {
         bump
     )]
     pub dao_config: Account<'info, DaoConfig>,
-    
+
     #[account(mut)]
     pub admin: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -35,13 +35,24 @@ pub fn init_dao_config(
     if min_vote_duration >= max_vote_duration || min_vote_duration <= 0 {
         return Err(ErrorCode::InvalidWindow.into());
     }
-    
+
+    use crate::constants::{ABSOLUTE_MIN_VOTE_DURATION, MAX_QUORUM_THRESHOLD};
+
     if approval_threshold < 100 || approval_threshold > 10000 {
         return Err(ErrorCode::InvalidWindow.into());
     }
 
+    // ADD THIS:
+    if quorum_threshold > MAX_QUORUM_THRESHOLD {
+        return Err(ErrorCode::InvalidWindow.into()); // Or create InvalidThreshold error
+    }
+
+    if min_vote_duration < ABSOLUTE_MIN_VOTE_DURATION {
+        return Err(ErrorCode::InvalidWindow.into());
+    }
+
     let dao_config = &mut ctx.accounts.dao_config;
-    
+
     // Initialize all fields explicitly
     dao_config.admin = ctx.accounts.admin.key();
     dao_config.light_fee_usdc = light_fee_usdc;
@@ -56,7 +67,7 @@ pub fn init_dao_config(
     dao_config.paused = false;
     dao_config.weight_params = 1_000_000_000; // Default weight divisor
     dao_config.bump = ctx.bumps.dao_config;
-    
+
     // Treasury and staking fields will be set when they are initialized
     dao_config.usdc_mint = Pubkey::default();
     dao_config.treasury = Pubkey::default();
@@ -69,6 +80,6 @@ pub fn init_dao_config(
     msg!("Major fee: {} USDC", dao_config.major_fee_usdc);
     msg!("Vote fee: {} lamports", dao_config.vote_fee_lamports);
     msg!("Proposal count: {}", dao_config.proposal_count);
-    
+
     Ok(())
 }

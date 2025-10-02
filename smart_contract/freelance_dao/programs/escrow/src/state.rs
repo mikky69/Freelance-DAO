@@ -8,6 +8,15 @@ pub struct Counter {
 
 impl Counter {
     pub const SIZE: usize = 8 + 8 + 1;
+
+    /// Safely increment counter with overflow check
+    pub fn increment(&mut self) -> Result<()> {
+        self.count = self
+            .count
+            .checked_add(1)
+            .ok_or(error!(crate::errors::EscrowError::CounterOverflow))?;
+        Ok(())
+    }
 }
 
 #[account]
@@ -37,16 +46,30 @@ impl EscrowAccount {
         8 + // created_at
         (1 + 8) + // signed_at Option<i64>
         (1 + 8) + // completed_at Option<i64>
-        1; // bump
+        1 + // bump
+        100; // Extra padding for safety
+
+    /// Validates escrow state transitions
+    pub fn can_transition_to(&self, new_state: &EscrowState) -> bool {
+        match (&self.state, new_state) {
+            (EscrowState::Proposed, EscrowState::AwaitingSigs) => true,
+            (EscrowState::Proposed, EscrowState::Cancelled) => true,
+            (EscrowState::AwaitingSigs, EscrowState::Active) => true,
+            (EscrowState::AwaitingSigs, EscrowState::Cancelled) => true,
+            (EscrowState::Active, EscrowState::Completed) => true,
+            (EscrowState::Active, EscrowState::Cancelled) => true,
+            (EscrowState::Active, EscrowState::Disputed) => true,
+            _ => false,
+        }
+    }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
 pub enum EscrowState {
-    Proposed,      // Client created proposal
-    Accepted,      // Freelancer accepted
-    AwaitingSigs,  // Both parties need to sign
-    Active,        // Both signed, work can begin
-    Completed,     // Work completed, funds released
-    Disputed,      // Dispute raised
-    Cancelled,     // Cancelled before completion
+    Proposed,
+    AwaitingSigs,
+    Active,
+    Completed,
+    Disputed,
+    Cancelled,
 }

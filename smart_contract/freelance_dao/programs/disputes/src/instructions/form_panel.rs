@@ -1,19 +1,27 @@
-use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::PanelFormed;
-use crate::state::{Dispute, DisputePanel, DisputeState};
+use crate::state::{AdminConfig, Dispute, DisputePanel, DisputeState};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct FormPanel<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>, // In production, this should be a proper admin/multisig
-    
+    pub admin: Signer<'info>,
+
+    #[account(
+        seeds = [b"admin_config"],
+        bump = admin_config.bump,
+        constraint = admin_config.authority == admin.key() @ DisputeError::Unauthorized
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
     #[account(
         mut,
-        constraint = dispute.state == DisputeState::Pending @ DisputeError::InvalidDisputeState
+        constraint = dispute.state == DisputeState::Pending @ DisputeError::InvalidDisputeState,
+        constraint = dispute.panel_size == 0 @ DisputeError::PanelAlreadyFormed
     )]
     pub dispute: Account<'info, Dispute>,
-    
+
     #[account(
         init,
         payer = admin,
@@ -22,7 +30,7 @@ pub struct FormPanel<'info> {
         bump
     )]
     pub panel: Account<'info, DisputePanel>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -33,20 +41,42 @@ pub fn handler(
     required_quorum: u16,
 ) -> Result<()> {
     require!(!members.is_empty(), DisputeError::InvalidPanelSize);
-    require!(members.len() <= DisputePanel::MAX_PANEL_SIZE, DisputeError::InvalidPanelSize);
+    require!(
+        members.len() <= DisputePanel::MAX_PANEL_SIZE,
+        DisputeError::InvalidPanelSize
+    );
     require!(required_quorum > 0, DisputeError::InvalidPanelSize);
-    require!(required_quorum <= members.len() as u16, DisputeError::InvalidPanelSize);
-    
+    require!(
+        required_quorum <= members.len() as u16,
+        DisputeError::InvalidPanelSize
+    );
+
+    // Validate no duplicate members
+    let mut unique_members = members.clone();
+    unique_members.sort();
+    unique_members.dedup();
+    require!(
+        unique_members.len() == members.len(),
+        DisputeError::DuplicatePanelMembers
+    );
+
     let dispute = &mut ctx.accounts.dispute;
     let panel = &mut ctx.accounts.panel;
     let clock = Clock::get()?;
-    
-    // Set panel expiry (e.g., 14 days from now)
-    let expires_at = clock.unix_timestamp + (14 * 24 * 60 * 60); // 14 days
-    
-    // Initialize weights (equal voting power for now)
+
+    let expires_at = clock
+        .unix_timestamp
+        .checked_add(14 * 24 * 60 * 60)
+        .ok_or(DisputeError::ArithmeticOverflow)?;
+
     let weights = vec![1u16; members.len()];
-    
+
+    let total_weight: u32 = weights.iter().map(|&w| w as u32).sum();
+    require!(
+        total_weight > 0 && total_weight <= u32::MAX,
+        DisputeError::InvalidPanelWeights
+    );
+
     panel.dispute_id = dispute.id;
     panel.members = members.clone();
     panel.weights = weights;
@@ -55,12 +85,11 @@ pub fn handler(
     panel.total_votes_cast = 0;
     panel.weighted_votes_cast = 0;
     panel.bump = ctx.bumps.panel;
-    
-    // Update dispute state
+
     dispute.state = DisputeState::PanelFormed;
     dispute.panel_size = members.len() as u16;
     dispute.required_quorum = required_quorum;
-    
+
     emit!(PanelFormed {
         dispute_id: dispute.id,
         members,
@@ -68,6 +97,6 @@ pub fn handler(
         required_quorum,
         expires_at,
     });
-    
+
     Ok(())
 }

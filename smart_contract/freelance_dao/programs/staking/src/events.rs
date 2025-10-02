@@ -1,6 +1,23 @@
 use anchor_lang::prelude::*;
 
 #[event]
+pub struct RewardsConfigInitialized {
+    pub admin: Pubkey,
+    pub fl_dao_mint: Pubkey,
+    pub exchange_rate: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PoolInitialized {
+    pub pool: Pubkey,
+    pub mint: Pubkey,
+    pub is_lp: bool,
+    pub points_per_token_per_second: u64,
+    pub timestamp: i64,
+}
+
+#[event]
 pub struct Staked {
     pub pool: Pubkey,
     pub staker: Pubkey,
@@ -37,18 +54,20 @@ pub struct PointsExchanged {
 }
 
 #[event]
-pub struct PoolInitialized {
+pub struct PoolParamsUpdated {
     pub pool: Pubkey,
-    pub mint: Pubkey,
-    pub is_lp: bool,
-    pub points_per_token_per_second: u64,
+    pub old_rate: u64, // ADD THIS
+    pub new_rate: Option<u64>,
+    pub old_paused: bool, // ADD THIS
+    pub paused: Option<bool>,
     pub timestamp: i64,
 }
 
 #[event]
-pub struct RewardsConfigInitialized {
-    pub admin: Pubkey,
-    pub fl_dao_mint: Pubkey,
-    pub exchange_rate: u64,
+pub struct RewardsParamsUpdated {
+    pub old_exchange_rate: u64, // ADD THIS
+    pub new_exchange_rate: Option<u64>,
+    pub old_paused: bool, // ADD THIS
+    pub paused: Option<bool>,
     pub timestamp: i64,
 }

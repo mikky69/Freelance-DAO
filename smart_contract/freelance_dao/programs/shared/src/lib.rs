@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("4vvGqQjKWJmAmNx1iuNNwpSJrjgVxgr1wSWWA2ZEkfA6");
+declare_id!("9W5ksWrT4kqmLUuR6knhsWdsp7Kbd1hiKSDAkDwwVAF7");
 
 // Program IDs for cross-program calls
 pub const STAKING_PROGRAM_ID: Pubkey = anchor_lang::pubkey!("DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9");

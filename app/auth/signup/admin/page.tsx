@@ -23,11 +23,17 @@ export default function AdminSignupPage() {
   useState(() => {
     const checkFirstAdmin = async () => {
       try {
-        const res = await fetch("/api/auth/admin/check-first")
+        // Only run on client side to avoid build-time URL parsing errors
+        if (typeof window === 'undefined') return;
+        
+        const baseUrl = window.location.origin;
+        const res = await fetch(`${baseUrl}/api/auth/admin/check-first`)
         const data = await res.json()
         setIsFirstAdmin(data.isFirstAdmin)
       } catch (error) {
         console.error("Error checking first admin:", error)
+        // Set default value on error
+        setIsFirstAdmin(false)
       }
     }
     checkFirstAdmin()

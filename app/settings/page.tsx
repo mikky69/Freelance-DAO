@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   User,
   Shield,
@@ -23,46 +24,234 @@ import {
   Save,
   AlertTriangle,
   CheckCircle,
+  Loader2,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useAuth } from "@/lib/auth-context"
+import { toast } from "sonner"
+
+interface ProfileData {
+  fullname: string
+  email: string
+  title: string
+  bio: string
+  location: string
+  hourlyRate: number
+  availability: string
+  skills: string[]
+  languages: string[]
+  avatar: string
+  company: string
+}
+
+interface PrivacySettings {
+  profileVisibility: string
+  showEmail: boolean
+  showPhone: boolean
+  showLocation: boolean
+  showEarnings: boolean
+  showSpent: boolean
+  allowDirectContact: boolean
+}
+
+interface NotificationSettings {
+  email: {
+    jobAlerts: boolean
+    messageAlerts: boolean
+    paymentAlerts: boolean
+    marketingEmails: boolean
+  }
+  push: {
+    jobAlerts: boolean
+    messageAlerts: boolean
+    paymentAlerts: boolean
+  }
+  sms: {
+    jobAlerts: boolean
+    paymentAlerts: boolean
+  }
+}
+
+interface SecuritySettings {
+  twoFactorEnabled: boolean
+  loginAlerts: boolean
+  sessionTimeout: number
+}
 
 export default function SettingsPage() {
-  const [profileData, setProfileData] = useState({
-    firstName: "Sarah",
-    lastName: "Johnson",
-    email: "sarah@example.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Senior Full-Stack Developer with 5+ years of experience in React, Node.js, and Web3 technologies.",
-    location: "San Francisco, CA",
-    timezone: "America/Los_Angeles",
-    hourlyRate: "75",
-    availability: "full-time",
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [userRole, setUserRole] = useState<string>('')
+  const [error, setError] = useState<string>('')
+
+  const [profileData, setProfileData] = useState<ProfileData>({
+    fullname: "",
+    email: "",
+    title: "",
+    bio: "",
+    location: "",
+    hourlyRate: 0,
+    availability: "Available now",
+    skills: [],
+    languages: ["English"],
+    avatar: "",
+    company: "",
   })
 
-  const [privacySettings, setPrivacySettings] = useState({
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
     profileVisibility: "public",
     showEmail: false,
     showPhone: false,
     showLocation: true,
     showEarnings: false,
+    showSpent: false,
     allowDirectContact: true,
   })
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    jobAlerts: true,
-    messageAlerts: true,
-    paymentAlerts: true,
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    email: {
+      jobAlerts: true,
+      messageAlerts: true,
+      paymentAlerts: true,
+      marketingEmails: false,
+    },
+    push: {
+      jobAlerts: true,
+      messageAlerts: true,
+      paymentAlerts: true,
+    },
+    sms: {
+      jobAlerts: false,
+      paymentAlerts: false,
+    },
   })
 
-  const [securitySettings, setSecuritySettings] = useState({
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     loginAlerts: true,
-    sessionTimeout: "24",
+    sessionTimeout: 30,
   })
+
+  // Fetch settings data on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setError('')
+      try {
+        const token = localStorage.getItem('freelancedao_token')
+        if (!token) {
+          setError('Authentication required. Please log in again.')
+          toast.error('Authentication required')
+          return
+        }
+
+        const response = await fetch('/api/settings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          const errorMessage = errorData.error || `Failed to fetch settings (${response.status})`
+          setError(errorMessage)
+          throw new Error(errorMessage)
+        }
+
+        const data = await response.json()
+        
+        setProfileData(data.profileData)
+        setPrivacySettings(data.privacySettings)
+        setNotificationSettings(data.notificationSettings)
+        setSecuritySettings(data.securitySettings)
+        setUserRole(data.userRole)
+      } catch (error) {
+        console.error('Error fetching settings:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load settings'
+        setError(errorMessage)
+        toast.error(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchSettings()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
+
+  const handleSaveSettings = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const token = localStorage.getItem('freelancedao_token')
+      if (!token) {
+        setError('Authentication required. Please log in again.')
+        toast.error('Authentication required')
+        return
+      }
+
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          profileData,
+          privacySettings,
+          notificationSettings,
+          securitySettings,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `Failed to save settings (${response.status})`
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      toast.success('Settings saved successfully!')
+      setError('')
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save settings'
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <ProtectedRoute requireAuth={true} requireCompleteProfile={true}>
+        <div className="min-h-screen bg-slate-50">
+          <div className="bg-white border-b border-slate-200">
+            <div className="container mx-auto px-4 py-6">
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+          </div>
+          <div className="container mx-auto px-4 py-8">
+            <div className="space-y-6">
+              <Skeleton className="h-12 w-full" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full lg:col-span-2" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
 
   return (
     <ProtectedRoute requireAuth={true} requireCompleteProfile={true}>
@@ -75,6 +264,23 @@ export default function SettingsPage() {
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Settings</h1>
                 <p className="text-slate-600">Manage your account preferences and security</p>
               </div>
+              <Button 
+                onClick={handleSaveSettings} 
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -101,8 +307,10 @@ export default function SettingsPage() {
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
                     <Avatar className="w-32 h-32 mx-auto">
-                      <AvatarImage src="/placeholder.svg?height=128&width=128" alt="Profile" />
-                      <AvatarFallback className="text-2xl bg-blue-100 text-blue-600">SJ</AvatarFallback>
+                      <AvatarImage src={profileData.avatar || "/placeholder.svg?height=128&width=128"} alt="Profile" />
+                      <AvatarFallback className="text-2xl bg-blue-100 text-blue-600">
+                        {profileData.fullname ? profileData.fullname.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
                       <Button variant="outline" className="w-full">
@@ -125,23 +333,13 @@ export default function SettingsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={profileData.firstName}
-                          onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={profileData.lastName}
-                          onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullname">Full Name</Label>
+                      <Input
+                        id="fullname"
+                        value={profileData.fullname}
+                        onChange={(e) => setProfileData({ ...profileData, fullname: e.target.value })}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -154,14 +352,29 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                      />
-                    </div>
+                    {userRole === 'freelancer' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Professional Title</Label>
+                        <Input
+                          id="title"
+                          value={profileData.title}
+                          onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
+                          placeholder="e.g., Full-Stack Developer"
+                        />
+                      </div>
+                    )}
+
+                    {userRole === 'client' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="company">Company</Label>
+                        <Input
+                          id="company"
+                          value={profileData.company}
+                          onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                          placeholder="Your company name"
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor="bio">Bio</Label>
@@ -170,73 +383,79 @@ export default function SettingsPage() {
                         value={profileData.bio}
                         onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                         className="min-h-24"
+                        placeholder="Tell us about yourself..."
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          value={profileData.location}
-                          onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="timezone">Timezone</Label>
-                        <Select
-                          value={profileData.timezone}
-                          onValueChange={(value) => setProfileData({ ...profileData, timezone: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                            <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                            <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                            <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                            <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                            <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
-                            <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={profileData.location}
+                        onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                        placeholder="City, Country"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="hourlyRate">Hourly Rate (HBAR)</Label>
-                        <Input
-                          id="hourlyRate"
-                          type="number"
-                          value={profileData.hourlyRate}
-                          onChange={(e) => setProfileData({ ...profileData, hourlyRate: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="availability">Availability</Label>
-                        <Select
-                          value={profileData.availability}
-                          onValueChange={(value) => setProfileData({ ...profileData, availability: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="full-time">Full-time (40+ hrs/week)</SelectItem>
-                            <SelectItem value="part-time">Part-time (20-40 hrs/week)</SelectItem>
-                            <SelectItem value="project-based">Project-based</SelectItem>
-                            <SelectItem value="unavailable">Currently unavailable</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    {userRole === 'freelancer' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="hourlyRate">Hourly Rate (HBAR)</Label>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            value={profileData.hourlyRate}
+                            onChange={(e) => setProfileData({ ...profileData, hourlyRate: parseFloat(e.target.value) || 0 })}
+                            placeholder="0"
+                          />
+                        </div>
 
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
+                        <div className="space-y-2">
+                          <Label htmlFor="availability">Availability</Label>
+                          <Select
+                            value={profileData.availability}
+                            onValueChange={(value) => setProfileData({ ...profileData, availability: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Available now">Available now</SelectItem>
+                              <SelectItem value="Available in 1 week">Available in 1 week</SelectItem>
+                              <SelectItem value="Available in 2 weeks">Available in 2 weeks</SelectItem>
+                              <SelectItem value="Available in 1 month">Available in 1 month</SelectItem>
+                              <SelectItem value="Not available">Not available</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="skills">Skills (comma-separated)</Label>
+                          <Input
+                            id="skills"
+                            value={profileData.skills.join(', ')}
+                            onChange={(e) => setProfileData({ 
+                              ...profileData, 
+                              skills: e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0)
+                            })}
+                            placeholder="React, Node.js, TypeScript"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="languages">Languages (comma-separated)</Label>
+                          <Input
+                            id="languages"
+                            value={profileData.languages.join(', ')}
+                            onChange={(e) => setProfileData({ 
+                              ...profileData, 
+                              languages: e.target.value.split(',').map(lang => lang.trim()).filter(lang => lang.length > 0)
+                            })}
+                            placeholder="English, Spanish, French"
+                          />
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -246,437 +465,338 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Eye className="w-5 h-5 mr-2 text-green-500" />
-                    Profile Visibility
+                    <Eye className="w-5 h-5 mr-2 text-blue-500" />
+                    Privacy Settings
                   </CardTitle>
-                  <CardDescription>Control who can see your profile and information</CardDescription>
+                  <CardDescription>
+                    Control who can see your information and how you appear to others
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="profileVisibility">Profile Visibility</Label>
-                      <Select
-                        value={privacySettings.profileVisibility}
-                        onValueChange={(value) => setPrivacySettings({ ...privacySettings, profileVisibility: value })}
-                      >
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Public - Anyone can view</SelectItem>
-                          <SelectItem value="clients-only">Clients Only - Only verified clients</SelectItem>
-                          <SelectItem value="private">Private - Only you can view</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profileVisibility">Profile Visibility</Label>
+                    <Select
+                      value={privacySettings.profileVisibility}
+                      onValueChange={(value) => setPrivacySettings({ ...privacySettings, profileVisibility: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">Public - Anyone can see your profile</SelectItem>
+                        <SelectItem value="private">Private - Only you can see your profile</SelectItem>
+                        <SelectItem value="freelancedao">FreelanceDAO Only - Only registered users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div className="space-y-4">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Show on Profile</h4>
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="showEmail">Show Email Address</Label>
-                          <p className="text-sm text-slate-500">Allow others to see your email</p>
-                        </div>
+                        <Label htmlFor="showEmail" className="flex-1">Email Address</Label>
                         <Switch
                           id="showEmail"
                           checked={privacySettings.showEmail}
                           onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showEmail: checked })}
                         />
                       </div>
-
                       <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="showPhone">Show Phone Number</Label>
-                          <p className="text-sm text-slate-500">Allow others to see your phone</p>
-                        </div>
+                        <Label htmlFor="showPhone" className="flex-1">Phone Number</Label>
                         <Switch
                           id="showPhone"
                           checked={privacySettings.showPhone}
                           onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showPhone: checked })}
                         />
                       </div>
-
                       <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="showLocation">Show Location</Label>
-                          <p className="text-sm text-slate-500">Display your city and country</p>
-                        </div>
+                        <Label htmlFor="showLocation" className="flex-1">Location</Label>
                         <Switch
                           id="showLocation"
                           checked={privacySettings.showLocation}
                           onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showLocation: checked })}
                         />
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="showEarnings">Show Earnings</Label>
-                          <p className="text-sm text-slate-500">Display total earnings on profile</p>
+                      {userRole === 'freelancer' && (
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="showEarnings" className="flex-1">Earnings</Label>
+                          <Switch
+                            id="showEarnings"
+                            checked={privacySettings.showEarnings}
+                            onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showEarnings: checked })}
+                          />
                         </div>
-                        <Switch
-                          id="showEarnings"
-                          checked={privacySettings.showEarnings}
-                          onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showEarnings: checked })}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="allowDirectContact">Allow Direct Contact</Label>
-                          <p className="text-sm text-slate-500">Let clients contact you directly</p>
+                      )}
+                      {userRole === 'client' && (
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="showSpent" className="flex-1">Amount Spent</Label>
+                          <Switch
+                            id="showSpent"
+                            checked={privacySettings.showSpent}
+                            onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, showSpent: checked })}
+                          />
                         </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="allowDirectContact" className="flex-1">Allow Direct Contact</Label>
                         <Switch
                           id="allowDirectContact"
                           checked={privacySettings.allowDirectContact}
-                          onCheckedChange={(checked) =>
-                            setPrivacySettings({ ...privacySettings, allowDirectContact: checked })
-                          }
+                          onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, allowDirectContact: checked })}
                         />
                       </div>
                     </div>
                   </div>
-              </CardContent>
-              </Card>
-                
-
-                <Button className="bg-blue-500 hover:bg-blue-600">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Privacy Settings
-                </Button>
-            </TabsContent>
-
-            <TabsContent value="notifications" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Bell className="w-5 h-5 mr-2 text-purple-500" />
-                    Notification Preferences
-                  </CardTitle>
-                  <CardDescription>Choose how and when you want to be notified</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-slate-800">Notification Channels</h4>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="w-5 h-5 text-blue-500" />
-                        <div>
-                          <Label htmlFor="emailNotifications">Email Notifications</Label>
-                          <p className="text-sm text-slate-500">Receive notifications via email</p>
-                        </div>
-                      </div>
-                      <Switch
-                        id="emailNotifications"
-                        checked={notificationSettings.emailNotifications}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, emailNotifications: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Smartphone className="w-5 h-5 text-green-500" />
-                        <div>
-                          <Label htmlFor="pushNotifications">Push Notifications</Label>
-                          <p className="text-sm text-slate-500">Browser and mobile push notifications</p>
-                        </div>
-                      </div>
-                      <Switch
-                        id="pushNotifications"
-                        checked={notificationSettings.pushNotifications}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, pushNotifications: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Smartphone className="w-5 h-5 text-purple-500" />
-                        <div>
-                          <Label htmlFor="smsNotifications">SMS Notifications</Label>
-                          <p className="text-sm text-slate-500">Text message alerts for urgent items</p>
-                        </div>
-                      </div>
-                      <Switch
-                        id="smsNotifications"
-                        checked={notificationSettings.smsNotifications}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, smsNotifications: checked })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-slate-800">Notification Types</h4>
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="jobAlerts">Job Alerts</Label>
-                      <Switch
-                        id="jobAlerts"
-                        checked={notificationSettings.jobAlerts}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, jobAlerts: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="messageAlerts">Message Alerts</Label>
-                      <Switch
-                        id="messageAlerts"
-                        checked={notificationSettings.messageAlerts}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, messageAlerts: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="paymentAlerts">Payment Alerts</Label>
-                      <Switch
-                        id="paymentAlerts"
-                        checked={notificationSettings.paymentAlerts}
-                        onCheckedChange={(checked) =>
-                          setNotificationSettings({ ...notificationSettings, paymentAlerts: checked })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <Button className="bg-blue-500 hover:bg-blue-600">
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Notification Settings
-                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="security" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="notifications" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Email Notifications */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Shield className="w-5 h-5 mr-2 text-red-500" />
-                      Account Security
+                      <Mail className="w-5 h-5 mr-2 text-blue-500" />
+                      Email
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="twoFactor">Two-Factor Authentication</Label>
-                        <p className="text-sm text-slate-500">Add an extra layer of security</p>
-                      </div>
+                      <Label htmlFor="emailJobAlerts" className="flex-1">Job Alerts</Label>
                       <Switch
-                        id="twoFactor"
-                        checked={securitySettings.twoFactorEnabled}
-                        onCheckedChange={(checked) =>
-                          setSecuritySettings({ ...securitySettings, twoFactorEnabled: checked })
-                        }
+                        id="emailJobAlerts"
+                        checked={notificationSettings.email.jobAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          email: { ...notificationSettings.email, jobAlerts: checked }
+                        })}
                       />
                     </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="emailMessageAlerts" className="flex-1">Message Alerts</Label>
+                      <Switch
+                        id="emailMessageAlerts"
+                        checked={notificationSettings.email.messageAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          email: { ...notificationSettings.email, messageAlerts: checked }
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="emailPaymentAlerts" className="flex-1">Payment Alerts</Label>
+                      <Switch
+                        id="emailPaymentAlerts"
+                        checked={notificationSettings.email.paymentAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          email: { ...notificationSettings.email, paymentAlerts: checked }
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="emailMarketingEmails" className="flex-1">Marketing Emails</Label>
+                      <Switch
+                        id="emailMarketingEmails"
+                        checked={notificationSettings.email.marketingEmails}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          email: { ...notificationSettings.email, marketingEmails: checked }
+                        })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
+                {/* Push Notifications */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Bell className="w-5 h-5 mr-2 text-blue-500" />
+                      Push
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pushJobAlerts" className="flex-1">Job Alerts</Label>
+                      <Switch
+                        id="pushJobAlerts"
+                        checked={notificationSettings.push.jobAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          push: { ...notificationSettings.push, jobAlerts: checked }
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pushMessageAlerts" className="flex-1">Message Alerts</Label>
+                      <Switch
+                        id="pushMessageAlerts"
+                        checked={notificationSettings.push.messageAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          push: { ...notificationSettings.push, messageAlerts: checked }
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pushPaymentAlerts" className="flex-1">Payment Alerts</Label>
+                      <Switch
+                        id="pushPaymentAlerts"
+                        checked={notificationSettings.push.paymentAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          push: { ...notificationSettings.push, paymentAlerts: checked }
+                        })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* SMS Notifications */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Smartphone className="w-5 h-5 mr-2 text-blue-500" />
+                      SMS
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="smsJobAlerts" className="flex-1">Job Alerts</Label>
+                      <Switch
+                        id="smsJobAlerts"
+                        checked={notificationSettings.sms.jobAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          sms: { ...notificationSettings.sms, jobAlerts: checked }
+                        })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="smsPaymentAlerts" className="flex-1">Payment Alerts</Label>
+                      <Switch
+                        id="smsPaymentAlerts"
+                        checked={notificationSettings.sms.paymentAlerts}
+                        onCheckedChange={(checked) => setNotificationSettings({
+                          ...notificationSettings,
+                          sms: { ...notificationSettings.sms, paymentAlerts: checked }
+                        })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="security" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Two-Factor Authentication */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Shield className="w-5 h-5 mr-2 text-blue-500" />
+                      Two-Factor Authentication
+                    </CardTitle>
+                    <CardDescription>
+                      Add an extra layer of security to your account
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label htmlFor="loginAlerts">Login Alerts</Label>
-                        <p className="text-sm text-slate-500">Get notified of new logins</p>
+                        <Label className="font-medium">Enable 2FA</Label>
+                        <p className="text-sm text-slate-600">
+                          {securitySettings.twoFactorEnabled ? "2FA is currently enabled" : "2FA is currently disabled"}
+                        </p>
                       </div>
                       <Switch
-                        id="loginAlerts"
+                        checked={securitySettings.twoFactorEnabled}
+                        onCheckedChange={(checked) => setSecuritySettings({ ...securitySettings, twoFactorEnabled: checked })}
+                      />
+                    </div>
+                    {securitySettings.twoFactorEnabled && (
+                      <Alert>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Two-factor authentication is active. You'll need your authenticator app to sign in.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Login & Session Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Lock className="w-5 h-5 mr-2 text-blue-500" />
+                      Login & Sessions
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your login preferences and active sessions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="font-medium">Login Alerts</Label>
+                        <p className="text-sm text-slate-600">Get notified of new logins</p>
+                      </div>
+                      <Switch
                         checked={securitySettings.loginAlerts}
                         onCheckedChange={(checked) => setSecuritySettings({ ...securitySettings, loginAlerts: checked })}
                       />
                     </div>
-
                     <div className="space-y-2">
-                      <Label htmlFor="sessionTimeout">Session Timeout (hours)</Label>
+                      <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
                       <Select
-                        value={securitySettings.sessionTimeout}
-                        onValueChange={(value) => setSecuritySettings({ ...securitySettings, sessionTimeout: value })}
+                        value={securitySettings.sessionTimeout.toString()}
+                        onValueChange={(value) => setSecuritySettings({ ...securitySettings, sessionTimeout: parseInt(value) })}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 hour</SelectItem>
-                          <SelectItem value="8">8 hours</SelectItem>
-                          <SelectItem value="24">24 hours</SelectItem>
-                          <SelectItem value="168">1 week</SelectItem>
-                          <SelectItem value="never">Never</SelectItem>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                          <SelectItem value="480">8 hours</SelectItem>
+                          <SelectItem value="1440">24 hours</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full">
-                        <Lock className="w-4 h-4 mr-2" />
-                        Change Password
-                      </Button>
-                      <Button variant="outline" className="w-full">
-                        View Active Sessions
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Wallet className="w-5 h-5 mr-2 text-green-500" />
-                      Wallet Security
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Alert>
-                      <CheckCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Your wallet is connected and secured with industry-standard encryption.
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="space-y-2">
-                      <Label>Connected Wallet</Label>
-                      <div className="p-3 bg-slate-50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">HashPack Wallet</p>
-                            <p className="text-sm text-slate-500">0.0.123456</p>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            Disconnect
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full">
-                        View Transaction History
-                      </Button>
-                      <Button variant="outline" className="w-full">
-                        Export Wallet Data
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                  <CardDescription>Irreversible and destructive actions</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>These actions cannot be undone. Please proceed with caution.</AlertDescription>
-                  </Alert>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
-                      Deactivate Account
-                    </Button>
-                    <Button variant="destructive">Delete Account Permanently</Button>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="billing" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Wallet className="w-5 h-5 mr-2 text-green-500" />
-                      Payment Methods
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-4 border border-green-200 bg-green-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-green-800">HBAR Wallet</p>
-                          <p className="text-sm text-green-600">Primary payment method</p>
-                        </div>
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      </div>
-                    </div>
-
-                    <Button variant="outline" className="w-full">
-                      Add Payment Method
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Billing History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">Platform Fee</p>
-                          <p className="text-sm text-slate-500">Dec 10, 2024</p>
-                        </div>
-                        <span className="font-semibold text-red-600">-50 HBAR</span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">Platform Fee</p>
-                          <p className="text-sm text-slate-500">Dec 8, 2024</p>
-                        </div>
-                        <span className="font-semibold text-red-600">-35 HBAR</span>
-                      </div>
-                    </div>
-
-                    <Button variant="outline" className="w-full mt-4">
-                      View All Transactions
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-
               <Card>
                 <CardHeader>
-                  <CardTitle>Tax Information</CardTitle>
-                  <CardDescription>Manage your tax documents and settings</CardDescription>
+                  <CardTitle className="flex items-center">
+                    <Wallet className="w-5 h-5 mr-2 text-blue-500" />
+                    Billing & Payments
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your payment methods and billing preferences
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="taxId">Tax ID / SSN</Label>
-                      <Input id="taxId" placeholder="XXX-XX-XXXX" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="taxCountry">Tax Country</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="us">United States</SelectItem>
-                          <SelectItem value="ca">Canada</SelectItem>
-                          <SelectItem value="uk">United Kingdom</SelectItem>
-                          <SelectItem value="de">Germany</SelectItem>
-                          <SelectItem value="fr">France</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <Button variant="outline">Download 1099 Form</Button>
-                    <Button variant="outline">Export Tax Report</Button>
-                  </div>
+                <CardContent>
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Billing settings are managed through the blockchain. Connect your wallet to manage payments.
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
               </Card>
             </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
-    </div>
     </ProtectedRoute>
   )
 }

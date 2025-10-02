@@ -36,6 +36,24 @@ contract FreeLanceDAOProposalContract is Ownable, ReentrancyGuard {
         uint256 feePaid; // in native token wei
     }
 
+    /**
+     * @dev A struct designed for returning proposal data to off-chain clients.
+     * It includes the ID and calculated participation, and is ABI-encodable as an array.
+     */
+    struct ProposalView {
+        uint256 id;
+        address proposer;
+        string title;
+        string proposalType;
+        string category;
+        string description;
+        string[] tags;
+        uint256 deadline;
+        bool finalized;
+        uint256 feePaid;
+        uint256 participation;
+    }
+
     uint256 public proposalCount;
     mapping(uint256 => Proposal) private proposals;
 
@@ -259,58 +277,31 @@ contract FreeLanceDAOProposalContract is Ownable, ReentrancyGuard {
 
     /**
      * @notice Get all proposals metadata.
-     * @dev Returns parallel arrays. tagsPerProposal is an array of string[] where each element corresponds to a proposal's tags.
+     * @dev Returns an array of ProposalView structs.
      * WARNING: This can be expensive to call off-chain if there are many proposals. Consider adding pagination if needed.
      */
-    function getAllProposals() external view returns (
-        uint256[] memory ids,
-        address[] memory proposers,
-        string[] memory titles,
-        string[] memory types_,
-        string[] memory categories,
-        string[] memory descriptions,
-        string[][] memory tagsPerProposal,
-        uint256[] memory fees,
-        uint256[] memory deadlines,
-        bool[] memory finalizedFlags,
-        uint256[] memory participations
-    ) {
+    function getAllProposals() external view returns (ProposalView[] memory) {
         uint256 total = proposalCount;
-        ids = new uint256[](total);
-        proposers = new address[](total);
-        titles = new string[](total);
-        types_ = new string[](total);
-        categories = new string[](total);
-        descriptions = new string[](total);
-        tagsPerProposal = new string[][](total);
-        fees = new uint256[](total);
-        deadlines = new uint256[](total);
-        finalizedFlags = new bool[](total);
-        participations = new uint256[](total);
+        ProposalView[] memory allProposals = new ProposalView[](total);
 
         for (uint256 i = 0; i < total; i++) {
             uint256 pid = i + 1;
             Proposal storage p = proposals[pid];
-            ids[i] = pid;
-            proposers[i] = p.proposer;
-            titles[i] = p.title;
-            types_[i] = p.proposalType;
-            categories[i] = p.category;
-            descriptions[i] = p.description;
-            deadlines[i] = p.deadline;
-            finalizedFlags[i] = p.finalized;
-            fees[i] = p.feePaid;
-            participations[i] = p.yesVotes + p.noVotes;
-
-            // copy tags
-            uint256 tagCount = p.tags.length;
-            string[] memory tagMem = new string[](tagCount);
-            for (uint256 t = 0; t < tagCount; t++) {
-                tagMem[t] = p.tags[t];
-            }
-            tagsPerProposal[i] = tagMem;
+            allProposals[i] = ProposalView({
+                id: pid,
+                proposer: p.proposer,
+                title: p.title,
+                proposalType: p.proposalType,
+                category: p.category,
+                description: p.description,
+                tags: p.tags,
+                deadline: p.deadline,
+                finalized: p.finalized,
+                feePaid: p.feePaid,
+                participation: p.yesVotes + p.noVotes
+            });
         }
-        return (ids, proposers, titles, types_, categories, descriptions, tagsPerProposal, fees, deadlines, finalizedFlags, participations);
+        return allProposals;
     }
 
     /**
@@ -318,52 +309,30 @@ contract FreeLanceDAOProposalContract is Ownable, ReentrancyGuard {
      * @dev Returns parallel arrays corresponding to that user's proposals.
      */
     function getUserProposals(address user) external view returns (
-        uint256[] memory ids,
-        string[] memory titles,
-        string[] memory types_,
-        string[] memory categories,
-        string[] memory descriptions,
-        string[][] memory tagsPerProposal,
-        uint256[] memory fees,
-        uint256[] memory deadlines,
-        bool[] memory finalizedFlags,
-        uint256[] memory participations
+        ProposalView[] memory
     ) {
         uint256 count = userProposals[user].length;
-        ids = new uint256[](count);
-        titles = new string[](count);
-        types_ = new string[](count);
-        categories = new string[](count);
-        descriptions = new string[](count);
-        tagsPerProposal = new string[][](count);
-        fees = new uint256[](count);
-        deadlines = new uint256[](count);
-        finalizedFlags = new bool[](count);
-        participations = new uint256[](count);
+        ProposalView[] memory userCreatedProposals = new ProposalView[](count);
 
         for (uint256 i = 0; i < count; i++) {
             uint256 pid = userProposals[user][i];
             Proposal storage p = proposals[pid];
-            ids[i] = pid;
-            titles[i] = p.title;
-            types_[i] = p.proposalType;
-            categories[i] = p.category;
-            descriptions[i] = p.description;
-            deadlines[i] = p.deadline;
-            finalizedFlags[i] = p.finalized;
-            fees[i] = p.feePaid;
-            participations[i] = p.yesVotes + p.noVotes;
-
-            // copy tags
-            uint256 tagCount = p.tags.length;
-            string[] memory tagMem = new string[](tagCount);
-            for (uint256 t = 0; t < tagCount; t++) {
-                tagMem[t] = p.tags[t];
-            }
-            tagsPerProposal[i] = tagMem;
+            userCreatedProposals[i] = ProposalView({
+                id: pid,
+                proposer: p.proposer,
+                title: p.title,
+                proposalType: p.proposalType,
+                category: p.category,
+                description: p.description,
+                tags: p.tags,
+                deadline: p.deadline,
+                finalized: p.finalized,
+                feePaid: p.feePaid,
+                participation: p.yesVotes + p.noVotes
+            });
         }
 
-        return (ids, titles, types_, categories, descriptions, tagsPerProposal, fees, deadlines, finalizedFlags, participations);
+        return userCreatedProposals;
     }
 
     /* ========== FALLBACKS ========== */

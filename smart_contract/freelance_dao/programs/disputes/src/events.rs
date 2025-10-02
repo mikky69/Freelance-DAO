@@ -1,5 +1,6 @@
-use anchor_lang::prelude::*;
+use crate::state::DisputeState;
 use crate::state::JudgmentChoice;
+use anchor_lang::prelude::*; // ADD THIS IMPORT
 
 #[event]
 pub struct DisputeOpened {
@@ -42,5 +43,14 @@ pub struct DisputeExecuted {
     pub dispute_id: u64,
     pub judgment: JudgmentChoice,
     pub linked_escrow: Option<Pubkey>,
+    pub timestamp: i64,
+}
+
+// ADD THIS NEW EVENT
+#[event]
+pub struct DisputeCanceled {
+    pub dispute_id: u64,
+    pub canceled_by: Pubkey,
+    pub previous_state: DisputeState,
     pub timestamp: i64,
 }

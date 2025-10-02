@@ -54,4 +54,8 @@ pub enum ErrorCode {
     InvalidVoteWeight,
     #[msg("Invalid staking program")]
     InvalidStakingProgram,
+    #[msg("Invalid staking position account")]
+    InvalidStakingPosition,
+    #[msg("Invalid threshold parameter")]
+    InvalidThreshold,
 }

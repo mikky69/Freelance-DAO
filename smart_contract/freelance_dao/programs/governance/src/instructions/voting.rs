@@ -1,11 +1,14 @@
-use anchor_lang::{prelude::*, system_program};
 use crate::{
-    state_accounts::{DaoConfig, Proposal, VoteRecord, Member},
+    constants::{
+        BASE_VOTE_WEIGHT, MAX_STAKING_BONUS, PREMIUM_BONUS_WEIGHT, STAKING_POSITION_DISCRIMINATOR,
+        STAKING_PROGRAM_ID, STAKING_WEIGHT_DIVISOR,
+    },
     errors::ErrorCode,
     events::VoteCast,
-    state::{VoteChoice, ProposalState},
-    constants::{BASE_VOTE_WEIGHT, PREMIUM_BONUS_WEIGHT, STAKING_WEIGHT_DIVISOR, STAKING_PROGRAM_ID}
+    state::{ProposalState, VoteChoice},
+    state_accounts::{DaoConfig, Member, Proposal, VoteRecord},
 };
+use anchor_lang::{prelude::*, system_program};
 
 #[derive(Accounts)]
 pub struct CastVote<'info> {
@@ -53,8 +56,9 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
 
     let proposal = &mut ctx.accounts.proposal;
     let now = ctx.accounts.clock.unix_timestamp;
-    
-    if now < proposal.start_ts || now >= proposal.end_ts || proposal.state != ProposalState::Active {
+
+    if now < proposal.start_ts || now >= proposal.end_ts || proposal.state != ProposalState::Active
+    {
         return Err(ErrorCode::VotingWindowClosed.into());
     }
 
@@ -87,34 +91,68 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
 
     // Calculate vote weight with staking integration
     let mut weight: u64 = BASE_VOTE_WEIGHT;
-    
+
     // Add premium bonus
     if let Some(member) = &ctx.accounts.member {
         if member.premium {
-            weight = weight.checked_add(PREMIUM_BONUS_WEIGHT)
+            weight = weight
+                .checked_add(PREMIUM_BONUS_WEIGHT)
                 .ok_or(ErrorCode::ArithmeticOverflow)?;
         }
     }
-    
+
     // Add staking bonus if position exists and is valid
     if let Some(staking_position) = &ctx.accounts.staking_position {
         // Verify the account is owned by the staking program
-        if staking_position.owner == &STAKING_PROGRAM_ID {
-            // Try to read the staked amount from the position
-            let position_data = staking_position.try_borrow_data()?;
-            if position_data.len() >= 8 + 32 + 32 + 8 { // discriminator + staker + pool + amount
-                // Skip discriminator (8 bytes), staker (32 bytes), pool (32 bytes)
-                let amount_bytes = &position_data[72..80];
-                if let Ok(amount_array) = <[u8; 8]>::try_from(amount_bytes) {
-                    let staked_amount = u64::from_le_bytes(amount_array);
-                    let staking_bonus = staked_amount.checked_div(STAKING_WEIGHT_DIVISOR).unwrap_or(0);
-                    weight = weight.checked_add(staking_bonus)
-                        .ok_or(ErrorCode::ArithmeticOverflow)?;
-                }
-            }
+        if staking_position.owner != &STAKING_PROGRAM_ID {
+            return Err(ErrorCode::InvalidStakingProgram.into());
         }
+
+        let position_data = staking_position.try_borrow_data()?;
+
+        // Validate data length and discriminator
+        if position_data.len() < 80 || position_data[0..8] != STAKING_POSITION_DISCRIMINATOR {
+            return Err(ErrorCode::InvalidStakingPosition.into());
+        }
+
+        // Validate staker matches voter (bytes 8-40)
+        let staker_bytes = &position_data[8..40];
+        let staker_pubkey =
+            Pubkey::try_from(staker_bytes).map_err(|_| ErrorCode::InvalidStakingPosition)?;
+
+        if staker_pubkey != ctx.accounts.voter.key() {
+            return Err(ErrorCode::InvalidStakingPosition.into());
+        }
+
+        // Validate pool (bytes 40-72)
+        let pool_bytes = &position_data[40..72];
+        let position_pool =
+            Pubkey::try_from(pool_bytes).map_err(|_| ErrorCode::InvalidStakingPosition)?;
+
+        // Get expected pool PDA for FLDAO token
+        let (expected_pool, _) =
+            crate::utils::get_staking_pool_pda(&ctx.accounts.dao_config.usdc_mint);
+
+        if position_pool != expected_pool {
+            return Err(ErrorCode::InvalidStakingPosition.into());
+        }
+
+        // Read staked amount (bytes 72-80)
+        let amount_bytes = &position_data[72..80];
+        let amount_array =
+            <[u8; 8]>::try_from(amount_bytes).map_err(|_| ErrorCode::InvalidStakingPosition)?;
+        let staked_amount = u64::from_le_bytes(amount_array);
+
+        let staking_bonus = staked_amount
+            .checked_div(STAKING_WEIGHT_DIVISOR)
+            .unwrap_or(0)
+            .min(MAX_STAKING_BONUS);
+
+        weight = weight
+            .checked_add(staking_bonus)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
     }
-    
+
     if weight == 0 {
         return Err(ErrorCode::InvalidVoteWeight.into());
     }
@@ -130,18 +168,21 @@ pub fn cast_vote(ctx: Context<CastVote>, choice: VoteChoice) -> Result<()> {
     // Update proposal tallies with overflow protection
     match choice {
         VoteChoice::Yes => {
-            proposal.tally_yes = proposal.tally_yes
+            proposal.tally_yes = proposal
+                .tally_yes
                 .checked_add(weight)
                 .ok_or(ErrorCode::ArithmeticOverflow)?;
-        },
+        }
         VoteChoice::No => {
-            proposal.tally_no = proposal.tally_no
+            proposal.tally_no = proposal
+                .tally_no
                 .checked_add(weight)
                 .ok_or(ErrorCode::ArithmeticOverflow)?;
-        },
+        }
     }
-    
-    proposal.total_votes = proposal.total_votes
+
+    proposal.total_votes = proposal
+        .total_votes
         .checked_add(weight)
         .ok_or(ErrorCode::ArithmeticOverflow)?;
 

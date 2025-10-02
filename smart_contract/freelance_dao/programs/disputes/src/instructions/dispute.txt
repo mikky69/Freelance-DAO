@@ -1,349 +1,218 @@
-ome@CodingMachine:~/Projects/Collabs/V2/Freelance-DAO/smart_contract/freelance_dao$ tree -L 2
-.
-├── Anchor.toml
-├── Cargo.lock
-├── Cargo.toml
-├── migrations
-│   └── deploy.ts
-├── node_modules
-│   ├── @babel
-│   ├── @coral-xyz
-│   ├── @cspotcode
-│   ├── @jridgewell
-│   ├── @noble
-│   ├── @solana
-│   ├── @swc
-│   ├── @tsconfig
-│   ├── @types
-│   ├── @ungap
-│   ├── acorn
-│   ├── acorn-walk
-│   ├── agentkeepalive
-│   ├── ansi-colors
-│   ├── ansi-regex
-│   ├── ansi-styles
-│   ├── anymatch
-│   ├── arg
-│   ├── argparse
-│   ├── arrify
-│   ├── assertion-error
-│   ├── balanced-match
-│   ├── base-x
-│   ├── base64-js
-│   ├── bigint-buffer
-│   ├── bignumber.js
-│   ├── binary-extensions
-│   ├── bindings
-│   ├── bn.js
-│   ├── borsh
-│   ├── brace-expansion
-│   ├── braces
-│   ├── browser-stdout
-│   ├── bs58
-│   ├── buffer
-│   ├── buffer-from
-│   ├── buffer-layout
-│   ├── bufferutil
-│   ├── camelcase
-│   ├── chai
-│   ├── chalk
-│   ├── check-error
-│   ├── chokidar
-│   ├── cliui
-│   ├── color-convert
-│   ├── color-name
-│   ├── commander
-│   ├── concat-map
-│   ├── create-require
-│   ├── cross-fetch
-│   ├── crypto-hash
-│   ├── debug
-│   ├── decamelize
-│   ├── deep-eql
-│   ├── delay
-│   ├── diff
-│   ├── dot-case
-│   ├── emoji-regex
-│   ├── es6-promise
-│   ├── es6-promisify
-│   ├── escalade
-│   ├── escape-string-regexp
-│   ├── eventemitter3
-│   ├── eyes
-│   ├── fast-stable-stringify
-│   ├── fastestsmallesttextencoderdecoder
-│   ├── file-uri-to-path
-│   ├── fill-range
-│   ├── find-up
-│   ├── flat
-│   ├── fs.realpath
-│   ├── get-caller-file
-│   ├── get-func-name
-│   ├── glob
-│   ├── glob-parent
-│   ├── growl
-│   ├── has-flag
-│   ├── he
-│   ├── humanize-ms
-│   ├── ieee754
-│   ├── inflight
-│   ├── inherits
-│   ├── is-binary-path
-│   ├── is-extglob
-│   ├── is-fullwidth-code-point
-│   ├── is-glob
-│   ├── is-number
-│   ├── is-plain-obj
-│   ├── is-unicode-supported
-│   ├── isexe
-│   ├── isomorphic-ws
-│   ├── jayson
-│   ├── js-yaml
-│   ├── json-stringify-safe
-│   ├── json5
-│   ├── locate-path
-│   ├── log-symbols
-│   ├── loupe
-│   ├── lower-case
-│   ├── make-error
-│   ├── minimatch
-│   ├── minimist
-│   ├── mkdirp
-│   ├── mocha
-│   ├── ms
-│   ├── nanoid
-│   ├── no-case
-│   ├── node-fetch
-│   ├── node-gyp-build
-│   ├── normalize-path
-│   ├── once
-│   ├── p-limit
-│   ├── p-locate
-│   ├── pako
-│   ├── path-exists
-│   ├── path-is-absolute
-│   ├── pathval
-│   ├── picomatch
-│   ├── prettier
-│   ├── randombytes
-│   ├── readdirp
-│   ├── require-directory
-│   ├── rpc-websockets
-│   ├── safe-buffer
-│   ├── serialize-javascript
-│   ├── snake-case
-│   ├── source-map
-│   ├── source-map-support
-│   ├── stream-chain
-│   ├── stream-json
-│   ├── string-width
-│   ├── strip-ansi
-│   ├── strip-bom
-│   ├── strip-json-comments
-│   ├── superstruct
-│   ├── supports-color
-│   ├── text-encoding-utf-8
-│   ├── to-regex-range
-│   ├── toml
-│   ├── tr46
-│   ├── ts-mocha
-│   ├── ts-node
-│   ├── tsconfig-paths
-│   ├── tslib
-│   ├── type-detect
-│   ├── typescript
-│   ├── undici-types
-│   ├── utf-8-validate
-│   ├── uuid
-│   ├── v8-compile-cache-lib
-│   ├── webidl-conversions
-│   ├── whatwg-url
-│   ├── which
-│   ├── workerpool
-│   ├── wrap-ansi
-│   ├── wrappy
-│   ├── ws
-│   ├── y18n
-│   ├── yargs
-│   ├── yargs-parser
-│   ├── yargs-unparser
-│   ├── yn
-│   └── yocto-queue
-├── package-lock.json
-├── package.json
-├── programs
-│   ├── disputes
-│   ├── governance
-│   └── staking
-├── target
-│   ├── debug
-│   ├── deploy
-│   ├── idl
-│   ├── release
-│   ├── sbpf-solana-solana
-│   └── types
-├── test-keys
-│   ├── admin.json
-│   ├── user1.json
-│   └── user2.json
-├── test-ledger
-│   ├── accounts
-│   ├── admin.rpc
-│   ├── faucet-keypair.json
-│   ├── genesis.bin
-│   ├── genesis.tar.bz2
-│   ├── ledger.lock
-│   ├── rocksdb
-│   ├── snapshot
-│   ├── snapshot-2500-Hg2REeDjnkfSYK72mHS4vG3dxc3WJptb39jtkT36f74p.tar.zst
-│   ├── snapshot-2600-9vAtyfzjKyc6Y51ViNDhy7F8xf1pWBMxyBrL9HLvkSsG.tar.zst
-│   ├── stake-account-keypair.json
-│   ├── tower-1_9-BGEbyBiPNd1rkA4ZhKNY7GmvJwEQBzkXV4oGRr2MUxdj.bin
-│   ├── validator-1756764692967.log
-│   ├── validator-keypair.json
-│   ├── validator.log -> validator-1756764692967.log
-│   └── vote-account-keypair.json
-├── tests
-│   ├── governance.ts
-│   └── staking.ts
-└── tsconfig.json
-
-183 directories, 25 files
-ome@CodingMachine:~/Projects/Collabs/V2/Freelance-DAO/smart_contract/freelance_dao$ tree programs -L 5
-programs
-├── disputes
-│   ├── Cargo.toml
-│   └── src
-│       ├── error.rs
-│       ├── events.rs
-│       ├── instructions
-│       │   ├── dispute.txt
-│       │   ├── execute_judgment.rs
-│       │   ├── finalize_judgment.rs
-│       │   ├── form_panel.rs
-│       │   ├── init_counter.rs
-│       │   ├── mod.rs
-│       │   ├── open_dispute.rs
-│       │   └── panel_vote.rs
-│       ├── lib.rs
-│       └── state
-│           ├── counter.rs
-│           ├── dispute.rs
-│           ├── mod.rs
-│           ├── panel.rs
-│           └── panel_vote.rs
-├── governance
-│   ├── Cargo.toml
-│   ├── Xargo.toml
-│   └── src
-│       ├── errors.rs
-│       ├── events.rs
-│       ├── instructions
-│       │   ├── admin.rs
-│       │   ├── execution.rs
-│       │   ├── init.rs
-│       │   ├── membership.rs
-│       │   ├── mod.rs
-│       │   ├── proposals.rs
-│       │   ├── treasury.rs
-│       │   └── voting.rs
-│       ├── lib.rs
-│       ├── state.rs
-│       └── state_accounts.rs
-└── staking
-    ├── Cargo.toml
-    └── src
-        ├── constants.rs
-        ├── errors.rs
-        ├── events.rs
-        ├── instructions
-        │   ├── admin.rs
-        │   ├── init.rs
-        │   ├── mod.rs
-        │   ├── rewards.rs
-        │   ├── staking.rs
-        │   ├── staking.txt
-        │   └── utils.rs
-        ├── lib.rs
-        ├── math.rs
-        ├── state.rs
-        ├── state_accounts.rs
-        └── utils.rs
-
-11 directories, 48 files
-ome@CodingMachine:~/Projects/Collabs/V2/Freelance-DAO/smart_contract/freelance_dao$ 
-
-
-execute_judgment
-use anchor_lang::prelude::*;
+//disputes smart contract
+//instructions folder
+//execute_judgment.rs
 use crate::error::DisputeError;
 use crate::events::DisputeExecuted;
-use crate::state::{Dispute, DisputeState};
+use crate::state::{AdminConfig, Dispute, DisputeState};
+use anchor_lang::prelude::*;
+
+// ADD THESE IMPORTS
+use anchor_lang::solana_program::program::invoke_signed;
 
 #[derive(Accounts)]
 pub struct ExecuteJudgment<'info> {
     #[account(mut)]
     pub executor: Signer<'info>,
-    
+
+    #[account(
+        seeds = [b"admin_config"],
+        bump = admin_config.bump,
+        constraint = admin_config.authority == executor.key() @ DisputeError::Unauthorized
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
     #[account(
         mut,
         constraint = dispute.state == DisputeState::Judged @ DisputeError::InvalidDisputeState,
         constraint = dispute.judgment.is_some() @ DisputeError::InvalidDisputeState
     )]
     pub dispute: Account<'info, Dispute>,
-    
-    /// CHECK: This is validated by the CPI call if linked_escrow exists
-    pub escrow_program: Option<UncheckedAccount<'info>>,
-    
-    /// CHECK: This is validated by the CPI call if linked_escrow exists  
-    pub escrow_account: Option<UncheckedAccount<'info>>,
+
+    // CHANGE FROM Option TO REQUIRED WHEN ESCROW EXISTS
+    /// CHECK: The escrow program - validated by the dispute's linked_escrow field
+    #[account(
+        constraint = escrow_program.key() == crate::ESCROW_PROGRAM_ID @ DisputeError::InvalidEscrowAccount
+    )]
+    pub escrow_program: UncheckedAccount<'info>,
+
+    /// CHECK: The escrow account - validated by CPI call
+    #[account(
+        mut,
+        constraint = escrow_account.owner == &escrow_program.key() @ DisputeError::InvalidEscrowAccount,
+    )]
+    pub escrow_account: UncheckedAccount<'info>,
+
+    // ADD THESE ACCOUNTS FOR ESCROW CPI
+    /// CHECK: Client account to receive funds
+    #[account(mut)]
+    pub client: UncheckedAccount<'info>,
+
+    /// CHECK: Freelancer account to receive funds
+    #[account(mut)]
+    pub freelancer: UncheckedAccount<'info>,
+
+    /// CHECK: Vault holding the escrowed funds
+    #[account(mut)]
+    pub vault: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+    // ADD IF YOUR ESCROW USES SPL TOKENS
+    // pub token_program: Program<'info, Token>,
 }
 
 pub fn handler(ctx: Context<ExecuteJudgment>) -> Result<()> {
     let dispute = &mut ctx.accounts.dispute;
     let clock = Clock::get()?;
-    
-    // Clone the judgment choice before mutating dispute
+
+    // REENTRANCY GUARD: Change state BEFORE any CPI calls
     let judgment_choice = dispute.judgment.as_ref().unwrap().choice.clone();
     let linked_escrow = dispute.linked_escrow;
-    
-    // Optional CPI to escrow program would go here
-    if let Some(escrow_key) = linked_escrow {
-        msg!("Executing judgment for escrow: {}", escrow_key);
-        // CPI call to escrow program would be implemented here
-    }
-    
+
     dispute.state = DisputeState::Executed;
-    
+
+    // REPLACE THE TODO WITH ACTUAL CPI
+    if let Some(escrow_key) = linked_escrow {
+        // Validate the escrow account matches
+        require!(
+            ctx.accounts.escrow_account.key() == escrow_key,
+            DisputeError::InvalidEscrowAccount
+        );
+
+        msg!("Executing judgment for escrow: {}", escrow_key);
+
+        // Create the dispute PDA seeds for signing
+        let dispute_seeds = &[b"dispute", &dispute.id.to_le_bytes()[..], &[dispute.bump]];
+        let signer_seeds = &[&dispute_seeds[..]];
+
+        // Build the CPI instruction based on your escrow program's interface
+        // ADJUST THIS BASED ON YOUR ACTUAL ESCROW PROGRAM INSTRUCTIONS
+        match judgment_choice {
+            crate::state::JudgmentChoice::Client => {
+                // Release 100% to client
+                let ix = anchor_lang::solana_program::instruction::Instruction {
+                    program_id: ctx.accounts.escrow_program.key(),
+                    accounts: vec![
+                        AccountMeta::new(ctx.accounts.escrow_account.key(), false),
+                        AccountMeta::new(ctx.accounts.client.key(), false),
+                        AccountMeta::new(ctx.accounts.vault.key(), false),
+                        AccountMeta::new_readonly(dispute.key(), true), // Dispute as authority
+                        AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
+                    ],
+                    data: vec![0], // Your escrow instruction discriminator for "release_to_client"
+                };
+
+                invoke_signed(
+                    &ix,
+                    &[
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.client.to_account_info(),
+                        ctx.accounts.vault.to_account_info(),
+                        dispute.to_account_info(),
+                        ctx.accounts.system_program.to_account_info(),
+                    ],
+                    signer_seeds,
+                )?;
+            }
+            crate::state::JudgmentChoice::Freelancer => {
+                // Release 100% to freelancer
+                let ix = anchor_lang::solana_program::instruction::Instruction {
+                    program_id: ctx.accounts.escrow_program.key(),
+                    accounts: vec![
+                        AccountMeta::new(ctx.accounts.escrow_account.key(), false),
+                        AccountMeta::new(ctx.accounts.freelancer.key(), false),
+                        AccountMeta::new(ctx.accounts.vault.key(), false),
+                        AccountMeta::new_readonly(dispute.key(), true),
+                        AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
+                    ],
+                    data: vec![1], // Your escrow instruction discriminator for "release_to_freelancer"
+                };
+
+                invoke_signed(
+                    &ix,
+                    &[
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.freelancer.to_account_info(),
+                        ctx.accounts.vault.to_account_info(),
+                        dispute.to_account_info(),
+                        ctx.accounts.system_program.to_account_info(),
+                    ],
+                    signer_seeds,
+                )?;
+            }
+            crate::state::JudgmentChoice::Split(percentage) => {
+                // Split based on percentage
+                require!(percentage <= 100, DisputeError::InvalidJudgmentChoice);
+
+                // Encode percentage as instruction data
+                let mut data = vec![2]; // Discriminator for "split_release"
+                data.extend_from_slice(&percentage.to_le_bytes());
+
+                let ix = anchor_lang::solana_program::instruction::Instruction {
+                    program_id: ctx.accounts.escrow_program.key(),
+                    accounts: vec![
+                        AccountMeta::new(ctx.accounts.escrow_account.key(), false),
+                        AccountMeta::new(ctx.accounts.client.key(), false),
+                        AccountMeta::new(ctx.accounts.freelancer.key(), false),
+                        AccountMeta::new(ctx.accounts.vault.key(), false),
+                        AccountMeta::new_readonly(dispute.key(), true),
+                        AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
+                    ],
+                    data,
+                };
+
+                invoke_signed(
+                    &ix,
+                    &[
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.client.to_account_info(),
+                        ctx.accounts.freelancer.to_account_info(),
+                        ctx.accounts.vault.to_account_info(),
+                        dispute.to_account_info(),
+                        ctx.accounts.system_program.to_account_info(),
+                    ],
+                    signer_seeds,
+                )?;
+            }
+        }
+    }
+
     emit!(DisputeExecuted {
         dispute_id: dispute.id,
         judgment: judgment_choice,
         linked_escrow,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
-
-finalize_judgment
-// instructions/finalize_judgment.rs
-use anchor_lang::prelude::*;
+//finalize_judgment.rs
 use crate::error::DisputeError;
 use crate::events::DisputeJudged;
-use crate::state::{Dispute, DisputePanel, DisputeState, Judgment, JudgmentChoice};
+use crate::state::{
+    AdminConfig, Dispute, DisputePanel, DisputeState, Judgment, JudgmentChoice, PanelVoteRecord,
+};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct FinalizeJudgment<'info> {
     #[account(mut)]
     pub finalizer: Signer<'info>,
-    
+
+    #[account(
+        seeds = [b"admin_config"],
+        bump = admin_config.bump,
+        constraint = admin_config.authority == finalizer.key() @ DisputeError::Unauthorized
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
     #[account(
         mut,
-        constraint = dispute.state == DisputeState::PanelFormed || dispute.state == DisputeState::Deliberating @ DisputeError::InvalidDisputeState
+        constraint = dispute.state == DisputeState::PanelFormed || dispute.state == DisputeState::Deliberating @ DisputeError::InvalidDisputeState,
+        constraint = dispute.judgment.is_none() @ DisputeError::JudgmentAlreadyFinalized
     )]
     pub dispute: Account<'info, Dispute>,
-    
+
     #[account(
         seeds = [b"panel", &dispute.id.to_le_bytes()[..]],
         bump = panel.bump
@@ -351,26 +220,105 @@ pub struct FinalizeJudgment<'info> {
     pub panel: Account<'info, DisputePanel>,
 }
 
-pub fn handler(ctx: Context<FinalizeJudgment>) -> Result<()> {
+pub fn handler<'info>(ctx: Context<'_, '_, 'info, 'info, FinalizeJudgment<'info>>) -> Result<()> {
     let dispute = &mut ctx.accounts.dispute;
     let panel = &ctx.accounts.panel;
     let clock = Clock::get()?;
-    
+
+    // Check panel hasn't expired
+    require!(
+        clock.unix_timestamp < panel.expires_at,
+        DisputeError::DisputeExpired
+    );
+
+    // Check quorum reached
     require!(
         panel.total_votes_cast >= dispute.required_quorum,
         DisputeError::QuorumNotReached
     );
-    
-    // TODO: Implement proper vote tallying by iterating through PanelVoteRecord accounts
-    // For now, using a placeholder - in production you'd need to pass vote records as remaining accounts
-    let winning_choice = JudgmentChoice::Client;
-    
+
+    // Tally votes from remaining accounts
+    let mut client_votes: u32 = 0;
+    let mut freelancer_votes: u32 = 0;
+    let mut split_votes: u32 = 0;
+    let mut total_weighted: u32 = 0;
+
+    // Iterate through remaining accounts (vote records)
+    for account_info in ctx.remaining_accounts.iter() {
+        // Deserialize vote record
+        let vote_record: Account<PanelVoteRecord> = Account::try_from(account_info)?;
+
+        // Validate this vote belongs to this dispute
+        require!(
+            vote_record.dispute_id == dispute.id,
+            DisputeError::InvalidVoteRecord
+        );
+
+        // Validate voter is panel member
+        require!(
+            panel.is_member(&vote_record.voter),
+            DisputeError::NotPanelMember
+        );
+
+        // UPDATED SECTION: Enhanced overflow protection
+        let weight = vote_record.weight as u32;
+
+        // Add overflow check before adding
+        let new_total = total_weighted
+            .checked_add(weight)
+            .ok_or(DisputeError::ArithmeticOverflow)?;
+
+        // Also check against expected maximum to prevent vote stuffing
+        require!(
+            new_total <= panel.weighted_votes_cast,
+            DisputeError::VoteMismatch
+        );
+
+        total_weighted = new_total;
+
+        match vote_record.choice {
+            JudgmentChoice::Client => {
+                client_votes = client_votes
+                    .checked_add(weight)
+                    .ok_or(DisputeError::ArithmeticOverflow)?;
+            }
+            JudgmentChoice::Freelancer => {
+                freelancer_votes = freelancer_votes
+                    .checked_add(weight)
+                    .ok_or(DisputeError::ArithmeticOverflow)?;
+            }
+            JudgmentChoice::Split(_) => {
+                split_votes = split_votes
+                    .checked_add(weight)
+                    .ok_or(DisputeError::ArithmeticOverflow)?;
+            }
+        }
+    }
+
+    // Verify vote count matches panel records exactly
+    require!(
+        total_weighted == panel.weighted_votes_cast,
+        DisputeError::VoteMismatch
+    );
+
+    // Determine winner (simple majority)
+    let winning_choice = if client_votes > freelancer_votes && client_votes > split_votes {
+        JudgmentChoice::Client
+    } else if freelancer_votes > client_votes && freelancer_votes > split_votes {
+        JudgmentChoice::Freelancer
+    } else if split_votes > client_votes && split_votes > freelancer_votes {
+        JudgmentChoice::Split(50) // Default 50-50 split
+    } else {
+        // Tie-breaker: favor split
+        JudgmentChoice::Split(50)
+    };
+
     dispute.judgment = Some(Judgment {
         choice: winning_choice.clone(),
         finalized_at: clock.unix_timestamp,
     });
     dispute.state = DisputeState::Judged;
-    
+
     emit!(DisputeJudged {
         dispute_id: dispute.id,
         judgment: winning_choice,
@@ -378,28 +326,97 @@ pub fn handler(ctx: Context<FinalizeJudgment>) -> Result<()> {
         weighted_votes: panel.weighted_votes_cast,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
-form_panel
-// instructions/form_panel.rs
+//cancel_dispute.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
+use crate::events::DisputeCanceled;
+use crate::state::{AdminConfig, Dispute, DisputeState};
+
+#[derive(Accounts)]
+pub struct CancelDispute<'info> {
+    #[account(mut)]
+    pub canceler: Signer<'info>,
+
+    #[account(
+        seeds = [b"admin_config"],
+        bump = admin_config.bump
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
+    #[account(
+        mut,
+        constraint = dispute.state == DisputeState::Pending 
+            || dispute.state == DisputeState::PanelFormed 
+            || dispute.state == DisputeState::Deliberating 
+            @ DisputeError::CannotCancel
+    )]
+    pub dispute: Account<'info, Dispute>,
+}
+
+pub fn handler(ctx: Context<CancelDispute>) -> Result<()> {
+    let dispute = &mut ctx.accounts.dispute;
+    let canceler = ctx.accounts.canceler.key();
+    let clock = Clock::get()?;
+
+    // Authorization: Either dispute opener or admin can cancel
+    let is_opener = dispute.opened_by == canceler;
+    let is_admin = ctx.accounts.admin_config.authority == canceler;
+    
+    require!(
+        is_opener || is_admin,
+        DisputeError::UnauthorizedCancel
+    );
+
+    // Additional restriction: opener can only cancel before judgment
+    if is_opener && !is_admin {
+        require!(
+            dispute.state != DisputeState::Judged && dispute.state != DisputeState::Executed,
+            DisputeError::CannotCancel
+        );
+    }
+
+    let previous_state = dispute.state.clone();
+    dispute.state = DisputeState::Canceled;
+
+    emit!(DisputeCanceled {
+        dispute_id: dispute.id,
+        canceled_by: canceler,
+        previous_state,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+//form_panel.rs
+use crate::error::DisputeError;
 use crate::events::PanelFormed;
-use crate::state::{Dispute, DisputePanel, DisputeState};
+use crate::state::{AdminConfig, Dispute, DisputePanel, DisputeState};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct FormPanel<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>, // In production, this should be a proper admin/multisig
-    
+    pub admin: Signer<'info>,
+
+    #[account(
+        seeds = [b"admin_config"],
+        bump = admin_config.bump,
+        constraint = admin_config.authority == admin.key() @ DisputeError::Unauthorized
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
     #[account(
         mut,
-        constraint = dispute.state == DisputeState::Pending @ DisputeError::InvalidDisputeState
+        constraint = dispute.state == DisputeState::Pending @ DisputeError::InvalidDisputeState,
+        constraint = dispute.panel_size == 0 @ DisputeError::PanelAlreadyFormed
     )]
     pub dispute: Account<'info, Dispute>,
-    
+
     #[account(
         init,
         payer = admin,
@@ -408,7 +425,7 @@ pub struct FormPanel<'info> {
         bump
     )]
     pub panel: Account<'info, DisputePanel>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -419,20 +436,42 @@ pub fn handler(
     required_quorum: u16,
 ) -> Result<()> {
     require!(!members.is_empty(), DisputeError::InvalidPanelSize);
-    require!(members.len() <= DisputePanel::MAX_PANEL_SIZE, DisputeError::InvalidPanelSize);
+    require!(
+        members.len() <= DisputePanel::MAX_PANEL_SIZE,
+        DisputeError::InvalidPanelSize
+    );
     require!(required_quorum > 0, DisputeError::InvalidPanelSize);
-    require!(required_quorum <= members.len() as u16, DisputeError::InvalidPanelSize);
-    
+    require!(
+        required_quorum <= members.len() as u16,
+        DisputeError::InvalidPanelSize
+    );
+
+    // Validate no duplicate members
+    let mut unique_members = members.clone();
+    unique_members.sort();
+    unique_members.dedup();
+    require!(
+        unique_members.len() == members.len(),
+        DisputeError::DuplicatePanelMembers
+    );
+
     let dispute = &mut ctx.accounts.dispute;
     let panel = &mut ctx.accounts.panel;
     let clock = Clock::get()?;
-    
-    // Set panel expiry (e.g., 14 days from now)
-    let expires_at = clock.unix_timestamp + (14 * 24 * 60 * 60); // 14 days
-    
-    // Initialize weights (equal voting power for now)
+
+    let expires_at = clock
+        .unix_timestamp
+        .checked_add(14 * 24 * 60 * 60)
+        .ok_or(DisputeError::ArithmeticOverflow)?;
+
     let weights = vec![1u16; members.len()];
-    
+
+    let total_weight: u32 = weights.iter().map(|&w| w as u32).sum();
+    require!(
+        total_weight > 0 && total_weight <= u32::MAX,
+        DisputeError::InvalidPanelWeights
+    );
+
     panel.dispute_id = dispute.id;
     panel.members = members.clone();
     panel.weights = weights;
@@ -441,12 +480,11 @@ pub fn handler(
     panel.total_votes_cast = 0;
     panel.weighted_votes_cast = 0;
     panel.bump = ctx.bumps.panel;
-    
-    // Update dispute state
+
     dispute.state = DisputeState::PanelFormed;
     dispute.panel_size = members.len() as u16;
     dispute.required_quorum = required_quorum;
-    
+
     emit!(PanelFormed {
         dispute_id: dispute.id,
         members,
@@ -454,19 +492,29 @@ pub fn handler(
         required_quorum,
         expires_at,
     });
-    
+
     Ok(())
 }
 
-// instructions/init_counter.rs
+
+//init_counter.rs
+use crate::state::{AdminConfig, DisputeCounter};
 use anchor_lang::prelude::*;
-use crate::state::DisputeCounter;
 
 #[derive(Accounts)]
 pub struct InitCounter<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    
+
+    #[account(
+        init,
+        payer = admin,
+        space = AdminConfig::SPACE,
+        seeds = [b"admin_config"],
+        bump
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+
     #[account(
         init,
         payer = admin,
@@ -475,7 +523,7 @@ pub struct InitCounter<'info> {
         bump
     )]
     pub counter: Account<'info, DisputeCounter>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -483,26 +531,32 @@ pub fn handler(ctx: Context<InitCounter>) -> Result<()> {
     let counter = &mut ctx.accounts.counter;
     counter.count = 0;
     counter.bump = ctx.bumps.counter;
+
+    let admin_config = &mut ctx.accounts.admin_config;
+    admin_config.authority = ctx.accounts.admin.key();
+    admin_config.bump = ctx.bumps.admin_config;
+
     Ok(())
 }
 
-mod.rs
+//mod.rs
+pub mod cancel_dispute;
+pub mod execute_judgment;
+pub mod finalize_judgment;
+pub mod form_panel;
 pub mod init_counter;
 pub mod open_dispute;
-pub mod form_panel;
-pub mod panel_vote;
-pub mod finalize_judgment;
-pub mod execute_judgment;
+pub mod panel_vote; // ADD THIS
 
-// Export all the account structs that the #[program] macro needs
-pub use init_counter::InitCounter;
-pub use open_dispute::OpenDispute;
-pub use form_panel::FormPanel;
-pub use panel_vote::PanelVote;
-pub use finalize_judgment::FinalizeJudgment;
-pub use execute_judgment::ExecuteJudgment;
+pub use cancel_dispute::*;
+pub use execute_judgment::*;
+pub use finalize_judgment::*;
+pub use form_panel::*;
+pub use init_counter::*;
+pub use open_dispute::*;
+pub use panel_vote::*; // ADD THIS
 
-// instructions/open_dispute.rs
+//open_dispute.rs
 use anchor_lang::prelude::*;
 use crate::error::DisputeError;
 use crate::events::DisputeOpened;
@@ -574,22 +628,25 @@ pub fn handler(
     Ok(())
 }
 
-// instructions/panel_vote.rs
-use anchor_lang::prelude::*;
+
+//panel_vote.rs
 use crate::error::DisputeError;
 use crate::events::PanelVoteCast;
 use crate::state::{Dispute, DisputePanel, DisputeState, JudgmentChoice, PanelVoteRecord};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct PanelVote<'info> {
     #[account(mut)]
     pub voter: Signer<'info>,
-    
+
+    // ADD mut TO DISPUTE SO WE CAN UPDATE STATE
     #[account(
+        mut,  // <-- ADD THIS
         constraint = dispute.state == DisputeState::PanelFormed || dispute.state == DisputeState::Deliberating @ DisputeError::InvalidDisputeState
     )]
     pub dispute: Account<'info, Dispute>,
-    
+
     #[account(
         mut,
         seeds = [b"panel", &dispute.id.to_le_bytes()[..]],
@@ -597,7 +654,7 @@ pub struct PanelVote<'info> {
         constraint = panel.is_member(&voter.key()) @ DisputeError::NotPanelMember
     )]
     pub panel: Account<'info, DisputePanel>,
-    
+
     #[account(
         init,
         payer = voter,
@@ -606,27 +663,33 @@ pub struct PanelVote<'info> {
         bump
     )]
     pub vote_record: Account<'info, PanelVoteRecord>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(
-    ctx: Context<PanelVote>,
-    choice: JudgmentChoice,
-) -> Result<()> {
-    let dispute = &ctx.accounts.dispute;
+pub fn handler(ctx: Context<PanelVote>, choice: JudgmentChoice) -> Result<()> {
+    let dispute = &mut ctx.accounts.dispute; // Now mutable
     let panel = &mut ctx.accounts.panel;
     let vote_record = &mut ctx.accounts.vote_record;
     let clock = Clock::get()?;
-    
+
     // Check if panel has expired
-    require!(clock.unix_timestamp < panel.expires_at, DisputeError::DisputeExpired);
-    
+    require!(
+        clock.unix_timestamp < panel.expires_at,
+        DisputeError::DisputeExpired
+    );
+
+    // ADD THIS: Transition to Deliberating on first vote
+    if dispute.state == DisputeState::PanelFormed {
+        dispute.state = DisputeState::Deliberating;
+        msg!("Dispute {} entered deliberation phase", dispute.id);
+    }
+
     // Get voter's weight
     let voter_weight = panel
         .get_member_weight(&ctx.accounts.voter.key())
         .ok_or(DisputeError::NotPanelMember)?;
-    
+
     // Initialize vote record
     vote_record.dispute_id = dispute.id;
     vote_record.voter = ctx.accounts.voter.key();
@@ -634,11 +697,11 @@ pub fn handler(
     vote_record.weight = voter_weight;
     vote_record.voted_at = clock.unix_timestamp;
     vote_record.bump = ctx.bumps.vote_record;
-    
+
     // Update panel vote counts
     panel.total_votes_cast += 1;
     panel.weighted_votes_cast += voter_weight as u32;
-    
+
     emit!(PanelVoteCast {
         dispute_id: dispute.id,
         voter: ctx.accounts.voter.key(),
@@ -646,11 +709,25 @@ pub fn handler(
         weight: voter_weight,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
-// state/counter.rs
+//in state folder 
+//admin_config.rs 
+use anchor_lang::prelude::*;
+
+#[account]
+pub struct AdminConfig {
+    pub authority: Pubkey,
+    pub bump: u8,
+}
+
+impl AdminConfig {
+    pub const SPACE: usize = 8 + 32 + 1 + 8; // discriminator + authority + bump + padding
+}
+
+//counter.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -667,7 +744,7 @@ impl DisputeCounter {
     }
 }
 
-state/dispute.rs
+//dispute.rs
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
@@ -730,19 +807,22 @@ impl Dispute {
 }
 
 
-mod.rs
+//mod.rs
+// state/mod.rs - Add this to exports
+pub mod admin_config;
+pub mod counter;
 pub mod dispute;
 pub mod panel;
-pub mod panel_vote;
-pub mod counter;
+pub mod panel_vote; // ← NEW
 
+pub use admin_config::*;
+pub use counter::*;
 pub use dispute::*;
 pub use panel::*;
-pub use panel_vote::*;
-pub use counter::*;
+pub use panel_vote::*; // ← NEW
 
 
-panel_vote
+//panel_vote.rs
 use anchor_lang::prelude::*;
 use super::JudgmentChoice;
 
@@ -769,8 +849,7 @@ impl PanelVoteRecord {
     }
 }
 
-
-panel
+//panel.rs
 use anchor_lang::prelude::*;
 
 #[account]
@@ -814,53 +893,83 @@ impl DisputePanel {
 }
 
 
-error.rs
-
+//error.rs
 use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum DisputeError {
     #[msg("Invalid dispute state for this operation")]
     InvalidDisputeState,
-    
+
     #[msg("Only panel members can vote")]
     NotPanelMember,
-    
+
     #[msg("Panel member has already voted")]
     AlreadyVoted,
-    
+
     #[msg("Dispute has expired")]
     DisputeExpired,
-    
+
     #[msg("Invalid panel size")]
     InvalidPanelSize,
-    
+
     #[msg("Quorum not reached")]
     QuorumNotReached,
-    
+
     #[msg("Invalid parties - must have at least 2")]
     InvalidParties,
-    
+
     #[msg("URI too long")]
     UriTooLong,
-    
+
     #[msg("Panel already formed")]
     PanelAlreadyFormed,
-    
+
     #[msg("Panel selection seed already used")]
     SeedAlreadyUsed,
-    
+
     #[msg("Invalid judgment choice")]
     InvalidJudgmentChoice,
-    
+
     #[msg("Judgment already executed")]
     JudgmentAlreadyExecuted,
+
+    #[msg("Unauthorized: Only admin can perform this action")]
+    Unauthorized,
+
+    #[msg("Duplicate panel members not allowed")]
+    DuplicatePanelMembers,
+
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
+
+    #[msg("Invalid vote record")]
+    InvalidVoteRecord,
+
+    #[msg("Vote count mismatch")]
+    VoteMismatch,
+
+    #[msg("Judgment already finalized")]
+    JudgmentAlreadyFinalized,
+
+    // ADD THESE NEW ERROR CODES
+    #[msg("Invalid escrow account provided")]
+    InvalidEscrowAccount,
+
+    #[msg("Cannot cancel dispute in current state")]
+    CannotCancel,
+
+    #[msg("Only dispute opener can cancel before panel formation")]
+    UnauthorizedCancel,
+
+    #[msg("Invalid panel weights")]
+    InvalidPanelWeights,
 }
 
-
-events.rs
-use anchor_lang::prelude::*;
+//events.rs
+use crate::state::DisputeState;
 use crate::state::JudgmentChoice;
+use anchor_lang::prelude::*; // ADD THIS IMPORT
 
 #[event]
 pub struct DisputeOpened {
@@ -906,8 +1015,17 @@ pub struct DisputeExecuted {
     pub timestamp: i64,
 }
 
+// ADD THIS NEW EVENT
+#[event]
+pub struct DisputeCanceled {
+    pub dispute_id: u64,
+    pub canceled_by: Pubkey,
+    pub previous_state: DisputeState,
+    pub timestamp: i64,
+}
 
-lib.rs
+
+//lib.rs
 use anchor_lang::prelude::*;
 
 pub mod error;
@@ -918,11 +1036,13 @@ pub mod state;
 use instructions::*;
 
 declare_id!("AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn");
+pub const ESCROW_PROGRAM_ID: Pubkey = pubkey!("5WWu5uNgBwop6etUhEpbVAt88M2RdDvz9vKHsyBE3rZg");
 
 #[program]
 pub mod disputes {
     use super::*;
 
+    /// Initialize the dispute counter and admin config (ONE TIME ONLY)
     pub fn init_counter(ctx: Context<InitCounter>) -> Result<()> {
         instructions::init_counter::handler(ctx)
     }
@@ -945,23 +1065,28 @@ pub mod disputes {
         instructions::form_panel::handler(ctx, members, selection_seed, required_quorum)
     }
 
-    pub fn cast_panel_vote(
-        ctx: Context<PanelVote>,
-        choice: state::JudgmentChoice,
-    ) -> Result<()> {
+    pub fn cast_panel_vote(ctx: Context<PanelVote>, choice: state::JudgmentChoice) -> Result<()> {
         instructions::panel_vote::handler(ctx, choice)
     }
 
-    pub fn finalize_judgment(ctx: Context<FinalizeJudgment>) -> Result<()> {
+    pub fn finalize_judgment<'info>(
+        ctx: Context<'_, '_, 'info, 'info, FinalizeJudgment<'info>>,
+    ) -> Result<()> {
         instructions::finalize_judgment::handler(ctx)
     }
 
     pub fn execute_judgment(ctx: Context<ExecuteJudgment>) -> Result<()> {
         instructions::execute_judgment::handler(ctx)
     }
+
+    // ADD THIS NEW INSTRUCTION
+    pub fn cancel_dispute(ctx: Context<CancelDispute>) -> Result<()> {
+        instructions::cancel_dispute::handler(ctx)
+    }
 }
 
-cargo.toml
+
+//cargo.toml
 [package]
 name = "disputes"
 version = "0.1.0"
@@ -973,6 +1098,7 @@ crate-type = ["cdylib", "lib"]
 name = "disputes"
 
 [features]
+anchor-debug = []
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
@@ -982,32 +1108,3 @@ idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
 anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
-
-
-[toolchain]
-anchor_version = "0.31.1"
-package_manager = "npm"
-
-[features]
-resolution = true
-skip-lint = false
-
-[programs.localnet]
-governance = "GgkLgFNYnDsCo4w9NKZrjMnhjaJ5F3XjNTMfvGjaxgFf"
-staking = "DFv6N5EiAueb7xcntYB3ZL49dFbAmgimXsfgwobZpfv9"
-disputes = "AdQN2jzFXvBSmfhwAdKtjouacDKGvMqMnPAayxfmsTYn"
-
-[registry]
-url = "https://api.apr.dev"
-
-[provider]
-cluster = "localnet"
-wallet = "~/.config/solana/id.json"
-
-[scripts]
-test = "npx mocha -t 1000000 --require ts-node/register tests/**/*.ts"
-
-[test]
-startup_wait = 5000
-shutdown_wait = 2000
-upgradeable = false

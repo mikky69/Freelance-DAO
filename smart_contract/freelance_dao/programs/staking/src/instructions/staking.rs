@@ -1,15 +1,19 @@
-use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use crate::state_accounts::{StakePool, StakePosition};
 use crate::errors::StakingError;
 use crate::events::{Staked, Unstaked};
+use crate::state_accounts::{StakePool, StakePosition};
 use crate::utils::update_position_points;
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct Stake<'info> {
     #[account(mut)]
     pub pool: Account<'info, StakePool>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault.key() == pool.vault @ StakingError::InvalidVault,
+        constraint = vault.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub vault: Account<'info, TokenAccount>,
     #[account(
         init_if_needed,
@@ -21,29 +25,27 @@ pub struct Stake<'info> {
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
     pub staker: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = staker_token_account.owner == staker.key() @ StakingError::Unauthorized,
+        constraint = staker_token_account.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub staker_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
-// programs/staking/src/instructions/staking.rs (stake function only)
 pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
-    if pool.paused {
-        return Err(StakingError::PoolPaused.into());
-    }
-    
-    if amount == 0 {
-        return Err(StakingError::AmountTooSmall.into());
-    }
-    
+
+    require!(!pool.paused, StakingError::PoolPaused);
+    require!(amount > 0, StakingError::AmountTooSmall);
+
     // Update points before changing stake amount
     update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     // Initialize position if first stake
     if position.staker == Pubkey::default() {
         position.staker = ctx.accounts.staker.key();
@@ -52,9 +54,25 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         position.accum_points = 0;
         position.created_at = clock.unix_timestamp;
         position.last_update_ts = clock.unix_timestamp;
-        position.bump = ctx.bumps.position; // Use ctx.bumps directly
+        position.bump = ctx.bumps.position;
     }
-    
+
+    // ADD THIS CHECK:
+    let new_amount = position
+        .amount
+        .checked_add(amount)
+        .ok_or(StakingError::MathOverflow)?;
+
+    require!(
+        new_amount <= pool.max_stake_per_user,
+        StakingError::StakeLimitExceeded
+    );
+
+    require!(
+        ctx.accounts.staker_token_account.amount >= amount,
+        StakingError::InsufficientStaked
+    );
+
     // Transfer tokens to vault
     token::transfer(
         CpiContext::new(
@@ -67,16 +85,15 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         ),
         amount,
     )?;
-    
+
     // Update amounts
-    position.amount = position.amount
+    position.amount = new_amount; // CHANGE THIS LINE
+
+    pool.total_staked = pool
+        .total_staked
         .checked_add(amount)
         .ok_or(StakingError::MathOverflow)?;
-        
-    pool.total_staked = pool.total_staked
-        .checked_add(amount)
-        .ok_or(StakingError::MathOverflow)?;
-    
+
     emit!(Staked {
         pool: pool.key(),
         staker: position.staker,
@@ -84,7 +101,7 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
         new_total: position.amount,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -92,7 +109,11 @@ pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
 pub struct Unstake<'info> {
     #[account(mut)]
     pub pool: Account<'info, StakePool>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault.key() == pool.vault @ StakingError::InvalidVault,
+        constraint = vault.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
@@ -102,7 +123,11 @@ pub struct Unstake<'info> {
     pub position: Account<'info, StakePosition>,
     #[account(mut)]
     pub staker: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = staker_token_account.owner == staker.key() @ StakingError::Unauthorized,
+        constraint = staker_token_account.mint == pool.mint @ StakingError::InvalidMint
+    )]
     pub staker_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }
@@ -111,25 +136,20 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
-    if amount == 0 {
-        return Err(StakingError::AmountTooSmall.into());
-    }
-    
-    if position.amount < amount {
-        return Err(StakingError::InsufficientStaked.into());
-    }
-    
+
+    // NOTE: Intentionally allowing unstake even when pool is paused
+    // This ensures users can always withdraw their funds
+    // Only staking is blocked when paused
+
+    require!(amount > 0, StakingError::AmountTooSmall);
+    require!(position.amount >= amount, StakingError::InsufficientStaked);
+
     // Update points before changing stake amount
     update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     // Transfer tokens back to user
-    let pool_seeds = &[
-        b"pool",
-        pool.mint.as_ref(),
-        &[pool.bump],
-    ];
-    
+    let pool_seeds = &[b"pool", pool.mint.as_ref(), &[pool.bump]];
+
     token::transfer(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -142,16 +162,18 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         ),
         amount,
     )?;
-    
+
     // Update amounts
-    position.amount = position.amount
+    position.amount = position
+        .amount
         .checked_sub(amount)
         .ok_or(StakingError::MathOverflow)?;
-        
-    pool.total_staked = pool.total_staked
+
+    pool.total_staked = pool
+        .total_staked
         .checked_sub(amount)
         .ok_or(StakingError::MathOverflow)?;
-    
+
     emit!(Unstaked {
         pool: pool.key(),
         staker: position.staker,
@@ -159,12 +181,13 @@ pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         remaining: position.amount,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct SyncPosition<'info> {
+    #[account(mut)]
     pub pool: Account<'info, StakePool>,
     #[account(
         mut,
@@ -176,12 +199,12 @@ pub struct SyncPosition<'info> {
 }
 
 pub fn sync_position(ctx: Context<SyncPosition>) -> Result<()> {
-    let pool = &ctx.accounts.pool;
+    let pool = &mut ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
     let clock = Clock::get()?;
-    
+
     let points_earned = update_position_points(position, pool, clock.unix_timestamp)?;
-    
+
     if points_earned > 0 {
         emit!(crate::events::PointsAccrued {
             pool: pool.key(),
@@ -191,6 +214,6 @@ pub fn sync_position(ctx: Context<SyncPosition>) -> Result<()> {
             timestamp: clock.unix_timestamp,
         });
     }
-    
+
     Ok(())
 }
