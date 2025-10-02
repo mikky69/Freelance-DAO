@@ -109,7 +109,7 @@ function Footer() {
               height={24}
               className="rounded opacity-75"
             />
-            <p>&copy; 2024 FreeLanceDAO. All rights reserved.</p>
+            <p>&copy; 2025 FreeLanceDAO. All rights reserved.</p>
           </div>
         </div>
       </div>
