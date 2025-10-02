@@ -8,92 +8,123 @@ import { TopNavigation, BottomNavigation } from "@/components/navigation"
 import { AuthProvider } from "@/lib/auth-context"
 import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
+import { Twitter, BookText } from "lucide-react";
 import Image from "next/image"
 import RainbowkitHederaProvider from "@/RainbowkitHederaProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
-function Footer() {
+
+export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-slate-900 text-white py-12 mt-0">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8">
+    <footer className="bg-gradient-to-b from-[#1D0225] via-[#2A0632] to-[#1D0225] text-white py-16 mt-0 relative">
+      <div className="container mx-auto px-6">
+        <div className="grid gap-10 md:grid-cols-4">
+          {/* Brand Section */}
           <div>
-            <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center space-x-3 mb-5">
               <Image
                 src="/images/freelancedao-logo.png"
                 alt="FreeLanceDAO"
-                width={40}
-                height={40}
-                className="rounded-lg shadow-lg"
+                width={42}
+                height={42}
+                className="rounded-lg shadow-md"
               />
               <div>
-                <span className="text-xl font-bold">FreeLanceDAO</span>
-                <div className="text-xs text-slate-400">Decentralized Freelancing</div>
+                <span className="text-xl font-bold tracking-wide">FreeLanceDAO</span>
+                <div className="text-xs text-slate-400">
+                  Decentralized Freelancing
+                </div>
               </div>
             </div>
-            <p className="text-slate-400 leading-relaxed">
-              The decentralized freelance platform combining Web2 usability with Web3 security.
+            <p className="text-slate-400 leading-relaxed text-sm">
+              The decentralized freelance platform combining Web2 usability with
+              Web3 security. Join us in shaping the future of work.
             </p>
           </div>
 
+          {/* Platform Links */}
           <div>
-            <h4 className="font-semibold mb-4 flex items-center">Platform</h4>
+            <h4 className="font-semibold mb-4 text-lg">Platform</h4>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a href="/jobs" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/jobs"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Find Work
                 </a>
               </li>
               <li>
-                <a href="/freelancers" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/freelancers"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Find Talent
                 </a>
               </li>
               <li>
-                <a href="/post-job" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/post-job"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Post Job
                 </a>
               </li>
             </ul>
           </div>
 
+          {/* Community Links */}
           <div>
-            <h4 className="font-semibold mb-4">Community</h4>
+            <h4 className="font-semibold mb-4 text-lg">Community</h4>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a href="https://x.com/Freelance_DAO" className="hover:text-white transition-colors duration-200">
-                  Twitter/X
+                <a
+                  href="https://x.com/Freelance_DAO"
+                  className="flex items-center gap-2 hover:text-[#FA5F04] transition-colors duration-200"
+                >
+                  <Twitter className="w-4 h-4" /> Twitter/X
                 </a>
               </li>
+              
               <li>
-                <a href="https://discord.gg/pYyf2fkFZj" className="hover:text-white transition-colors duration-200">
-                  Discord
-                </a>
-              </li>
-              <li>
-                <a href="https://medium.com/@freelancedao" className="hover:text-white transition-colors duration-200">
-                  Medium
+                <a
+                  href="https://medium.com/@freelancedao"
+                  className="flex items-center gap-2 hover:text-[#FA5F04] transition-colors duration-200"
+                >
+                  <BookText className="w-4 h-4" /> Medium
                 </a>
               </li>
             </ul>
           </div>
 
+          {/* Governance Links */}
           <div>
-            <h4 className="font-semibold mb-4">Governance</h4>
+            <h4 className="font-semibold mb-4 text-lg">Governance</h4>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a href="/dao" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/dao"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Join DAO
                 </a>
               </li>
               <li>
-                <a href="/proposals" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/proposals"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Proposals
                 </a>
               </li>
               <li>
-                <a href="/governance" className="hover:text-white transition-colors duration-200">
+                <a
+                  href="/governance"
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
                   Governance
                 </a>
               </li>
@@ -101,21 +132,24 @@ function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-          <div className="flex items-center justify-center space-x-3">
+        {/* Footer Bottom */}
+        <div className="border-t border-white/10 mt-10 pt-6 text-center">
+          <div className="flex items-center justify-center gap-3">
             <Image
               src="/images/freelancedao-logo.png"
               alt="FreeLanceDAO"
               width={24}
               height={24}
-              className="rounded opacity-75"
+              className="rounded opacity-80"
             />
-            <p>&copy; 2025 FreeLanceDAO. All rights reserved.</p>
+            <p className="text-slate-400 text-sm">
+              &copy; {year} FreeLanceDAO. All rights reserved.
+            </p>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
 function ConditionalNavigation() {
