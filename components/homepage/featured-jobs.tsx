@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,6 +14,7 @@ import {
 	Users,
 } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export function FeaturedJobs() {
 	const jobs = [
@@ -45,103 +48,130 @@ export function FeaturedJobs() {
 	];
 
 	return (
-		<section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
-			<div className="container mx-auto px-4">
-				<div className="flex items-center justify-between mb-8">
-					<h2 className="text-3xl font-bold text-slate-800 text-shadow">
-						<TrendingUp className="w-8 h-8 inline mr-3 text-blue-500" />
+		<section className="relative py-20 bg-gradient-to-br from-[#1D0225] via-[#15011a] to-[#2b0340] overflow-hidden">
+			{/* Decorative background accents */}
+			<motion.div
+				className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-purple-600 opacity-30 blur-3xl"
+				animate={{ y: [0, 30, 0] }}
+				transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+			/>
+			<motion.div
+				className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-pink-500 opacity-20 blur-3xl"
+				animate={{ y: [0, -25, 0] }}
+				transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
+			/>
+
+			<div className="container mx-auto px-4 relative z-10">
+				{/* Header */}
+				<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10 space-y-4 md:space-y-0">
+					<h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2">
+						<TrendingUp className="w-8 h-8 text-[#FA5F04]" />
 						Featured Jobs
 					</h2>
 					<Link
 						href="/jobs"
-						className="text-blue-500 hover:text-blue-600 font-medium group transition-colors duration-200"
+						className="text-[#FA5F04] hover:text-[#FF7B47] font-medium group transition-all duration-300 flex items-center gap-1"
 					>
 						View All Jobs
-						<ArrowRight className="w-4 h-4 inline ml-1 group-hover:translate-x-1 transition-transform duration-200" />
+						<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
 					</Link>
 				</div>
 
-				<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{/* Jobs grid */}
+				<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 					{jobs.map((job, index) => (
-						<Link href="/jobs" key={index}>
-							<Card className="card-hover cursor-pointer glass-effect group relative overflow-hidden">
-								{job.urgent && (
-									<div className="absolute top-4 right-4">
-										<Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse shadow-lg">
-											<Clock className="w-3 h-3 mr-1" />
-											Urgent
-										</Badge>
-									</div>
-								)}
-								<div className="absolute top-4 left-4">
-									<Badge
-										className={`${
-											job.type === "AI Agent"
-												? "bg-purple-100 text-purple-700"
-												: job.type === "Human + AI"
-												? "bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700"
-												: "bg-green-100 text-green-700"
-										} shadow-sm`}
-									>
-										{job.type === "AI Agent" && (
-											<Bot className="w-3 h-3 mr-1" />
-										)}
-										{job.type === "Human + AI" && (
-											<Users className="w-3 h-3 mr-1" />
-										)}
-										{job.type === "Human" && <User className="w-3 h-3 mr-1" />}
-										{job.type}
-									</Badge>
-								</div>
-								<CardHeader className="pt-12">
-									<div className="flex items-start justify-between">
-										<CardTitle className="text-lg text-slate-800 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
-											{job.title}
-										</CardTitle>
-										<Badge
-											variant="secondary"
-											className="bg-gradient-to-r from-green-100 to-green-200 text-green-700 font-semibold shadow-sm ml-2"
-										>
-											<DollarSign className="w-3 h-3 mr-1" />
-											{job.budget}
-										</Badge>
-									</div>
-									<div className="flex items-center space-x-2 text-sm text-slate-600">
-										<Avatar className="w-6 h-6 ring-2 ring-blue-100">
-											<AvatarFallback className="text-xs bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold">
-												{job.client[0]}
-											</AvatarFallback>
-										</Avatar>
-										<span className="font-medium">{job.client}</span>
-										<div className="w-1 h-1 bg-slate-400 rounded-full" />
-										<div className="flex items-center">
-											<Star className="w-3 h-3 text-yellow-500 mr-1" />
-											<span>4.8</span>
-										</div>
-									</div>
-								</CardHeader>
-								<CardContent>
-									<div className="flex flex-wrap gap-2 mb-4">
-										{job.skills.map((skill, skillIndex) => (
-											<Badge
-												key={skillIndex}
-												variant="outline"
-												className="text-xs hover:bg-blue-50 transition-colors duration-200"
-											>
-												{skill}
+						<motion.div
+							key={index}
+							initial={{ opacity: 0, y: 40 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.6, delay: index * 0.2 }}
+							viewport={{ once: true }}
+						>
+							<Link href="/jobs">
+								<Card className="cursor-pointer group relative overflow-hidden border border-purple-500/20 hover:border-[#FA5F04] bg-white/5 backdrop-blur-md shadow-lg transition-all duration-300 hover:shadow-[#FA5F04]/30">
+									{/* Urgent Badge */}
+									{job.urgent && (
+										<div className="absolute top-4 right-4">
+											<Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse shadow-lg">
+												<Clock className="w-3 h-3 mr-1" />
+												Urgent
 											</Badge>
-										))}
-									</div>
-									<div className="flex items-center justify-between text-sm text-slate-500">
-										<span>{job.proposals} proposals</span>
-										<div className="flex items-center">
-											<Clock className="w-3 h-3 mr-1" />
-											<span>2 hours ago</span>
 										</div>
+									)}
+
+									{/* Job type badge */}
+									<div className="absolute top-4 left-4">
+										<Badge
+											className={`${
+												job.type === "AI Agent"
+													? "bg-purple-200 text-purple-700"
+													: job.type === "Human + AI"
+													? "bg-gradient-to-r from-blue-200 to-purple-200 text-blue-800"
+													: "bg-green-200 text-green-800"
+											} shadow-sm`}
+										>
+											{job.type === "AI Agent" && <Bot className="w-3 h-3 mr-1" />}
+											{job.type === "Human + AI" && (
+												<Users className="w-3 h-3 mr-1" />
+											)}
+											{job.type === "Human" && <User className="w-3 h-3 mr-1" />}
+											{job.type}
+										</Badge>
 									</div>
-								</CardContent>
-							</Card>
-						</Link>
+
+									<CardHeader className="pt-12">
+										<div className="flex items-start justify-between">
+											<CardTitle className="text-lg md:text-xl text-white line-clamp-2 group-hover:text-[#FA5F04] transition-colors duration-300">
+												{job.title}
+											</CardTitle>
+											<Badge className="bg-gradient-to-r from-green-200 to-green-300 text-green-800 font-semibold shadow-sm ml-2">
+												<DollarSign className="w-3 h-3 mr-1" />
+												{job.budget}
+											</Badge>
+										</div>
+
+										{/* Client info */}
+										<div className="flex items-center space-x-2 text-sm text-gray-300 mt-2">
+											<Avatar className="w-7 h-7 ring-2 ring-purple-200">
+												<AvatarFallback className="text-xs bg-gradient-to-r from-purple-200 to-purple-300 text-purple-800 font-semibold">
+													{job.client[0]}
+												</AvatarFallback>
+											</Avatar>
+											<span className="font-medium">{job.client}</span>
+											<div className="w-1 h-1 bg-gray-400 rounded-full" />
+											<div className="flex items-center">
+												<Star className="w-3 h-3 text-yellow-400 mr-1" />
+												<span>4.8</span>
+											</div>
+										</div>
+									</CardHeader>
+
+									<CardContent>
+										{/* Skills */}
+										<div className="flex flex-wrap gap-2 mb-4">
+											{job.skills.map((skill, skillIndex) => (
+												<Badge
+													key={skillIndex}
+													variant="outline"
+													className="text-xs text-gray-200 border-gray-500/30 hover:bg-[#FA5F04]/20 hover:text-[#FA5F04] transition-colors"
+												>
+													{skill}
+												</Badge>
+											))}
+										</div>
+
+										{/* Proposals & time */}
+										<div className="flex items-center justify-between text-xs text-gray-400">
+											<span>{job.proposals} proposals</span>
+											<div className="flex items-center">
+												<Clock className="w-3 h-3 mr-1" />
+												<span>2 hours ago</span>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
+						</motion.div>
 					))}
 				</div>
 			</div>
