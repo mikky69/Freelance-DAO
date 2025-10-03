@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useAccount } from "wagmi"
+import { useAccount, usePublicClient } from "wagmi"
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from "wagmi"
 import proposalContractDeployment from "../../../hedera-deployments/hedera-proposal-testnet.json"
 import proposalContractABI from "../../../hedera-frontend-abi/FreeLanceDAOProposalContract.json"
@@ -19,13 +19,13 @@ function formatDeadline(deadline: number) {
   // deadline is seconds since epoch
   const now = Math.floor(Date.now() / 1000)
   let diff = deadline - now
-  if (diff <= 0) return "Expired"
+  if (diff <= 0) return "Finalized"
   const days = Math.floor(diff / (60 * 60 * 24))
   diff -= days * 60 * 60 * 24
   const hours = Math.floor(diff / (60 * 60))
   diff -= hours * 60 * 60
   const minutes = Math.floor(diff / 60)
-  return `${days}d ${hours}h ${minutes}m`
+  return `${days}d ${hours}h ${minutes}m left`
 }
 
 export default function ProposalsPage() {
@@ -86,7 +86,7 @@ export default function ProposalsPage() {
       enabled: typeof window !== 'undefined' && !!contractAddress
     }
   })
-  
+
   // Only log on client side to avoid build errors
   if (typeof window !== 'undefined') {
     console.log("Proposals data from contract:", proposalsData)
@@ -154,6 +154,7 @@ export default function ProposalsPage() {
     chainId: 296,
     // enabled: !!address,
   })
+  const publicClient = usePublicClient()
   const handleVote = async (proposalId: number, support: boolean) => {
     if (!isConnected) {
       toast.error("Please connect your wallet to vote.")
@@ -166,6 +167,57 @@ export default function ProposalsPage() {
       toast.error("You must stake tokens before you can vote on proposals.")
       return
     }
+
+    // Check if user has already voted
+    let hasVoted = false
+    try {
+      if (!publicClient) {
+        toast.error("RPC client not available. Try again later.")
+        return
+      }
+      if (!address) {
+        toast.error("Please connect your wallet")
+        return
+      }
+      const hv = (await publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: "hasVoted",
+        args: [proposalId, address],
+      })) as any
+      hasVoted = !!hv
+    } catch (e) {
+      console.error("hasVoted read error", e)
+    }
+    if (hasVoted) {
+      toast.error("You have already voted on this proposal.")
+      return
+    }
+
+    // Check if voting period has ended
+    let proposalDeadline = 0
+    try {
+      if (!publicClient) {
+        toast.error("RPC client not available. Try again later.")
+        return
+      }
+      const p = (await publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: "getProposal",
+        args: [proposalId],
+      })) as any
+
+      proposalDeadline = (p && ((p.deadline ?? p[8]) as any)) ?? 0
+    } catch (e) {
+      console.error("getProposal read error", e)
+    }
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (proposalDeadline && nowSec > Number(proposalDeadline)) {
+      toast.error("Voting period has ended for this proposal.");
+      return;
+    }
+
     setIsVoting(proposalId)
     try {
       writeContract({
@@ -179,7 +231,6 @@ export default function ProposalsPage() {
       toast.error(err?.message || "Error submitting vote.")
     } finally {
       setIsVoting(null)
-      console.log("Refetching proposals after vote...")
       refetchProposals()
     }
   }
@@ -343,7 +394,7 @@ export default function ProposalsPage() {
                       <div className="text-sm text-slate-600 space-y-1">
                         <div>Fee: {proposal.feePaid} HBAR</div>
                         <div>Category: {proposal.category}</div>
-                        <div>{proposal.finalized ? "Completed" : formatDeadline(Number(proposal.deadline))} left</div>
+                        <div>{proposal.finalized ? "Completed" : formatDeadline(Number(proposal.deadline))} </div>
                       </div>
                     </div>
                   </div>

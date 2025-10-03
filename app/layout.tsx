@@ -73,6 +73,17 @@ export function Footer() {
                   Post Job
                 </a>
               </li>
+              
+              {/* add download link for whitepaper */}
+              <li>
+                <a
+                  href="/Freelance-DAO-Whitepaper.pdf"
+                  download={true}
+                  className="hover:text-[#FA5F04] transition-colors duration-200"
+                >
+                  WhitePaper
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -88,7 +99,7 @@ export function Footer() {
                   <Twitter className="w-4 h-4" /> Twitter/X
                 </a>
               </li>
-              
+
               <li>
                 <a
                   href="https://medium.com/@freelancedao"
@@ -155,33 +166,33 @@ export function Footer() {
 function ConditionalNavigation() {
   const pathname = usePathname()
   const isAdminPage = pathname?.startsWith('/admin')
-  
+
   if (isAdminPage) {
     return null
   }
-  
+
   return <TopNavigation />
 }
 
 function ConditionalBottomNavigation() {
   const pathname = usePathname()
   const isAdminPage = pathname?.startsWith('/admin')
-  
+
   if (isAdminPage) {
     return null
   }
-  
+
   return <BottomNavigation />
 }
 
 function ConditionalFooter() {
   const pathname = usePathname()
   const isAdminPage = pathname?.startsWith('/admin')
-  
+
   if (isAdminPage) {
     return null
   }
-  
+
   return <Footer />
 }
 
@@ -195,12 +206,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <RainbowkitHederaProvider>
-          <ConditionalNavigation />
-          <main className="pb-20 md:pb-0">{children}</main>
-          <ConditionalBottomNavigation />
-          <ConditionalFooter />
-          <ContractNotification />
-          <Toaster position="top-right" richColors />
+            <ConditionalNavigation />
+            <main className="pb-20 md:pb-0">{children}</main>
+            <ConditionalBottomNavigation />
+            <ConditionalFooter />
+            <ContractNotification />
+            <Toaster position="top-right" richColors />
           </RainbowkitHederaProvider>
         </AuthProvider>
       </body>
