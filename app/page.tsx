@@ -20,7 +20,6 @@ export default function HomePage() {
       <WhatIsFreeLanceDAO />
       <TestimonialsSection/>
       <FaqSection/>
-     
     </div>
   )
 }
