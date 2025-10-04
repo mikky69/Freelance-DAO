@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
          await contract.save();
          
          // Also update milestones in the corresponding job
-         const { Job } = require('@/models/Job');
+        //  const { Job } = require('@/models/Job');
          await Job.findByIdAndUpdate(contract.job, {
            milestones: milestones.map((milestone: any) => ({
              name: milestone.name,

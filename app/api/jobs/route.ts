@@ -193,7 +193,6 @@ export async function GET(request: NextRequest) {
     
     // Calculate pagination
     const skip = (page - 1) * limit;
-    
     // Fetch jobs
     const jobs = await Job.find(query)
       .populate('client', 'fullname avatar rating reviewCount verified')

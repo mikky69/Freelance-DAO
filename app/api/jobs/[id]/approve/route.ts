@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     
     if (approved) {
       // Approve the job - mark as fully completed and approved
-      job.status = 'approved';
+      job.status = 'completed'; //changed from approved to completed to fix the error here
       
       // Send payment notification to freelancer
       if (job.freelancer) {
