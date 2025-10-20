@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useSearchParams } from "next/navigation"
 
 export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState(0)
@@ -41,6 +42,9 @@ export default function MessagesPage() {
     online: boolean
     project: string
     type: "client" | "freelancer"
+    otherPartyId?: string
+    jobId?: string
+    isPlaceholder?: boolean
   }
 
   type MessageItem = {
@@ -59,6 +63,13 @@ export default function MessagesPage() {
   const [loadingConversations, setLoadingConversations] = useState<boolean>(true)
   const [loadingMessages, setLoadingMessages] = useState<boolean>(false)
 
+  const searchParams = useSearchParams()
+  const recipientIdParam = searchParams.get("recipientId")
+  const recipientRoleParam = searchParams.get("recipientRole")
+  const jobIdParam = searchParams.get("jobId")
+  const recipientNameParam = searchParams.get("recipientName")
+  const projectParam = searchParams.get("project")
+
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -72,10 +83,40 @@ export default function MessagesPage() {
         })
         if (res.ok) {
           const data = await res.json()
-          setConversations(data.conversations || [])
-          if ((data.conversations || []).length > 0) {
-            setSelectedChat(0)
-            fetchMessages(data.conversations[0].id)
+          const convs: ConversationSummary[] = (data.conversations || [])
+          if (recipientIdParam) {
+            const idx = convs.findIndex((c: ConversationSummary) => c.otherPartyId === recipientIdParam)
+            if (idx >= 0) {
+              setConversations(convs)
+              setSelectedChat(idx)
+              fetchMessages(convs[idx].id)
+            } else {
+              const name = recipientNameParam || "New Chat"
+              const avatar = (name || "U")[0]
+              const type: "client" | "freelancer" = recipientRoleParam === "freelancer" ? "freelancer" : "client"
+              const placeholder: ConversationSummary = {
+                id: `new:${recipientIdParam}:${jobIdParam || "none"}`,
+                name,
+                avatar,
+                lastMessage: "Start the conversation...",
+                timestamp: "Just now",
+                unread: 0,
+                online: false,
+                project: projectParam || (type === "client" ? "Direct Chat" : "New Conversation"),
+                type,
+                otherPartyId: recipientIdParam || undefined,
+                jobId: jobIdParam || undefined,
+                isPlaceholder: true,
+              }
+              setConversations([placeholder, ...convs])
+              setSelectedChat(0)
+            }
+          } else {
+            setConversations(convs)
+            if (convs.length > 0) {
+              setSelectedChat(0)
+              fetchMessages(convs[0].id)
+            }
           }
         }
       } catch (e) {
@@ -116,6 +157,39 @@ export default function MessagesPage() {
       if (!token) return
       const conversation = conversations[selectedChat]
       if (!conversation) return
+
+      // If this is a placeholder conversation, create the conversation implicitly with recipientId
+      if (conversation.isPlaceholder) {
+        const res = await fetch("/api/messages", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recipientId: conversation.otherPartyId,
+            recipientRole: conversation.type,
+            jobId: conversation.jobId,
+            content: newMessage.trim(),
+            type: "text",
+          }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const msg = data.message as MessageItem
+          const newConvId = data.conversationId as string
+          setConversations((prev) => {
+            const updated = [...prev]
+            updated[selectedChat] = { ...updated[selectedChat], id: newConvId, isPlaceholder: false }
+            return updated
+          })
+          setMessages((prev) => [...prev, msg])
+          setNewMessage("")
+        }
+        return
+      }
+
+      // Existing conversation: send message normally
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: {
@@ -143,7 +217,7 @@ export default function MessagesPage() {
     setSelectedChat(index)
     setIsMobileConversationOpen(true)
     const conv = conversations[index]
-    if (conv) fetchMessages(conv.id)
+    if (conv && !conv.isPlaceholder) fetchMessages(conv.id)
   }
 
   const ConversationsList = () => (
