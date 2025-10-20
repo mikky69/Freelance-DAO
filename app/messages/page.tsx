@@ -23,7 +23,7 @@ import {
   ArrowLeft,
   MessageSquare,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useSearchParams } from "next/navigation"
 
@@ -31,6 +31,7 @@ export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState(0)
   const [newMessage, setNewMessage] = useState("")
   const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   type ConversationSummary = {
     id: string
@@ -185,6 +186,7 @@ export default function MessagesPage() {
           })
           setMessages((prev) => [...prev, msg])
           setNewMessage("")
+          inputRef.current?.focus()
         }
         return
       }
@@ -205,8 +207,15 @@ export default function MessagesPage() {
       if (res.ok) {
         const data = await res.json()
         const msg = data.message as MessageItem
+        const newConvId = data.conversationId as string
+        setConversations((prev) => {
+          const updated = [...prev]
+          updated[selectedChat] = { ...updated[selectedChat], id: newConvId, isPlaceholder: false }
+          return updated
+        })
         setMessages((prev) => [...prev, msg])
         setNewMessage("")
+        inputRef.current?.focus()
       }
     } catch (e) {
       console.error("Failed to send message", e)
@@ -432,11 +441,26 @@ export default function MessagesPage() {
             </Button>
             <div className="flex-1">
               <Textarea
+                ref={inputRef}
+                autoFocus
+                dir="ltr"
                 placeholder="Type your message..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setNewMessage(v)
+                  requestAnimationFrame(() => {
+                    const el = inputRef.current
+                    if (el) {
+                      const end = v.length
+                      try {
+                        el.setSelectionRange(end, end)
+                      } catch {}
+                    }
+                  })
+                }}
                 className="min-h-[44px] max-h-32 resize-none text-sm"
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault()
                     sendMessage()
