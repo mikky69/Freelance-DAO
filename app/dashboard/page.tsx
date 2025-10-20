@@ -1145,6 +1145,17 @@ function DashboardContent() {
                               <span className="text-sm">Awaiting client approval</span>
                             </div>
                             <div className="flex gap-2">
+                              <Link
+                                href={`/messages?recipientId=${job.client?._id}&recipientRole=client&jobId=${job._id}&recipientName=${encodeURIComponent(
+                                job.client?.fullname || ''
+                              )}&project=${encodeURIComponent(job.title)}`}
+                                className="flex-1"
+                              >
+                                <Button variant="outline" size="sm" className="w-full">
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  Message
+                                </Button>
+                              </Link>
                               <Button 
                                 onClick={() => {
                                   setSelectedJob(job)

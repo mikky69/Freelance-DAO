@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
         online: false,
         project: (conv as any)?.job?.title || 'Direct Chat',
         type: otherType,
+        otherPartyId: otherParty?._id?.toString(),
+        jobId: (conv as any)?.job?._id?.toString(),
       });
     }
 
