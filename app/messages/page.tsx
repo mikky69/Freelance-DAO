@@ -129,6 +129,43 @@ export default function MessagesPage() {
     fetchConversations()
   }, [])
 
+  // Subscribe to SSE for live message updates on the selected conversation
+  useEffect(() => {
+    const conv = conversations[selectedChat]
+    if (!conv || conv.isPlaceholder) return
+
+    const token = localStorage.getItem("freelancedao_token")
+    if (!token) return
+
+    const url = `/api/messages/stream?conversationId=${encodeURIComponent(conv.id)}&token=${encodeURIComponent(token)}`
+    const es = new EventSource(url)
+
+    const onReady = () => {
+      // connection established; optional: console.log("SSE ready")
+    }
+    const onMessage = (ev: MessageEvent) => {
+      try {
+        const payload = JSON.parse(ev.data) as MessageItem
+        setMessages((prev) => [...prev, payload])
+      } catch (err) {
+        console.error("Failed to parse SSE message", err)
+      }
+    }
+    const onError = (err: any) => {
+      console.warn("SSE connection error", err)
+      // EventSource will auto-reconnect; no action needed
+    }
+
+    es.addEventListener("ready", onReady)
+    es.onmessage = onMessage
+    es.onerror = onError
+
+    return () => {
+      es.removeEventListener("ready", onReady)
+      es.close()
+    }
+  }, [selectedChat, conversations[selectedChat]?.id])
+
   const fetchMessages = async (conversationId: string) => {
     setLoadingMessages(true)
     try {

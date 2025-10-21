@@ -5,6 +5,7 @@ import { Conversation } from '@/models/Conversation';
 import { Message } from '@/models/Message';
 import { Freelancer, Client } from '@/models/User';
 import { NotificationService } from '@/lib/notification-service';
+import { emitMessage } from '@/lib/events';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
@@ -178,6 +179,20 @@ export async function POST(request: NextRequest) {
       isOwn: true,
       type: msg.type || 'text',
     };
+
+    // Emit SSE message for real-time updates to the recipient
+    try {
+      emitMessage(conversation._id.toString(), {
+        id: msg._id.toString(),
+        sender: senderName,
+        content: msg.content,
+        timestamp: formatTime(msg.createdAt),
+        isOwn: false,
+        type: msg.type || 'text',
+      });
+    } catch (err) {
+      console.warn('Failed to emit SSE message:', err);
+    }
 
     return NextResponse.json({ message: response, conversationId: conversation._id.toString() }, { status: 201 });
   } catch (error) {
