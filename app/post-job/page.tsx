@@ -11,16 +11,21 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DollarSign, Users, FileText, Shield, Plus, X, Loader2, CreditCard, Wallet } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, useReadContract, useChainId } from "wagmi"
+import escrowContractABI from "@/hedera-frontend-abi/FreeLanceDAOEscrowPayment.json";
+import escrowContractDeployment from "@/hedera-deployments/hedera-escrow-testnet.json";
+
+const HEDERA_TESTNET_CHAIN_ID = 296;
 
 export default function PostJobPage() {
   const { user } = useAuth()
   const router = useRouter()
-  
+
   // Form state
   const [formData, setFormData] = useState({
     title: "",
@@ -35,13 +40,96 @@ export default function PostJobPage() {
     urgent: false,
     useEscrow: true
   })
-  
+
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDraft, setIsDraft] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
+
+  //web3 part
+  const { isConnected, address } = useAccount()
+  const contractAddress = escrowContractDeployment.FreeLanceDAOEscrow.evmAddress;
+  const contractAbi = escrowContractABI.abi;
+
+  const { writeContract, data: txData, error: writeError, isPending: isPending, isSuccess: isWriteSuccess, reset } = useWriteContract();
+  // Extract hash from txData (WriteContractReturnType)
+  const txHash = typeof txData === 'object' && txData !== null && 'hash' in txData ? (txData as any).hash : undefined;
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    data: txReceipt,
+    error: txReceiptError
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+
+  useEffect(() => {
+    if (writeError) {
+      toast.error(writeError.message || "error creating job");
+      console.error("error:", writeError);
+    }
+  }, [writeError])
+
+  useWatchContractEvent({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    eventName: "JobCreated",
+    chainId: HEDERA_TESTNET_CHAIN_ID,
+    onLogs: (logs: any[]) => {
+      if (logs && logs.length > 0) {
+        toast.success("Job created successfully!");
+        console.log("job created", logs)
+        reset();
+      }
+    },
+  });
+
+
+  // Query blockchain for jobs
+  const { data: escrowData, isLoading: isEscrowLoading, error: escrowError, refetch: refetchEscrow } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: contractAbi,
+    functionName: "daoFeePct",
+    chainId: HEDERA_TESTNET_CHAIN_ID,
+    query: {
+      enabled: typeof window !== 'undefined' && !!contractAddress
+    }
+  });
+
+  // Only log on client side to avoid build errors
+  // if (typeof window !== 'undefined') {
+  //   console.log(" daoTreasury is", escrowData);
+  //   console.log(" contract address is", contractAddress);
+  // }
+
+  const handlePostWeb3Job = async () => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet.");
+      console.warn("Wallet not connected");
+      return;
+    }
+    try {
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: "createFixedJob",
+        value: BigInt(Number(formData.budgetMax) * 1e18), //fund the contract with the maximum amount the client wants to pay for the job
+        // args: [],
+      });
+      //display success after 5 secs
+      setTimeout(() => {
+        toast.success("Job submitted successfully!");
+      }, 5000); // 5 seconds
+    } catch (err: any) {
+      toast.error(err?.message || "Error posting job.");
+      console.error("Job posting error:", err);
+    }
+  }
+
+
 
   const addSkill = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
@@ -53,14 +141,14 @@ export default function PostJobPage() {
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter((skill) => skill !== skillToRemove))
   }
-  
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
-  
+
   const validateForm = () => {
     const errors: string[] = []
-    
+
     if (!formData.title.trim()) errors.push("Job title is required")
     if (!formData.description.trim()) errors.push("Job description is required")
     if (formData.description.trim().length < 100) errors.push("Description must be at least 100 characters")
@@ -71,10 +159,10 @@ export default function PostJobPage() {
       errors.push("Maximum budget must be greater than minimum budget")
     }
     if (!formData.duration) errors.push("Project duration is required")
-    
+
     return errors
   }
-  
+
   const submitJob = async (asDraft = false) => {
     // Check authentication first
     if (!user || !user.id) {
@@ -82,23 +170,23 @@ export default function PostJobPage() {
       router.push('/auth/signin/client')
       return
     }
-    
+
     if (!asDraft) {
       const errors = validateForm()
       if (errors.length > 0) {
         toast.error(errors[0])
         return
       }
-      
+
       // If job is featured and not draft, show payment modal
       if (formData.featured) {
         setShowPaymentModal(true)
         return
       }
     }
-    
+    await handlePostWeb3Job();
     // If not featured or is draft, proceed directly
-    await processJobSubmission(asDraft)
+    // await processJobSubmission(asDraft)
   }
 
   const handlePaymentAndSubmit = async () => {
@@ -106,13 +194,13 @@ export default function PostJobPage() {
       toast.error('Please select a payment method')
       return
     }
-    
+
     setShowPaymentModal(false)
-    
+
     // TODO: Implement actual payment processing here
     // For now, we'll just proceed with job posting
     toast.success(`Payment method selected: ${selectedPaymentMethod}. Payment processing  later.`)
-    
+
     // Proceed with job posting
     await processJobSubmission(false)
   }
@@ -120,7 +208,6 @@ export default function PostJobPage() {
   const processJobSubmission = async (asDraft = false) => {
     setIsSubmitting(true)
     setIsDraft(asDraft)
-    
     try {
       const token = localStorage.getItem('freelancedao_token')
       if (!token) {
@@ -128,7 +215,7 @@ export default function PostJobPage() {
         router.push('/auth/signin/client')
         return
       }
-      
+
       const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: {
@@ -142,9 +229,9 @@ export default function PostJobPage() {
           budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null
         })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         toast.success(asDraft ? 'Job saved as draft' : 'Job posted successfully!')
         router.push('/dashboard')
@@ -231,7 +318,7 @@ export default function PostJobPage() {
                       required
                     />
                     <p className="text-sm text-slate-500">
-                      Minimum 100 characters. Be specific about your requirements. 
+                      Minimum 100 characters. Be specific about your requirements.
                       <span className="font-medium">
                         ({formData.description.length}/100)
                       </span>
@@ -301,13 +388,13 @@ export default function PostJobPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="budget-min">Minimum Budget (HBAR) *</Label>
-                      <Input 
-                        id="budget-min" 
-                        type="number" 
+                      <Input
+                        id="budget-min"
+                        type="number"
                         value={formData.budgetMin}
                         onChange={(e) => handleInputChange('budgetMin', e.target.value)}
-                        placeholder="1000" 
-                        className="text-base" 
+                        placeholder="1000"
+                        className="text-base"
                         required
                         min="1"
                       />
@@ -316,13 +403,13 @@ export default function PostJobPage() {
                       <Label htmlFor="budget-max">
                         {formData.budgetType === 'fixed' ? 'Maximum Budget (HBAR)' : 'Maximum Rate (HBAR/hour)'}
                       </Label>
-                      <Input 
-                        id="budget-max" 
-                        type="number" 
+                      <Input
+                        id="budget-max"
+                        type="number"
                         value={formData.budgetMax}
                         onChange={(e) => handleInputChange('budgetMax', e.target.value)}
-                        placeholder={formData.budgetType === 'fixed' ? '5000' : '100'} 
-                        className="text-base" 
+                        placeholder={formData.budgetType === 'fixed' ? '5000' : '100'}
+                        className="text-base"
                         min="1"
                       />
                     </div>
@@ -394,8 +481,8 @@ export default function PostJobPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="featured" 
+                    <Checkbox
+                      id="featured"
                       checked={formData.featured}
                       onCheckedChange={(checked) => handleInputChange('featured', checked)}
                     />
@@ -406,8 +493,8 @@ export default function PostJobPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="urgent" 
+                    <Checkbox
+                      id="urgent"
                       checked={formData.urgent}
                       onCheckedChange={(checked) => handleInputChange('urgent', checked)}
                     />
@@ -418,8 +505,8 @@ export default function PostJobPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="escrow" 
+                    <Checkbox
+                      id="escrow"
                       checked={formData.useEscrow}
                       onCheckedChange={(checked) => handleInputChange('useEscrow', checked)}
                     />
@@ -433,9 +520,9 @@ export default function PostJobPage() {
 
               {/* Submit */}
               <div className="flex flex-col md:flex-row gap-4 pt-6">
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="flex-1"
                   onClick={() => submitJob(true)}
                   disabled={isSubmitting}
@@ -449,7 +536,7 @@ export default function PostJobPage() {
                     'Save as Draft'
                   )}
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   className="flex-1 bg-blue-500 hover:bg-blue-600"
                   disabled={isSubmitting}
@@ -481,7 +568,7 @@ export default function PostJobPage() {
               Select your preferred payment method for the featured job listing (+$20)
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
               <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
@@ -496,7 +583,7 @@ export default function PostJobPage() {
                   </div>
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
                 <RadioGroupItem value="hbar" id="hbar" />
                 <Label htmlFor="hbar" className="flex-1 cursor-pointer">
@@ -509,7 +596,7 @@ export default function PostJobPage() {
                   </div>
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
                 <RadioGroupItem value="fiat" id="fiat" />
                 <Label htmlFor="fiat" className="flex-1 cursor-pointer">
@@ -524,16 +611,16 @@ export default function PostJobPage() {
               </div>
             </RadioGroup>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowPaymentModal(false)}
               className="flex-1"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handlePaymentAndSubmit}
               disabled={!selectedPaymentMethod || isSubmitting}
               className="flex-1 bg-blue-500 hover:bg-blue-600"
