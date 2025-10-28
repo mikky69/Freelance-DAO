@@ -16,9 +16,6 @@ export const metadata: Metadata = {
     "The decentralized freelance platform combining Web2 usability with Web3 security. Join us in shaping the future of work.",
 }
 
-
-
-
 export default function RootLayout({
   children,
 }: {
