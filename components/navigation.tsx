@@ -392,7 +392,6 @@ export function TopNavigation() {
 							{/* Enhanced Wallet Connection */}
 							<div className="hidden sm:block">
 								<div className="relative">
-									<div className="absolute -inset-1 bg-gradient-to-r from-[#AE16A7] to-[#FF068D] rounded-lg blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
 									<CustomHederaConnectButton />
 								</div>
 							</div>
