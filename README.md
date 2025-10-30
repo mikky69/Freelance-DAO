@@ -22,6 +22,7 @@
 - [Getting Started](#-getting-started)
 - [Key Features](#-key-features)
 - [Team Certification](#-team-certification)
+- [Pitch Deck](#-pitch-deck)
 - [Contributing](#-contributing)
 
 ---
@@ -571,6 +572,13 @@ This 4x cost advantage versus traditional platforms creates a powerful flywheel:
 
 ---
 
+## Pitch Deck
+
+Get our pitch deck in the link below
+
+https://drive.google.com/file/d/1X5hg4FDRpr8c6epjI0s-lMES_KOB6cEX/view?usp=drivesdk
+
+---
 ## 🤝 Contributing
 
 We welcome contributions from the Hedera and Web3 communities! Your expertise can help shape the future of decentralized freelancing.
@@ -692,3 +700,4 @@ This repository follows strict security practices:
 
 **For Judges:**
 Test credentials (Account ID and Private
+
