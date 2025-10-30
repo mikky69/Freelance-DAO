@@ -1,6 +1,7 @@
 # FreeLanceDAO
 
 > A decentralized freelance platform combining Web2 familiarity with Web3 automation and governance on Hedera Hashgraph.
+![freelance bw logo](https://github.com/user-attachments/assets/51177391-8ea2-4fc8-b2e9-bde47a87240a)
 
 <div align="center">
   <h2>🚀 The Future of Freelancing is Decentralized</h2>
@@ -145,4 +146,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Hedera Hashgraph for their groundbreaking DLT technology
 - The open-source community for invaluable tools and libraries
 - Early contributors and supporters of FreeLanceDAO
+
 
