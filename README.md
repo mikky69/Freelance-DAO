@@ -75,6 +75,12 @@ FreeLanceDAO revolutionizes the freelance economy by leveraging Hedera's distrib
 - **Indexing**: The Graph (Hedera Mirror Node)
 - **Real-time**: WebSockets, Server-Sent Events
 
+## TEAM CERTIFICATION
+
+**Cofounder of Freelance DAO: MIKAILU Samuel Nadro**
+<img width="1437" height="807" alt="mikailu hashgraph dev cert" src="https://github.com/user-attachments/assets/13820f89-fdc9-4aee-899d-6620450ad76b" />
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -139,3 +145,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Hedera Hashgraph for their groundbreaking DLT technology
 - The open-source community for invaluable tools and libraries
 - Early contributors and supporters of FreeLanceDAO
+
