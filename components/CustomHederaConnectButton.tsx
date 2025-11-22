@@ -70,20 +70,20 @@ export const CustomHederaConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <Button variant={'outline'} onClick={openConnectModal} type="button" className='border-green-200 bg-green-50 text-green-700 hover:bg-green-100'>
+                  <Button variant={'outline'} onClick={openConnectModal} type="button" className='space-x-1 md:space-x-2 border border-[#AE16A7]/50 hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:border-[#AE16A7] rounded-xl transition-all duration-300 px-2 md:px-3 py-2 bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10'>
                     Connect Wallet
                   </Button>
                 );
               }
               if (chain.unsupported) {
                 return (
-                  <Button variant={'outline'} onClick={openChainModal} type="button" className='border-green-200 bg-green-50 text-green-700 hover:bg-green-100'>
+                  <Button variant={'outline'} onClick={openChainModal} type="button" className='space-x-1 md:space-x-2 border border-[#AE16A7]/50 hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:border-[#AE16A7] rounded-xl transition-all duration-300 px-2 md:px-3 py-2 bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10'>
                     Wrong network
                   </Button>
                 );
               }
               return (
-                <Button variant={'outline'} className=' border-green-200 bg-green-50 text-green-700 hover:bg-green-100 flex gap-4 items-center'>
+                <Button variant={'outline'} className='space-x-1 md:space-x-2 border border-[#AE16A7]/50 hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:border-[#AE16A7] rounded-xl transition-all duration-300 px-2 md:px-3 py-2 bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10'>
                   <div
                     onClick={openChainModal}>
                     <div className='overflow-hidden'
@@ -104,7 +104,7 @@ export const CustomHederaConnectButton = () => {
                     {/* {account.displayBalance
                       ? ` (${account.displayBalance})`
                       : ''} */}
-                    <ChevronDown/>
+                    <ChevronDown />
                   </div>
                 </Button>
               );

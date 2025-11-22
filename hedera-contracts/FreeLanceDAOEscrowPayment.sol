@@ -11,9 +11,10 @@ pragma solidity ^0.8.20;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-    contract FreeLanceDAOEscrowPayment is Ownable, ReentrancyGuard {
+contract FreeLanceDAOEscrowPayment is Ownable, ReentrancyGuard {
     uint256 public constant PCT_BASE = 100; // percent base (use 5 => 5%)
     uint256 public daoFeePct;               // DAO fee percentage
+    uint256 public totalDaoFeesCollected;   // Total fees collected and available for withdrawal
     address public daoTreasury;             // where fees are withdrawn to
     uint256 public nextJobId = 1;
 
@@ -39,20 +40,37 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         address client;
         address freelancer; // awarded provider
         uint256 totalAmount; // sum of milestone amounts or fixed amount
+        uint256 minimumBudget;
+        uint256 maximumBudget;
         uint256 releasedAmount; // how much already paid out to freelancer
         uint256 createdAt;
         Status status;
         bool funded;
         Milestone[] milestones; // empty for FIXED
+        string jobTitle;
+        string jobCategory;
+        string projectDescription;
+        string[] requiredSkills;
+        // budgetType is implicitly handled by JobType (FIXED/MILESTONE)
+        // Will store the user-facing duration string.
+        string projectDuration;
         bool confirmed; // whether job fully confirmed
         bool exists;
         bool feeTaken; // whether DAO fee has been taken for this job
     }
 
+    struct JobParams {
+        string jobTitle;
+        string jobCategory;
+        string projectDescription;
+        string[] requiredSkills;
+        string projectDuration;
+        uint256 minimumBudget;
+        uint256 maximumBudget;
+    }
+
     // job storage
     mapping(uint256 => Job) private jobs;
-    mapping(address => uint256[]) public jobsByClient;
-    mapping(address => uint256[]) public jobsByFreelancer;
 
     // provider requests: provider => jobId => requested
     mapping(address => mapping(uint256 => bool)) public requested;
@@ -103,21 +121,32 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
     // Note: DAO fees are not tracked separately on-chain as a variable but are simply held in contract balance until withdrawn.
     function withdrawDaoFees(uint256 amount) external nonReentrant onlyOwner {
         require(amount > 0, "zero amount");
+        require(amount <= totalDaoFeesCollected, "Insufficient fees");
+        totalDaoFeesCollected -= amount;
         _safeSend(daoTreasury, amount);
-        emit WithdrawDaoFees(daoTreasury, amount);
+        emit WithdrawDaoFees(daoTreasury, amount); // Event name is plural, but that's okay.
     }
 
     // ====== JOB CREATION & FUNDING ======
 
     /// @notice Create a fixed job and optionally fund it by sending value
-    function createFixedJob() external payable returns (uint256) {
+    function createFixedJob(JobParams calldata params) external payable returns (uint256) {
         require(msg.value > 0, "Must fund job > 0");
+        require(bytes(params.jobTitle).length > 0, "Title required");
+        require(bytes(params.projectDescription).length > 0, "Description required");
 
         uint256 jid = nextJobId++;
         Job storage j = jobs[jid];
         j.jobId = jid;
         j.jobType = JobType.FIXED;
         j.client = msg.sender;
+        j.jobTitle = params.jobTitle;
+        j.jobCategory = params.jobCategory;
+        j.projectDescription = params.projectDescription;
+        // Manually copy calldata array to storage to avoid compiler error
+        string[] memory skills = params.requiredSkills;
+        j.requiredSkills = skills;
+        j.projectDuration = params.projectDuration;
         j.totalAmount = msg.value;
         j.releasedAmount = 0;
         j.createdAt = block.timestamp;
@@ -125,7 +154,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         j.funded = true;
         j.exists = true;
 
-        jobsByClient[msg.sender].push(jid);
+        j.minimumBudget = params.minimumBudget > 0 ? params.minimumBudget : msg.value;
+        j.maximumBudget = params.maximumBudget > 0 ? params.maximumBudget : msg.value;
 
         emit JobCreated(jid, JobType.FIXED, msg.sender, j.totalAmount);
         emit JobFunded(jid, msg.value);
@@ -134,7 +164,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
     /// @notice Create milestone job. Provide milestoneAmounts; you may fund total by sending msg.value equal to sum
     /// @dev IMPORTANT: The last milestone amount MUST be >= daoFeePct% of totalAmount. This ensures the DAO fee can be deducted from the last milestone.
-    function createMilestoneJob(uint256[] calldata milestoneAmounts) external payable returns (uint256) {
+    function createMilestoneJob(
+        uint256[] calldata milestoneAmounts, JobParams calldata params
+    ) external payable returns (uint256) {
         require(milestoneAmounts.length > 0, "Need >=1 milestone");
         uint256 sum = 0;
         for (uint256 i = 0; i < milestoneAmounts.length; i++) {
@@ -143,12 +175,23 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         }
         uint256 fee = (sum * daoFeePct) / PCT_BASE;
         require(milestoneAmounts[milestoneAmounts.length - 1] >= fee, "Last milestone must cover DAO fee");
+        require(bytes(params.jobTitle).length > 0, "Title required");
+        require(bytes(params.projectDescription).length > 0, "Description required");
 
         uint256 jid = nextJobId++;
         Job storage j = jobs[jid];
         j.jobId = jid;
         j.jobType = JobType.MILESTONE;
         j.client = msg.sender;
+        j.jobTitle = params.jobTitle;
+        j.jobCategory = params.jobCategory;
+        j.projectDescription = params.projectDescription;
+        // Manually copy calldata array to storage to avoid compiler error
+        string[] memory skills = params.requiredSkills;
+        j.requiredSkills = skills;
+        j.projectDuration = params.projectDuration;
+        j.minimumBudget = sum; // For milestones, min/max budget is the total sum
+        j.maximumBudget = sum;
         j.totalAmount = sum;
         j.releasedAmount = 0;
         j.createdAt = block.timestamp;
@@ -167,7 +210,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
             emit JobFunded(jid, msg.value);
         }
 
-        jobsByClient[msg.sender].push(jid);
         emit JobCreated(jid, JobType.MILESTONE, msg.sender, j.totalAmount);
         return jid;
     }
@@ -203,7 +245,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         require(requested[provider][jobId], "Provider did not request");
         j.freelancer = provider;
         j.status = Status.PENDING;
-        jobsByFreelancer[provider].push(jobId);
         emit ProviderApproved(jobId, provider);
     }
 
@@ -254,6 +295,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         j.confirmed = true;
         j.status = Status.CONFIRMED;
         j.feeTaken = true;
+        totalDaoFeesCollected += fee;
 
         // transfer net to freelancer, fee to daoTreasury
         if (net > 0) _safeSend(j.freelancer, net);
@@ -287,11 +329,13 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
             require(amount >= daoFee, "Last milestone must cover DAO fee (enforced at creation)");
             net = amount - daoFee;
             j.feeTaken = true;
+            totalDaoFeesCollected += daoFee;
         }
 
         // Mark released before transfers
         m.released = true;
         j.releasedAmount += amount;
+        j.status = Status.PENDING; // Default status, will be updated if all are released
 
         // If all milestones released -> mark confirmed
         bool allReleased = true;
@@ -304,8 +348,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         if (allReleased) {
             j.confirmed = true;
             j.status = Status.CONFIRMED;
-        } else {
-            j.status = Status.PENDING;
         }
 
         // Pay freelancer (net) and DAO fee (if any)
@@ -322,16 +364,17 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
         Job storage j = jobs[jobId];
         require(j.exists, "Job not exist");
         require(msg.sender == j.client, "Only client");
-        require(j.status == Status.OPEN || j.status == Status.PENDING, "Cannot cancel now");
+        require(j.status == Status.OPEN, "Cannot cancel now");
         // If some amount already released, cannot cancel (use dispute/adminRefund)
         require(j.releasedAmount == 0, "Already released partially");
 
         uint256 refund = 0;
+        j.status = Status.CANCELLED; // State change BEFORE external call
+
         if (j.funded) {
             refund = j.totalAmount;
             _safeSend(j.client, refund);
         }
-        j.status = Status.CANCELLED;
         emit JobCancelled(jobId);
         if (refund > 0) emit JobRefunded(jobId, refund);
     }
@@ -376,6 +419,32 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
             j.createdAt,
             j.funded,
             j.confirmed
+        );
+    }
+
+    function getJobDetails(uint256 jobId)
+        external
+        view
+        returns (
+            string memory jobTitle,
+            string memory jobCategory,
+            string memory projectDescription,
+            string[] memory requiredSkills,
+            string memory projectDuration,
+            uint256 minimumBudget,
+            uint256 maximumBudget
+        )
+    {
+        Job storage j = jobs[jobId];
+        require(j.exists, "Job not exist");
+        return (
+            j.jobTitle,
+            j.jobCategory,
+            j.projectDescription,
+            j.requiredSkills,
+            j.projectDuration,
+            j.minimumBudget,
+            j.maximumBudget
         );
     }
 
