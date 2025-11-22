@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
 import { Freelancer, Client } from '@/models/User';
+import { sendWelcomeEmail } from '@/lib/email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
@@ -26,19 +27,22 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create client
     const client = await Client.create({
       fullname,
       email,
       password: hashedPassword,
     });
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: client._id, email: client.email },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
+
+    const origin = new URL(request.url).origin
+    try {
+      await sendWelcomeEmail(email, fullname, 'client', origin)
+    } catch {}
 
     return NextResponse.json(
       { 

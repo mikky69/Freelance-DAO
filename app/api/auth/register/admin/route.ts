@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
 import { Freelancer, Client, Admin } from '@/models/User';
+import { sendWelcomeEmail } from '@/lib/email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
@@ -60,7 +61,6 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create admin
     const admin = await Admin.create({
       fullname,
       email,
@@ -68,12 +68,16 @@ export async function POST(request: NextRequest) {
       isFirstAdmin,
     });
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'admin' },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
+
+    const origin = new URL(request.url).origin
+    try {
+      await sendWelcomeEmail(email, fullname, 'admin', origin)
+    } catch {}
 
     return NextResponse.json(
       { 
