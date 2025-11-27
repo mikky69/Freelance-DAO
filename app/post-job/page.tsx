@@ -35,6 +35,7 @@ export default function PostJobPage() {
   const [isDraft, setIsDraft] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
+  const [paystackReady, setPaystackReady] = useState(false)
 
   //web3 part
   const { isConnected } = useAccount()
@@ -69,6 +70,18 @@ export default function PostJobPage() {
       }
     },
   });
+
+  useEffect(() => {
+    const id = 'paystack-inline'
+    if (typeof window === 'undefined') return
+    if (document.getElementById(id)) { setPaystackReady(true); return }
+    const s = document.createElement('script')
+    s.id = id
+    s.src = 'https://js.paystack.co/v1/inline.js'
+    s.onload = () => setPaystackReady(true)
+    s.onerror = () => setPaystackReady(false)
+    document.body.appendChild(s)
+  }, [])
 
 
   useReadContract({
@@ -128,14 +141,11 @@ export default function PostJobPage() {
         setIsSubmitting(false);
         return
       }
-
-      if (formData.featured) {
-        setShowPaymentModal(true)
-        setIsSubmitting(false);
-        return
-      }
+      setShowPaymentModal(true)
+      setIsSubmitting(false);
+      return
     }
-    await handlePostWeb3Job();
+    await processJobSubmission(true);
   }
 
   const handlePaymentAndSubmit = async () => {
@@ -145,10 +155,33 @@ export default function PostJobPage() {
     }
 
     setShowPaymentModal(false)
-
-    toast.success(`Payment method selected: ${selectedPaymentMethod}. Payment processing later.`)
-
-    await processJobSubmission(false)
+    if (selectedPaymentMethod === 'fiat') {
+      if (!paystackReady) { toast.error('Paystack failed to load'); return }
+      const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+      if (!key) { toast.error('Paystack public key not configured'); return }
+      const email = user?.email || 'user@example.com'
+      try {
+        const handler = (window as any).PaystackPop.setup({
+          key,
+          email,
+          amount: 100,
+          currency: 'USD',
+          callback: async () => {
+            toast.success('Payment successful')
+            await processJobSubmission(false)
+          },
+          onClose: () => {
+            toast.error('Payment canceled')
+          }
+        })
+        handler.openIframe()
+      } catch (e: any) {
+        toast.error(e?.message || 'Failed to initialize Paystack')
+      }
+    } else {
+      await handlePostWeb3Job()
+      await processJobSubmission(false)
+    }
   }
 
   const processJobSubmission = async (asDraft = false) => {

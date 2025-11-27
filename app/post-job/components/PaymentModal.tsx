@@ -16,46 +16,32 @@ export const PaymentModal = ({ showPaymentModal, setShowPaymentModal, selectedPa
             Choose Payment Method
           </DialogTitle>
           <DialogDescription>
-            Select your preferred payment method for the featured job listing (+$20)
+            Choose how to complete posting: Crypto wallet or $1 fiat (Paystack)
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
             <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
-              <RadioGroupItem value="solana" id="solana" />
-              <Label htmlFor="solana" className="flex-1 cursor-pointer">
-                <div className="flex items-center">
-                  <Wallet className="w-5 h-5 mr-2 text-purple-500" />
-                  <div>
-                    <div className="font-medium">Solana (SOL)</div>
-                    <div className="text-sm text-slate-500">Pay with Solana cryptocurrency</div>
-                  </div>
-                </div>
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
-              <RadioGroupItem value="hbar" id="hbar" />
-              <Label htmlFor="hbar" className="flex-1 cursor-pointer">
+              <RadioGroupItem value="crypto" id="crypto" />
+              <Label htmlFor="crypto" className="flex-1 cursor-pointer">
                 <div className="flex items-center">
                   <Wallet className="w-5 h-5 mr-2 text-green-500" />
                   <div>
-                    <div className="font-medium">HBAR (Hedera)</div>
-                    <div className="text-sm text-slate-500">Pay with Hedera Hashgraph</div>
+                    <div className="font-medium">Crypto (Wallet)</div>
+                    <div className="text-sm text-slate-500">Use your connected wallet</div>
                   </div>
                 </div>
               </Label>
             </div>
-
             <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
               <RadioGroupItem value="fiat" id="fiat" />
               <Label htmlFor="fiat" className="flex-1 cursor-pointer">
                 <div className="flex items-center">
                   <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
                   <div>
-                    <div className="font-medium">Credit/Debit Card</div>
-                    <div className="text-sm text-slate-500">Pay with traditional payment methods</div>
+                    <div className="font-medium">Fiat (Paystack)</div>
+                    <div className="text-sm text-slate-500">Pay a $1 fee to post</div>
                   </div>
                 </div>
               </Label>
