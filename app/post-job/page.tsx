@@ -100,6 +100,10 @@ export default function PostJobPage() {
       console.warn("Wallet not connected");
       return;
     }
+    if (formData.currency !== 'HBAR') {
+      toast.error('Set budget currency to HBAR for crypto payment')
+      return
+    }
     try {
       const params = {
         jobTitle: formData.title,
@@ -205,7 +209,8 @@ export default function PostJobPage() {
           ...formData,
           skills,
           budgetMin: parseFloat(formData.budgetMin),
-          budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null
+          budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
+          currency: formData.currency
         })
       })
 

@@ -7,6 +7,7 @@ export const usePostJobForm = () => {
     description: "",
     category: "",
     budgetType: "fixed",
+    currency: "HBAR",
     budgetMin: "",
     budgetMax: "",
     duration: "",

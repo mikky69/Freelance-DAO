@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       budgetType,
       budgetMin,
       budgetMax,
+      currency,
       duration,
       experienceLevel,
       featured,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       skills: skills.map((skill: string) => skill.trim()),
       budget: {
         amount: budgetMax || budgetMin,
-        currency: 'HBAR',
+        currency: currency === 'USD' ? 'USD' : 'HBAR',
         type: budgetType
       },
       duration,
