@@ -170,11 +170,11 @@ export default function PostJobPage() {
           email,
           amount: 100,
           currency: 'USD',
-          callback: async () => {
+          callback: function (_response: any) {
             toast.success('Payment successful')
-            await processJobSubmission(false)
+            processJobSubmission(false)
           },
-          onClose: () => {
+          onClose: function () {
             toast.error('Payment canceled')
           }
         })
