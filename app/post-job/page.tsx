@@ -165,11 +165,14 @@ export default function PostJobPage() {
       if (!key) { toast.error('Paystack public key not configured'); return }
       const email = user?.email || 'user@example.com'
       try {
+        const rate = Number(process.env.NEXT_PUBLIC_USD_NGN_RATE || 1600)
+        const ngnKobo = Math.round(Math.max(rate, 1) * 100) // $1 -> NGN -> kobo
         const handler = (window as any).PaystackPop.setup({
           key,
           email,
-          amount: 100,
-          currency: 'USD',
+          amount: ngnKobo,
+          currency: 'NGN',
+          metadata: { usd_equivalent: 1 },
           callback: function (_response: any) {
             toast.success('Payment successful')
             processJobSubmission(false)
