@@ -73,7 +73,6 @@ export async function GET(request: NextRequest) {
     const jobs = await Job.find(query)
       .populate('client', 'fullname email avatar company verified')
       .populate('freelancer', 'fullname email avatar verified')
-      .populate('proposals')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

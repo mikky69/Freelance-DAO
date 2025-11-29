@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
       experienceLevel,
       featured,
       urgent,
-      useEscrow
+      useEscrow,
+      paymentId
     } = await request.json();
     
     // Validate required fields
@@ -124,6 +125,15 @@ export async function POST(request: NextRequest) {
       status: 'draft',
       milestones: defaultMilestones
     });
+
+    if (paymentId) {
+      try {
+        const { Payment } = await import('@/models/Payment')
+        await Payment.findByIdAndUpdate(paymentId, { job: job._id })
+      } catch (e) {
+        console.warn('Failed to link payment to job:', e)
+      }
+    }
     
     // If featured job, deduct payment from client (this would integrate with payment system)
     if (featured) {

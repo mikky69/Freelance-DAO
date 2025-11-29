@@ -36,6 +36,7 @@ export default function PostJobPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
   const [paystackReady, setPaystackReady] = useState(false)
+  const [paymentId, setPaymentId] = useState<string | null>(null)
 
   //web3 part
   const { isConnected } = useAccount()
@@ -174,8 +175,28 @@ export default function PostJobPage() {
           currency: 'NGN',
           metadata: { usd_equivalent: 1 },
           callback: function (_response: any) {
-            toast.success('Payment successful')
-            processJobSubmission(false)
+            (async () => {
+              try {
+                const token = localStorage.getItem('freelancedao_token')
+                const verifyRes = await fetch('/api/payments/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({ reference: _response?.reference, purpose: 'job_post_fee', amountUsd: 1, amountNgn: ngnKobo / 100 })
+                })
+                const v = await verifyRes.json()
+                if (verifyRes.ok) {
+                  setPaymentId(v.payment.id)
+                  toast.success('Payment successful')
+                } else {
+                  toast.error(v.message || 'Failed to verify payment')
+                }
+              } catch (err: any) {
+                console.error('Verify payment error:', err)
+                toast.error('Verification error')
+              } finally {
+                processJobSubmission(false)
+              }
+            })()
           },
           onClose: function () {
             toast.error('Payment canceled')
@@ -213,7 +234,8 @@ export default function PostJobPage() {
           skills,
           budgetMin: parseFloat(formData.budgetMin),
           budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
-          currency: formData.currency
+          currency: formData.currency,
+          paymentId: paymentId || undefined
         })
       })
 
