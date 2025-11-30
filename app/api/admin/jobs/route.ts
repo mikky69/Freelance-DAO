@@ -4,6 +4,7 @@ import { Admin } from '@/models/User';
 import { Job } from '@/models/Job';
 import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
@@ -225,7 +226,7 @@ export async function PATCH(request: NextRequest) {
       jobId,
       updateData,
       { new: true }
-    ).populate('client', 'fullname');
+    ).populate('client', 'fullname email');
     
     if (!updatedJob) {
       return NextResponse.json(
@@ -234,17 +235,37 @@ export async function PATCH(request: NextRequest) {
       );
     }
     
-    // Send notification when job is approved
-    if (action === 'approve' && updatedJob.client) {
+    if (updatedJob.client) {
       try {
-        await NotificationService.notifyJobApproved(
-          updatedJob.client._id.toString(),
-          updatedJob.title,
-          updatedJob._id.toString()
-        );
-      } catch (notificationError) {
-        console.error('Failed to send job approval notification:', notificationError);
-        // Don't fail the main operation if notification fails
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+        });
+        const to = (updatedJob.client as any).email;
+        if (to) {
+          if (action === 'approve') {
+            await NotificationService.notifyJobApproved(
+              updatedJob.client._id.toString(),
+              updatedJob.title,
+              updatedJob._id.toString()
+            );
+            await transporter.sendMail({
+              from: process.env.EMAIL_USER,
+              to,
+              subject: 'Your job has been approved',
+              html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ''}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
+            });
+          } else if (action === 'reject') {
+            await transporter.sendMail({
+              from: process.env.EMAIL_USER,
+              to,
+              subject: 'Your job has been rejected',
+              html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
+            });
+          }
+        }
+      } catch (mailError) {
+        console.error('Failed to send job action email:', mailError);
       }
     }
     
