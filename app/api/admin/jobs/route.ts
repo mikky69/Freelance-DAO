@@ -246,6 +246,19 @@ export async function PATCH(request: NextRequest) {
           auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
         });
         await transporter.verify().catch(() => {});
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const brandWrap = (title: string, body: string, ctaText?: string, ctaHref?: string) => `
+<div style="background:#f6f7fb;padding:24px">
+  <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
+    <div style="background:#0f172a;color:#ffffff;padding:20px 24px;font-size:18px;font-weight:700;letter-spacing:0.3px">FreeLanceDAO</div>
+    <div style="padding:24px">
+      <h1 style="margin:0 0 12px 0;font-size:20px;color:#0f172a">${title}</h1>
+      <div style="font-size:14px;color:#334155;line-height:1.7">${body}</div>
+      ${ctaText && ctaHref ? `<div style="margin-top:20px"><a href="${ctaHref}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px">${ctaText}</a></div>` : ''}
+    </div>
+    <div style="padding:16px 24px;background:#f8fafc;color:#64748b;font-size:12px">This message was sent by FreeLanceDAO.</div>
+  </div>
+</div>`;
         const to = (updatedJob.client as any).email;
         if (to) {
           if (action === 'approve') {
@@ -259,8 +272,8 @@ export async function PATCH(request: NextRequest) {
                 from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
                 to,
                 subject: 'Your job has been approved',
-                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}`,
-                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
+                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${baseUrl}/jobs/${updatedJob._id}`,
+                html: brandWrap('Job Approved', `Your job <strong>${updatedJob.title}</strong> has been approved and is now live.`, 'View Job', `${baseUrl}/jobs/${updatedJob._id}`)
               });
             } catch {
               transporter = nodemailer.createTransport({
@@ -273,8 +286,8 @@ export async function PATCH(request: NextRequest) {
                 from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
                 to,
                 subject: 'Your job has been approved',
-                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}`,
-                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
+                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${baseUrl}/jobs/${updatedJob._id}`,
+                html: brandWrap('Job Approved', `Your job <strong>${updatedJob.title}</strong> has been approved and is now live.`, 'View Job', `${baseUrl}/jobs/${updatedJob._id}`)
               });
             }
           } else if (action === 'reject') {
@@ -284,7 +297,7 @@ export async function PATCH(request: NextRequest) {
                 to,
                 subject: 'Your job has been rejected',
                 text: `Your job "${updatedJob.title}" was rejected by the admin.${reason ? ` Reason: ${reason}` : ''}`,
-                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
+                html: brandWrap('Job Rejected', `Your job <strong>${updatedJob.title}</strong> was rejected by the admin.${reason ? ` <br/><strong>Reason:</strong> ${reason}` : ''}`)
               });
             } catch {
               transporter = nodemailer.createTransport({
@@ -298,7 +311,7 @@ export async function PATCH(request: NextRequest) {
                 to,
                 subject: 'Your job has been rejected',
                 text: `Your job "${updatedJob.title}" was rejected by the admin.${reason ? ` Reason: ${reason}` : ''}`,
-                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
+                html: brandWrap('Job Rejected', `Your job <strong>${updatedJob.title}</strong> was rejected by the admin.${reason ? ` <br/><strong>Reason:</strong> ${reason}` : ''}`)
               });
             }
           }
