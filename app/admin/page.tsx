@@ -753,24 +753,26 @@ export default function AdminDashboard() {
                               <div className="text-sm text-slate-500 text-right">
                                 Posted {job.created}
                               </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleJobAction(job.id, 'reject')}
-                                >
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Reject
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  className="bg-green-500 hover:bg-green-600"
-                                  onClick={() => handleJobAction(job.id, 'approve')}
-                                >
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Approve
-                                </Button>
-                              </div>
+                              {job.status.toLowerCase() === 'draft' && (
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleJobAction(job.id, 'reject')}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-500 hover:bg-green-600"
+                                    onClick={() => handleJobAction(job.id, 'approve')}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
