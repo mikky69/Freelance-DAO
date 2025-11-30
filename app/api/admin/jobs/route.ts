@@ -4,9 +4,10 @@ import { Admin } from '@/models/User';
 import { Job } from '@/models/Job';
 import { NotificationService } from '@/lib/notification-service';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -237,10 +238,14 @@ export async function PATCH(request: NextRequest) {
     
     if (updatedJob.client) {
       try {
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
+        const { default: nodemailer } = await import('nodemailer');
+        let transporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
           auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
         });
+        await transporter.verify().catch(() => {});
         const to = (updatedJob.client as any).email;
         if (to) {
           if (action === 'approve') {
@@ -249,19 +254,53 @@ export async function PATCH(request: NextRequest) {
               updatedJob.title,
               updatedJob._id.toString()
             );
-            await transporter.sendMail({
-              from: process.env.EMAIL_USER,
-              to,
-              subject: 'Your job has been approved',
-              html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ''}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
-            });
+            try {
+              await transporter.sendMail({
+                from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
+                to,
+                subject: 'Your job has been approved',
+                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}`,
+                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
+              });
+            } catch {
+              transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+              });
+              await transporter.sendMail({
+                from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
+                to,
+                subject: 'Your job has been approved',
+                text: `Your job "${updatedJob.title}" has been approved and is now live. View: ${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}`,
+                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Approved</h2><p>Your job "${updatedJob.title}" has been approved and is now live.</p><p><a href="${(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/jobs/${updatedJob._id}" target="_blank">View job</a></p></div>`
+              });
+            }
           } else if (action === 'reject') {
-            await transporter.sendMail({
-              from: process.env.EMAIL_USER,
-              to,
-              subject: 'Your job has been rejected',
-              html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
-            });
+            try {
+              await transporter.sendMail({
+                from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
+                to,
+                subject: 'Your job has been rejected',
+                text: `Your job "${updatedJob.title}" was rejected by the admin.${reason ? ` Reason: ${reason}` : ''}`,
+                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
+              });
+            } catch {
+              transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+              });
+              await transporter.sendMail({
+                from: `FreeLanceDAO <${process.env.EMAIL_USER}>`,
+                to,
+                subject: 'Your job has been rejected',
+                text: `Your job "${updatedJob.title}" was rejected by the admin.${reason ? ` Reason: ${reason}` : ''}`,
+                html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Job Rejected</h2><p>Your job "${updatedJob.title}" was rejected by the admin.</p>${reason ? `<p>Reason: ${reason}</p>` : ''}</div>`
+              });
+            }
           }
         }
       } catch (mailError) {
