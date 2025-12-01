@@ -105,10 +105,10 @@ export default function AdminJobsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-            <Input placeholder="Search jobs" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <Input className="w-full" placeholder="Search jobs" value={search} onChange={(e) => setSearch(e.target.value)} />
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -121,7 +121,7 @@ export default function AdminJobsPage() {
               </SelectContent>
             </Select>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -136,7 +136,7 @@ export default function AdminJobsPage() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant={flaggedOnly ? 'default' : 'outline'} onClick={() => setFlaggedOnly(v => !v)}>
+            <Button className="w-full" variant={flaggedOnly ? 'default' : 'outline'} onClick={() => setFlaggedOnly(v => !v)}>
               {flaggedOnly ? 'Showing flagged only' : 'Show flagged only'}
             </Button>
           </div>
