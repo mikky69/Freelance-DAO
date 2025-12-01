@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Shield, Users, Briefcase, DollarSign, BarChart3, Settings, Bell, LogOut, AlertTriangle } from "lucide-react"
+import { Shield, Users, Briefcase, DollarSign, BarChart3, Settings, Bell, LogOut, AlertTriangle, Menu } from "lucide-react"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/protected-route"
 
@@ -59,6 +60,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <DollarSign className="w-4 h-4" />
                   <span>Payments</span>
                 </Link>
+              </div>
+              <div className="md:hidden">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center">
+                      <Menu className="w-5 h-5" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-sm">
+                    <div className="space-y-2">
+                      <Link href="/admin">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                      <Link href="/admin/users">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Users className="w-4 h-4 mr-2" />
+                          Users
+                        </Button>
+                      </Link>
+                      <Link href="/admin/jobs">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Briefcase className="w-4 h-4 mr-2" />
+                          Jobs
+                        </Button>
+                      </Link>
+                      <Link href="/admin/payments">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Payments
+                        </Button>
+                      </Link>
+                      <Link href="/admin/settings">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Settings
+                        </Button>
+                      </Link>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
