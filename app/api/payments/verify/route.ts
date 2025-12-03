@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import { Payment } from '@/models/Payment'
 import { Client, Freelancer } from '@/models/User'
+import { Contract } from '@/models/Contract'
+import { NotificationService } from '@/lib/notification-service'
 import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key'
@@ -62,6 +64,42 @@ export async function POST(request: NextRequest) {
       channel,
       meta: { gateway: 'paystack', raw: data, usd_equivalent: amountUsd }
     })
+
+    // Handle contract escrow specific logic
+    if (status === 'success' && purpose === 'contract_escrow' && data.metadata?.contract_id) {
+      const contractId = data.metadata.contract_id;
+      const contract = await Contract.findById(contractId);
+
+      if (contract) {
+        // Update contract escrow status
+        contract.escrow.funded = true;
+        contract.escrow.fundedAt = new Date();
+        contract.escrow.amount = data.metadata.amount_usd || contract.paymentTerms.escrowAmount;
+        contract.escrow.currency = 'USD'; // Since we converted to NGN, the base is still USD
+
+        // Update contract status
+        if (contract.status === 'pending_escrow') {
+          contract.status = 'pending_freelancer_signature';
+        }
+
+        await contract.save();
+
+        // Send notification to freelancer
+        try {
+          const clientName = client ? client.fullname : 'Client';
+          await NotificationService.notifyContractSigned(
+            contract.freelancer.toString(),
+            clientName,
+            contract.title,
+            contract._id.toString(),
+            contract.escrow.amount,
+            contract.escrow.currency
+          );
+        } catch (notificationError) {
+          console.error('Failed to send escrow notification:', notificationError);
+        }
+      }
+    }
 
     return NextResponse.json({ message: 'Payment verified', payment: { id: payment._id } }, { status: 200 })
   } catch (error) {

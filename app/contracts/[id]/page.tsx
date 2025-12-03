@@ -39,7 +39,8 @@ import {
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams, useRouter } from "next/navigation"
+import { PaymentModal } from "@/components/payment-modal"
 
 interface Contract {
   _id: string;
@@ -121,6 +122,51 @@ function ContractContent() {
   const [savingMilestones, setSavingMilestones] = useState(false)
   const [drawnSignature, setDrawnSignature] = useState('')
   const [downloadingPDF, setDownloadingPDF] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkPayment = async () => {
+      const reference = searchParams.get('reference')
+      if (reference && !verifyingPayment) {
+        setVerifyingPayment(true)
+        try {
+          const token = localStorage.getItem('freelancedao_token')
+          const response = await fetch('/api/payments/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              reference,
+              purpose: 'contract_escrow'
+            })
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            toast.success('Payment successful! Funds escrowed.')
+            // Refresh page to show updated status
+            window.location.href = window.location.pathname
+          } else {
+            toast.error(data.message || 'Payment verification failed')
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error)
+          toast.error('Failed to verify payment')
+        } finally {
+          setVerifyingPayment(false)
+        }
+      }
+    }
+
+    checkPayment()
+  }, [searchParams])
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -914,18 +960,27 @@ function ContractContent() {
                 )}
 
                 {canClientEscrow && (
-                  <Button
-                    onClick={handleEscrow}
-                    disabled={escrowing}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    {escrowing ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <DollarSign className="w-4 h-4 mr-2" />
-                    )}
-                    {escrowing ? 'Escrowing...' : 'Escrow Funds'}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => setIsPaymentModalOpen(true)}
+                      disabled={escrowing}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      {escrowing ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <DollarSign className="w-4 h-4 mr-2" />
+                      )}
+                      {escrowing ? 'Escrowing...' : 'Escrow Funds'}
+                    </Button>
+                    <PaymentModal
+                      isOpen={isPaymentModalOpen}
+                      onClose={() => setIsPaymentModalOpen(false)}
+                      amount={contract.paymentTerms.escrowAmount}
+                      currency={contract.budget.currency}
+                      contractId={contract._id}
+                    />
+                  </>
                 )}
 
                 {canFreelancerSign && (
