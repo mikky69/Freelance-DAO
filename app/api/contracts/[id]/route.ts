@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    
+
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -20,25 +20,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         { status: 401 }
       );
     }
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
     const { id: contractId } = await params;
-    
+
     // Find the contract and populate related data
     const contract = await Contract.findById(contractId)
       .populate('job', 'title description category skills budget deadline')
       .populate('client', 'fullname email avatar')
       .populate('freelancer', 'fullname email avatar')
       .populate('proposal', 'title description timeline');
-      
+
     if (!contract) {
       return NextResponse.json(
         { message: 'Contract not found' },
         { status: 404 }
       );
     }
-    
+
     // Verify user has access to this contract
     if (contract.client._id.toString() !== userId && contract.freelancer._id.toString() !== userId) {
       return NextResponse.json(
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         { status: 403 }
       );
     }
-    
+
     return NextResponse.json({ contract });
   } catch (error) {
     console.error('Get Contract API Error:', error);
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    
+
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -69,14 +69,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         { status: 401 }
       );
     }
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
     const { id: contractId } = await params;
-    
+
     const requestBody = await request.json();
     const { action, signature, milestones } = requestBody;
-    
+
     // Find the contract
     const contract = await Contract.findById(contractId);
     if (!contract) {
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         { status: 404 }
       );
     }
-    
+
     // Verify user has access to this contract
     if (contract.client.toString() !== userId && contract.freelancer.toString() !== userId) {
       return NextResponse.json(
@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         { status: 403 }
       );
     }
-    
+
     // Handle different actions
     switch (action) {
       case 'update_milestones':
@@ -104,47 +104,63 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             { status: 403 }
           );
         }
-        
+
         if (contract.signatures.client.signed) {
           return NextResponse.json(
             { message: 'Cannot update milestones after contract is signed' },
             { status: 400 }
           );
         }
-        
+
         if (!milestones || !Array.isArray(milestones)) {
           return NextResponse.json(
             { message: 'Invalid milestones data' },
             { status: 400 }
           );
         }
-        
+
+        // Validate that milestone amounts sum to the total budget
+        if (milestones.length > 0) {
+          const milestonesTotal = milestones.reduce((sum: number, milestone: any) => sum + (milestone.amount || 0), 0);
+
+          if (milestonesTotal !== contract.budget.amount) {
+            return NextResponse.json(
+              {
+                message: `Milestone amounts (${milestonesTotal} ${contract.budget.currency}) must sum to the total budget (${contract.budget.amount} ${contract.budget.currency})`,
+                milestonesTotal,
+                budgetAmount: contract.budget.amount,
+              },
+              { status: 400 }
+            );
+          }
+        }
+
         contract.milestones = milestones;
-         await contract.save();
-         
-         // Also update milestones in the corresponding job
+        await contract.save();
+
+        // Also update milestones in the corresponding job
         //  const { Job } = require('@/models/Job');
-         await Job.findByIdAndUpdate(contract.job, {
-           milestones: milestones.map((milestone: any) => ({
-             name: milestone.name,
-             amount: milestone.amount,
-             duration: milestone.duration || '1 week',
-             completed: milestone.completed || false
-           }))
-         });
-         
-         return NextResponse.json({
-           message: 'Milestones updated successfully',
-           contract: {
-             id: contract._id,
-             milestones: contract.milestones,
-           }
-         });
-        
+        await Job.findByIdAndUpdate(contract.job, {
+          milestones: milestones.map((milestone: any) => ({
+            name: milestone.name,
+            amount: milestone.amount,
+            duration: milestone.duration || '1 week',
+            completed: milestone.completed || false
+          }))
+        });
+
+        return NextResponse.json({
+          message: 'Milestones updated successfully',
+          contract: {
+            id: contract._id,
+            milestones: contract.milestones,
+          }
+        });
+
       case 'sign':
         const isClient = contract.client.toString() === userId;
         const isFreelancer = contract.freelancer.toString() === userId;
-        
+
         if (isClient) {
           if (contract.signatures.client.signed) {
             return NextResponse.json(
@@ -152,11 +168,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               { status: 400 }
             );
           }
-          
+
           contract.signatures.client.signed = true;
           contract.signatures.client.signedAt = new Date();
           contract.signatures.client.signature = signature || `Client signature - ${new Date().toISOString()}`;
-          
+
           // Update status based on current state
           if (contract.status === 'pending_client_signature') {
             contract.status = 'pending_escrow';
@@ -168,7 +184,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               { status: 400 }
             );
           }
-          
+
           // Freelancer can only sign after client has signed and escrowed funds
           if (!contract.signatures.client.signed || !contract.escrow.funded) {
             return NextResponse.json(
@@ -176,16 +192,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               { status: 400 }
             );
           }
-          
+
           contract.signatures.freelancer.signed = true;
           contract.signatures.freelancer.signedAt = new Date();
           contract.signatures.freelancer.signature = signature || `Freelancer signature - ${new Date().toISOString()}`;
-          
+
           // If both signed and escrowed, contract becomes active
           if (contract.signatures.client.signed && contract.escrow.funded) {
             contract.status = 'active';
             contract.startDate = new Date();
-            
+
             // Update job status to in_progress
             await Job.findByIdAndUpdate(contract.job, {
               status: 'in_progress',
@@ -194,7 +210,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           }
         }
         break;
-        
+
       case 'escrow':
         // Only client can escrow funds
         if (contract.client.toString() !== userId) {
@@ -203,25 +219,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             { status: 403 }
           );
         }
-        
+
         if (contract.escrow.funded) {
           return NextResponse.json(
             { message: 'Funds already escrowed' },
             { status: 400 }
           );
         }
-        
+
         if (!contract.signatures.client.signed) {
           return NextResponse.json(
             { message: 'Client must sign contract before escrowing funds' },
             { status: 400 }
           );
         }
-        
+
         contract.escrow.funded = true;
         contract.escrow.fundedAt = new Date();
         contract.status = 'pending_freelancer_signature';
-        
+
         // Send notification to freelancer about escrow funding
         try {
           const client = await Client.findById(contract.client);
@@ -240,16 +256,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           // Don't fail the main operation if notification fails
         }
         break;
-        
+
       default:
         return NextResponse.json(
           { message: 'Invalid action' },
           { status: 400 }
         );
     }
-    
+
     await contract.save();
-    
+
     return NextResponse.json({
       message: `Contract ${action} successful`,
       contract: {

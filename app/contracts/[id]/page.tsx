@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -109,7 +109,7 @@ function ContractContent() {
   const { user } = useAuth()
   const params = useParams()
   const contractId = params.id as string
-  
+
   const [contract, setContract] = useState<Contract | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -121,7 +121,7 @@ function ContractContent() {
   const [savingMilestones, setSavingMilestones] = useState(false)
   const [drawnSignature, setDrawnSignature] = useState('')
   const [downloadingPDF, setDownloadingPDF] = useState(false)
-  
+
   useEffect(() => {
     const fetchContract = async () => {
       try {
@@ -130,19 +130,19 @@ function ContractContent() {
           setError('Please log in to view contract')
           return
         }
-        
+
         const response = await fetch(`/api/contracts/${contractId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         })
-        
+
         if (!response.ok) {
           const errorData = await response.json()
           throw new Error(errorData.message || 'Failed to fetch contract')
         }
-        
+
         const data = await response.json()
         setContract(data.contract)
         setMilestones(data.contract.milestones || [])
@@ -153,15 +153,15 @@ function ContractContent() {
         setLoading(false)
       }
     }
-    
+
     if (contractId) {
       fetchContract()
     }
   }, [contractId])
-  
+
   const handleSign = async () => {
     if (!contract) return
-    
+
     setSigning(true)
     try {
       const token = localStorage.getItem('freelancedao_token')
@@ -171,22 +171,22 @@ function ContractContent() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: 'sign',
           signature: drawnSignature || `Digital signature - ${new Date().toISOString()}`
         }),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to sign contract')
       }
-      
+
       const data = await response.json()
       toast.success('Contract signed successfully!')
       setShowSignDialog(false)
       setDrawnSignature('')
-      
+
       // Refresh contract data
       window.location.reload()
     } catch (error) {
@@ -196,10 +196,10 @@ function ContractContent() {
       setSigning(false)
     }
   }
-  
+
   const handleEscrow = async () => {
     if (!contract) return
-    
+
     setEscrowing(true)
     try {
       const token = localStorage.getItem('freelancedao_token')
@@ -211,14 +211,14 @@ function ContractContent() {
         },
         body: JSON.stringify({ action: 'escrow' }),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to escrow funds')
       }
-      
+
       toast.success('Funds escrowed successfully!')
-      
+
       // Refresh contract data
       window.location.reload()
     } catch (error) {
@@ -228,10 +228,10 @@ function ContractContent() {
       setEscrowing(false)
     }
   }
-  
+
   const handleSaveMilestones = async () => {
     if (!contract) return
-    
+
     setSavingMilestones(true)
     try {
       const token = localStorage.getItem('freelancedao_token')
@@ -241,20 +241,20 @@ function ContractContent() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: 'update_milestones',
           milestones: milestones
         }),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to update milestones')
       }
-      
+
       toast.success('Milestones updated successfully!')
       setEditingMilestones(false)
-      
+
       // Refresh contract data
       window.location.reload()
     } catch (error) {
@@ -264,7 +264,7 @@ function ContractContent() {
       setSavingMilestones(false)
     }
   }
-  
+
   const addMilestone = () => {
     setMilestones([...milestones, {
       name: '',
@@ -274,20 +274,20 @@ function ContractContent() {
       completed: false
     }])
   }
-  
+
   const removeMilestone = (index: number) => {
     setMilestones(milestones.filter((_, i) => i !== index))
   }
-  
+
   const updateMilestone = (index: number, field: string, value: any) => {
     const updated = [...milestones]
     updated[index] = { ...updated[index], [field]: value }
     setMilestones(updated)
   }
-  
+
   const handleDownloadPDF = async () => {
     if (!contract) return
-    
+
     setDownloadingPDF(true)
     try {
       await generateContractPDF(contract)
@@ -299,7 +299,7 @@ function ContractContent() {
       setDownloadingPDF(false)
     }
   }
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-500'
@@ -311,7 +311,7 @@ function ContractContent() {
       default: return 'bg-gray-500'
     }
   }
-  
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'active': return 'Active'
@@ -323,13 +323,13 @@ function ContractContent() {
       default: return status
     }
   }
-  
+
   const isClient = user?.role === 'client'
   const canClientSign = isClient && !contract?.signatures.client.signed
   const canClientEscrow = isClient && contract?.signatures.client.signed && !contract?.escrow.funded
   const canFreelancerSign = !isClient && contract?.signatures.client.signed && contract?.escrow.funded && !contract?.signatures.freelancer.signed
   const canEditMilestones = isClient && (contract?.status === 'draft' || contract?.status === 'pending_client_signature')
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -340,7 +340,7 @@ function ContractContent() {
       </div>
     )
   }
-  
+
   if (error || !contract) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -355,7 +355,7 @@ function ContractContent() {
       </div>
     )
   }
-  
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
@@ -369,7 +369,7 @@ function ContractContent() {
           </div>
           <p className="text-slate-600">Review and manage your contract agreement</p>
         </div>
-        
+
         {/* Status Alert */}
         {contract.status === 'pending_client_signature' && isClient && (
           <Alert className="mb-6 border-yellow-200 bg-yellow-50">
@@ -379,7 +379,7 @@ function ContractContent() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {contract.status === 'pending_escrow' && isClient && (
           <Alert className="mb-6 border-orange-200 bg-orange-50">
             <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -388,7 +388,7 @@ function ContractContent() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {contract.status === 'pending_freelancer_signature' && !isClient && (
           <Alert className="mb-6 border-blue-200 bg-blue-50">
             <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -397,7 +397,7 @@ function ContractContent() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Contract Details */}
           <div className="lg:col-span-2 space-y-6">
@@ -414,9 +414,9 @@ function ContractContent() {
                   <h3 className="font-semibold text-slate-800 mb-2">{contract.title}</h3>
                   <p className="text-slate-600">{contract.description}</p>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium text-slate-700 mb-1">Total Budget</h4>
@@ -433,7 +433,7 @@ function ContractContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Milestones */}
             <Card>
               <CardHeader>
@@ -452,38 +452,62 @@ function ContractContent() {
                       Edit Milestones
                     </Button>
                   )}
-                  {editingMilestones && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingMilestones(false)
-                          setMilestones(contract.milestones || [])
-                        }}
-                        disabled={savingMilestones}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSaveMilestones}
-                        disabled={savingMilestones}
-                      >
-                        {savingMilestones ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Save className="w-4 h-4 mr-2" />
-                        )}
-                        {savingMilestones ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                    </div>
-                  )}
+                  {editingMilestones && (() => {
+                    const milestonesTotal = milestones.reduce((sum, m) => sum + (m.amount || 0), 0);
+                    const isValid = milestonesTotal === contract.budget.amount;
+
+                    return (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingMilestones(false)
+                            setMilestones(contract.milestones || [])
+                          }}
+                          disabled={savingMilestones}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveMilestones}
+                          disabled={savingMilestones || !isValid}
+                        >
+                          {savingMilestones ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4 mr-2" />
+                          )}
+                          {savingMilestones ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </CardHeader>
               <CardContent>
                 {!editingMilestones ? (
                   <div className="space-y-4">
+                    {/* Validation Warning for View Mode */}
+                    {(() => {
+                      const milestonesTotal = contract.milestones.reduce((sum: number, m: any) => sum + (m.amount || 0), 0);
+                      const isValid = milestonesTotal === contract.budget.amount;
+
+                      if (!isValid && contract.milestones.length > 0) {
+                        return (
+                          <Alert variant="destructive" className="mb-4 bg-red-50 border-red-200">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            <AlertTitle className="text-red-800 font-medium">Budget Mismatch Detected</AlertTitle>
+                            <AlertDescription className="text-red-700">
+                              The sum of milestones ({milestonesTotal} {contract.budget.currency}) does not match the total budget ({contract.budget.amount} {contract.budget.currency}).
+                              {canEditMilestones && " Please edit milestones to fix this."}
+                            </AlertDescription>
+                          </Alert>
+                        );
+                      }
+                      return null;
+                    })()}
                     {contract.milestones.length === 0 ? (
                       <div className="text-center py-8 text-slate-500">
                         <p>No milestones set yet.</p>
@@ -523,7 +547,7 @@ function ContractContent() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                        
+
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor={`milestone-name-${index}`}>Deliverable Name *</Label>
@@ -550,7 +574,7 @@ function ContractContent() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <Label htmlFor={`milestone-description-${index}`}>Description</Label>
                           <Textarea
@@ -561,7 +585,7 @@ function ContractContent() {
                             rows={3}
                           />
                         </div>
-                        
+
                         <div>
                           <Label htmlFor={`milestone-duration-${index}`}>Estimated Duration</Label>
                           <Input
@@ -573,7 +597,7 @@ function ContractContent() {
                         </div>
                       </div>
                     ))}
-                    
+
                     <Button
                       variant="outline"
                       onClick={addMilestone}
@@ -582,7 +606,43 @@ function ContractContent() {
                       <Plus className="w-4 h-4 mr-2" />
                       Add Milestone
                     </Button>
-                    
+
+                    {/* Milestone Total vs Budget */}
+                    {milestones.length > 0 && (() => {
+                      const milestonesTotal = milestones.reduce((sum, m) => sum + (m.amount || 0), 0);
+                      const isValid = milestonesTotal === contract.budget.amount;
+
+                      return (
+                        <div className={`mt-4 p-4 rounded-lg border-2 ${isValid
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
+                          }`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium text-slate-700">Milestones Total:</span>
+                            <span className={`text-lg font-bold ${isValid ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                              {milestonesTotal} {contract.budget.currency}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-slate-700">Total Budget:</span>
+                            <span className="text-lg font-bold text-slate-800">
+                              {contract.budget.amount} {contract.budget.currency}
+                            </span>
+                          </div>
+                          {!isValid && (
+                            <p className="mt-3 text-sm text-red-700 font-medium">
+                              ⚠️ Milestone amounts must sum to the total budget.
+                              {milestonesTotal > contract.budget.amount
+                                ? `Please reduce by ${milestonesTotal - contract.budget.amount} ${contract.budget.currency}.`
+                                : `Please add ${contract.budget.amount - milestonesTotal} ${contract.budget.currency} more.`
+                              }
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {milestones.length === 0 && (
                       <div className="text-center py-8">
                         <p className="text-slate-600 mb-4">Set up project milestones to break down work and payments</p>
@@ -600,7 +660,7 @@ function ContractContent() {
                 )}
               </CardContent>
             </Card>
-            
+
             {/* Payment Terms */}
             <Card>
               <CardHeader>
@@ -616,19 +676,19 @@ function ContractContent() {
                     {contract.paymentTerms.escrowAmount} {contract.budget.currency}
                   </p>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium text-slate-700 mb-2">Release Conditions</h4>
                   <p className="text-slate-600">{contract.paymentTerms.releaseConditions}</p>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium text-slate-700 mb-2">Penalty Clause</h4>
                   <p className="text-slate-600">{contract.paymentTerms.penaltyClause}</p>
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Rights & Ownership */}
             <Card>
               <CardHeader>
@@ -650,7 +710,7 @@ function ContractContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Dispute Resolution */}
             <Card>
               <CardHeader>
@@ -670,7 +730,7 @@ function ContractContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Termination */}
             <Card>
               <CardHeader>
@@ -698,7 +758,7 @@ function ContractContent() {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Parties */}
@@ -723,9 +783,9 @@ function ContractContent() {
                     <CheckCircle className="w-5 h-5 text-green-500" />
                   )}
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={contract.freelancer.avatar} />
@@ -741,7 +801,7 @@ function ContractContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Escrow Status */}
             <Card>
               <CardHeader>
@@ -775,7 +835,7 @@ function ContractContent() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Actions */}
             <Card>
               <CardHeader>
@@ -795,7 +855,7 @@ function ContractContent() {
                   )}
                   {downloadingPDF ? 'Generating...' : 'Download PDF'}
                 </Button>
-                
+
                 {canClientSign && (
                   <Dialog open={showSignDialog} onOpenChange={setShowSignDialog}>
                     <DialogTrigger asChild>
@@ -812,15 +872,15 @@ function ContractContent() {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-6">
-                        <SignaturePad 
+                        <SignaturePad
                           onSignatureChange={setDrawnSignature}
                           width={500}
                           height={200}
                         />
-                        
+
                         <div className="flex gap-2">
-                          <Button 
-                            onClick={handleSign} 
+                          <Button
+                            onClick={handleSign}
                             disabled={signing || !drawnSignature}
                             className="flex-1"
                           >
@@ -831,8 +891,8 @@ function ContractContent() {
                             )}
                             {signing ? 'Signing...' : 'Sign Contract'}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => {
                               setShowSignDialog(false)
                               setDrawnSignature('')
@@ -842,7 +902,7 @@ function ContractContent() {
                             Cancel
                           </Button>
                         </div>
-                        
+
                         {!drawnSignature && (
                           <p className="text-sm text-amber-600 text-center">
                             Please draw your signature above to continue
@@ -852,10 +912,10 @@ function ContractContent() {
                     </DialogContent>
                   </Dialog>
                 )}
-                
+
                 {canClientEscrow && (
-                  <Button 
-                    onClick={handleEscrow} 
+                  <Button
+                    onClick={handleEscrow}
                     disabled={escrowing}
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
@@ -867,7 +927,7 @@ function ContractContent() {
                     {escrowing ? 'Escrowing...' : 'Escrow Funds'}
                   </Button>
                 )}
-                
+
                 {canFreelancerSign && (
                   <Dialog open={showSignDialog} onOpenChange={setShowSignDialog}>
                     <DialogTrigger asChild>
@@ -889,16 +949,16 @@ function ContractContent() {
                             ✅ The client has already signed and escrowed the funds. Signing this contract will make it active and you can start working.
                           </p>
                         </div>
-                        
-                        <SignaturePad 
+
+                        <SignaturePad
                           onSignatureChange={setDrawnSignature}
                           width={500}
                           height={200}
                         />
-                        
+
                         <div className="flex gap-2">
-                          <Button 
-                            onClick={handleSign} 
+                          <Button
+                            onClick={handleSign}
                             disabled={signing || !drawnSignature}
                             className="flex-1"
                           >
@@ -909,8 +969,8 @@ function ContractContent() {
                             )}
                             {signing ? 'Signing...' : 'Sign Contract'}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => {
                               setShowSignDialog(false)
                               setDrawnSignature('')
@@ -920,7 +980,7 @@ function ContractContent() {
                             Cancel
                           </Button>
                         </div>
-                        
+
                         {!drawnSignature && (
                           <p className="text-sm text-amber-600 text-center">
                             Please draw your signature above to continue
@@ -930,7 +990,7 @@ function ContractContent() {
                     </DialogContent>
                   </Dialog>
                 )}
-                
+
                 {contract.status === 'active' && (
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -950,7 +1010,7 @@ function ContractContent() {
 
 export default function ContractPage() {
   return (
-    <ProtectedRoute 
+    <ProtectedRoute
       requireAuth={true}
       requireCompleteProfile={true}
     >

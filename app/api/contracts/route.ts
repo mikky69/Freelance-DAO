@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
-    
+
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
-    
+
     // Verify user is a client
     const client = await Client.findById(userId);
     if (!client) {
@@ -32,28 +32,28 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-    
+
     const { proposalId } = await request.json();
-    
+
     if (!proposalId) {
       return NextResponse.json(
         { message: 'Proposal ID is required' },
         { status: 400 }
       );
     }
-    
+
     // Find the proposal and populate job details
     const proposal = await Proposal.findById(proposalId)
       .populate('job')
       .populate('freelancer', 'fullname email');
-      
+
     if (!proposal) {
       return NextResponse.json(
         { message: 'Proposal not found' },
         { status: 404 }
       );
     }
-    
+
     // Verify the client owns the job
     if (proposal.job.client.toString() !== userId) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-    
+
     // Check if proposal is accepted
     if (proposal.status !== 'accepted') {
       return NextResponse.json(
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Check if contract already exists for this proposal
     const existingContract = await Contract.findOne({ proposal: proposalId });
     if (existingContract) {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     }
-    
+
     // Get job details to copy milestones
     const job = await Job.findById(proposal.job._id);
     if (!job) {
@@ -87,12 +87,28 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
+
     // Use job milestones if available, otherwise use proposal milestones
-    const milestonesToUse = job.milestones && job.milestones.length > 0 
-      ? job.milestones 
+    const milestonesToUse = job.milestones && job.milestones.length > 0
+      ? job.milestones
       : proposal.milestones;
-    
+
+    // Validate that milestone amounts sum to the total budget
+    if (milestonesToUse && milestonesToUse.length > 0) {
+      const milestonesTotal = milestonesToUse.reduce((sum, milestone) => sum + milestone.amount, 0);
+
+      if (milestonesTotal !== proposal.budget.amount) {
+        return NextResponse.json(
+          {
+            message: `Milestone amounts (${milestonesTotal} ${proposal.budget.currency}) must sum to the total budget (${proposal.budget.amount} ${proposal.budget.currency})`,
+            milestonesTotal,
+            budgetAmount: proposal.budget.amount,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create contract with proposal details
     const contract = new Contract({
       job: proposal.job._id,
@@ -121,9 +137,9 @@ export async function POST(request: NextRequest) {
       },
       status: 'pending_client_signature',
     });
-    
+
     await contract.save();
-    
+
     return NextResponse.json(
       {
         message: 'Contract created successfully',
@@ -149,7 +165,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    
+
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -158,47 +174,47 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
-    
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const jobId = searchParams.get('jobId')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10');
-    
+
     // Check if user is freelancer or client
     const freelancer = await Freelancer.findById(userId);
     const client = await Client.findById(userId);
-    
+
     if (!freelancer && !client) {
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     // Build query based on user role and status
     const query: any = {}
-    
+
     if (freelancer) {
       query.freelancer = userId
     } else if (client) {
       query.client = userId
     }
-    
+
     if (status) {
       query.status = status
     }
-    
+
     if (jobId) {
       query.job = jobId
     }
-    
+
     // Calculate pagination
     const skip = (page - 1) * limit;
-    
+
     // Fetch contracts
     const contracts = await Contract.find(query)
       .populate('job', 'title category')
@@ -208,10 +224,10 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean();
-    
+
     // Get total count for pagination
     const total = await Contract.countDocuments(query);
-    
+
     return NextResponse.json({
       contracts,
       pagination: {
