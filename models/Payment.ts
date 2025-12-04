@@ -4,7 +4,7 @@ export interface IPayment extends Document {
   payer: mongoose.Types.ObjectId
   payerModel: 'Client' | 'Freelancer' | 'Admin'
   method: 'paystack' | 'crypto'
-  purpose: 'job_post_fee' | 'featured_fee' | 'escrow_deposit' | 'milestone_release'
+  purpose: 'job_post_fee' | 'featured_fee' | 'escrow_deposit' | 'milestone_release' | 'contract_escrow'
   amount: number
   currency: 'NGN' | 'USD' | 'HBAR'
   status: 'success' | 'failed' | 'pending'
@@ -22,10 +22,10 @@ const PaymentSchema = new Schema<IPayment>({
   payer: { type: Schema.Types.ObjectId, required: true, refPath: 'payerModel' },
   payerModel: { type: String, required: true, enum: ['Client', 'Freelancer', 'Admin'] },
   method: { type: String, required: true, enum: ['paystack', 'crypto'] },
-  purpose: { 
-    type: String, 
-    required: true, 
-    enum: ['job_post_fee', 'featured_fee', 'escrow_deposit', 'milestone_release'] 
+  purpose: {
+    type: String,
+    required: true,
+    enum: ['job_post_fee', 'featured_fee', 'escrow_deposit', 'milestone_release', 'contract_escrow']
   },
   amount: { type: Number, required: true, min: 0 },
   currency: { type: String, required: true, enum: ['NGN', 'USD', 'HBAR'] },
