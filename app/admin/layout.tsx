@@ -1,5 +1,7 @@
+"use client"
 
 import type React from "react"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -30,6 +32,7 @@ import Link from "next/link"
 import { ProtectedRoute } from "@/components/protected-route"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { signOut } = useAuth()
   return (
     <ProtectedRoute requireAuth={true} requiredRole="admin" redirectTo="/auth/signin/admin">
       <div className="flex h-screen bg-[#0f111a] text-slate-300 font-sans">
@@ -70,7 +73,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Bell className="w-5 h-5" />
               <span>Notifications</span>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all">
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all"
+              onClick={() => signOut()}
+            >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>
             </div>
