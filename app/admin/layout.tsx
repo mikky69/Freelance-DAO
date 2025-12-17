@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                  For now, relying on the page to render the "Analytics" title to match mockup exactly. */}
 
             {/* Alert Banner for Critical Issues (Styled Dark) */}
-            <div className="mb-6 bg-red-900/20 border border-red-900/50 rounded-lg p-3 flex items-center justify-between">
+            {/* <div className="mb-6 bg-red-900/20 border border-red-900/50 rounded-lg p-3 flex items-center justify-between">
               <div className="flex items-center space-x-2 text-red-400">
                 <AlertTriangle className="w-4 h-4" />
                 <span className="text-sm font-medium">5 disputes require immediate attention</span>
@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/30">
                 View All
               </Button>
-            </div>
+            </div> */}
 
             {children}
           </div>
