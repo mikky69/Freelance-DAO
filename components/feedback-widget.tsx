@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { MessageSquare, Loader2, Image as ImageIcon, X } from "lucide-react"
 import { toast } from "sonner"
+import { motion } from "framer-motion"
 
 export function FeedbackWidget() {
   const { user } = useAuth()
@@ -28,6 +29,7 @@ export function FeedbackWidget() {
   const [email, setEmail] = useState("")
   const [images, setImages] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -87,15 +89,30 @@ export function FeedbackWidget() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg z-50"
-          size="icon"
-        >
-          <MessageSquare className="h-6 w-6" />
-          <span className="sr-only">Feedback</span>
-        </Button>
-      </DialogTrigger>
+      <motion.div
+        drag
+        dragMomentum={false}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={() => setTimeout(() => setIsDragging(false), 150)}
+        className="fixed bottom-4 right-4 z-50"
+        style={{ touchAction: "none" }}
+      >
+        <DialogTrigger asChild>
+          <Button
+            className="h-12 w-12 rounded-full shadow-lg"
+            size="icon"
+            onClick={(e) => {
+              if (isDragging) {
+                e.preventDefault()
+                e.stopPropagation()
+              }
+            }}
+          >
+            <MessageSquare className="h-6 w-6" />
+            <span className="sr-only">Feedback</span>
+          </Button>
+        </DialogTrigger>
+      </motion.div>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Send Feedback</DialogTitle>
