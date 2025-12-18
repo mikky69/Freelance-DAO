@@ -71,8 +71,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="p-4 border-t border-[#1e293b] space-y-2">
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all">
-              <Bell className="w-5 h-5" />
-              <span>Notifications</span>
+                <Link href="/admin/feedbacks" className="flex items-center gap-3 px-4 py-2 hover:text-white">
+              <FileText className="w-5 h-5" />
+              <span>Feedbacks</span>
+              </Link>
             </div>
             <div
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all"
