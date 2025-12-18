@@ -6,6 +6,7 @@ import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
 import RainbowkitHederaProvider from "@/RainbowkitHederaProvider"
 import { ConditionalBottomNavigation, ConditionalFooter, ConditionalNavigation } from "./LayoutComponent"
+import { FeedbackWidget } from "@/components/feedback-widget"
 import type { Metadata } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -31,6 +32,7 @@ export default function RootLayout({
             <ConditionalBottomNavigation />
             <ConditionalFooter />
             <ContractNotification />
+            <FeedbackWidget />
             <Toaster position="top-right" richColors />
           </RainbowkitHederaProvider>
         </AuthProvider>

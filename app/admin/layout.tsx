@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   Menu,
   LayoutDashboard,
-  FileText
+  FileText,
+  MessageSquare
 } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
