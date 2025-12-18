@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MessageSquare, Loader2 } from "lucide-react"
+import { MessageSquare, Loader2, Image as ImageIcon, X } from "lucide-react"
 import { toast } from "sonner"
 
 export function FeedbackWidget() {
@@ -26,6 +26,18 @@ export function FeedbackWidget() {
   const [content, setContent] = useState("")
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [email, setEmail] = useState("")
+  const [images, setImages] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImages(prev => [...prev, ...Array.from(e.target.files || [])])
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,19 +50,21 @@ export function FeedbackWidget() {
     try {
       setLoading(true)
       
-      const payload = {
-        content,
-        isAnonymous,
-        email: isAnonymous ? undefined : (user?.email || email),
-        userType: user?.role || 'guest',
+      const formData = new FormData()
+      formData.append("content", content)
+      formData.append("isAnonymous", String(isAnonymous))
+      if (!isAnonymous && (user?.email || email)) {
+        formData.append("email", user?.email || email)
       }
+      formData.append("userType", user?.role || 'guest')
+      
+      images.forEach(image => {
+        formData.append("images", image)
+      })
 
       const res = await fetch("/api/feedback", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: formData,
       })
 
       if (!res.ok) {
@@ -62,6 +76,7 @@ export function FeedbackWidget() {
       setContent("")
       setIsAnonymous(false)
       setEmail("")
+      setImages([])
     } catch (error) {
       console.error(error)
       toast.error("Something went wrong. Please try again.")
@@ -98,6 +113,50 @@ export function FeedbackWidget() {
               onChange={(e) => setContent(e.target.value)}
               className="min-h-[100px]"
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Attachments</Label>
+            <div className="flex flex-wrap gap-2">
+              {images.map((file, index) => (
+                <div key={index} className="relative group">
+                  <div className="w-16 h-16 border rounded bg-slate-100 flex items-center justify-center overflow-hidden">
+                    {file.type.startsWith('image/') ? (
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt="preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-500 break-all px-1">{file.name.slice(0, 8)}...</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-16 h-16 border-dashed"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImageIcon className="w-6 h-6 text-slate-400" />
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+              />
+            </div>
           </div>
           
           <div className="flex items-center space-x-2">

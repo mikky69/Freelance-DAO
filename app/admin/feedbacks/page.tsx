@@ -15,6 +15,7 @@ interface FeedbackItem {
   userType: string
   isAnonymous: boolean
   createdAt: string
+  images?: string[]
 }
 
 export default function AdminFeedbacksPage() {
@@ -102,6 +103,16 @@ export default function AdminFeedbacksPage() {
                         <p className="text-slate-800 text-lg mb-3 whitespace-pre-wrap">
                           {feedback.content}
                         </p>
+
+                        {feedback.images && feedback.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {feedback.images.map((img, idx) => (
+                              <a key={idx} href={img} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 border rounded overflow-hidden hover:opacity-80 transition-opacity bg-slate-100">
+                                <img src={img} alt="attachment" className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         
                         {!feedback.isAnonymous && feedback.email && (
                           <div className="flex items-center text-sm text-slate-600">

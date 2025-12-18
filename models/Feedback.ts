@@ -5,6 +5,7 @@ export interface IFeedback extends Document {
   email?: string;
   userType?: 'freelancer' | 'client' | 'guest';
   isAnonymous: boolean;
+  images?: string[];
   createdAt: Date;
 }
 
@@ -27,6 +28,10 @@ const FeedbackSchema = new Schema<IFeedback>(
     isAnonymous: {
       type: Boolean,
       default: false,
+    },
+    images: {
+      type: [String],
+      default: [],
     },
   },
   {
