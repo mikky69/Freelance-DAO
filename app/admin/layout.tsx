@@ -104,6 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link href="/admin/users" className="flex items-center gap-3 px-4 py-2 hover:text-white">Users</Link>
                 <Link href="/admin/jobs" className="flex items-center gap-3 px-4 py-2 hover:text-white">Jobs</Link>
                 <Link href="/admin/payments" className="flex items-center gap-3 px-4 py-2 hover:text-white">Payments</Link>
+                <Link href="/admin/feedbacks" className="flex items-center gap-3 px-4 py-2 hover:text-white">Feedbacks</Link>
                 <Link href="/admin" className="flex items-center gap-3 px-4 py-2 text-cyan-400">Analytics</Link>
               </nav>
             </DialogContent>
