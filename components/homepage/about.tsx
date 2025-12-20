@@ -228,7 +228,7 @@ export function About() {
 							<button className="group px-6 py-3 md:px-8 md:py-4 border-2 border-purple-500 text-purple-300 hover:text-white hover:bg-purple-500/20 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105">
 								<div className="flex items-center justify-center space-x-2">
 									<Users className="w-4 h-4 md:w-5 md:h-5" />
-									<Link href="/admin/disputes" className="flex items-center gap-3 px-4 py-2 hover:text-white">
+									<Link href="/auth/signup/freelancer" className="flex items-center gap-3 px-4 py-2 hover:text-white">
 									<span>I'm a Freelancer</span>
 									</Link>
 								</div>
