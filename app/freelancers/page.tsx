@@ -413,7 +413,7 @@ interface Freelancer {
                     placeholder="Search freelancers by name, skill, or expertise..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-12 text-lg border-slate-200 focus:border-blue-500"
+                    className="pl-12 h-12 text-lg border-slate-200 focus:border-blue-500 text-black"
                   />
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>

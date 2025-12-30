@@ -5,6 +5,7 @@ import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
 import { WalletProvider } from "@/lib/wallet-context"
 import { ConditionalBottomNavigation, ConditionalFooter, ConditionalNavigation } from "./LayoutComponent"
+import { FeedbackWidget } from "@/components/feedback-widget"
 import type { Metadata } from "next"
 import { TestnetBanner } from "@/components/TestnetBanner"
 
@@ -30,6 +31,7 @@ export default function RootLayout({
             <ConditionalBottomNavigation />
             <ConditionalFooter />
             <ContractNotification />
+            <FeedbackWidget />
             <Toaster position="top-right" richColors />
           </WalletProvider>
         </AuthProvider>

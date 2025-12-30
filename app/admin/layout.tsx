@@ -1,4 +1,7 @@
+"use client"
+
 import type React from "react"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -10,166 +13,126 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Shield, Users, Briefcase, DollarSign, BarChart3, Settings, Bell, LogOut, AlertTriangle, Menu } from "lucide-react"
+import {
+  Shield,
+  Users,
+  Briefcase,
+  DollarSign,
+  BarChart3,
+  Settings,
+  Bell,
+  LogOut,
+  AlertTriangle,
+  Menu,
+  LayoutDashboard,
+  FileText,
+  MessageSquare
+} from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/protected-route"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { signOut } = useAuth()
   return (
     <ProtectedRoute requireAuth={true} requiredRole="admin" redirectTo="/auth/signin/admin">
-      <div className="min-h-screen bg-slate-50">
-      {/* Admin Navigation */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link href="/admin" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-800">Admin Panel</span>
+      <div className="flex h-screen bg-[#0f111a] text-slate-300 font-sans">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col w-64 bg-[#0B0E14] border-r border-[#1e293b]">
+          <div className="p-6 flex items-center gap-3">
+            <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white animate-spin-slow" />
+            </div>
+            <span className="text-xl font-bold text-white tracking-wide">Admin</span>
+          </div>
+
+          <nav className="flex-1 px-4 space-y-2 mt-4">
+            <Link href="/admin/disputes" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+              <FileText className="w-5 h-5" />
+              <span>Disputes</span>
+            </Link>
+            <Link href="/admin/users" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+              <Users className="w-5 h-5" />
+              <span>Users</span>
+            </Link>
+            <Link href="/admin/jobs" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+              <BarChart3 className="w-5 h-5" />
+              <span>Jobs</span>
+            </Link>
+            <Link href="/admin/payments" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+              <DollarSign className="w-5 h-5" />
+              <span>Payments</span>
+            </Link>
+            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#1e293b] text-cyan-400 font-medium transition-all">
+              <LayoutDashboard className="w-5 h-5" />
+              <span>Analytics</span>
+            </Link>
+          </nav>
+
+          <div className="p-4 border-t border-[#1e293b] space-y-2">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all">
+                <Link href="/admin/feedbacks" className="flex items-center gap-3 px-4 py-2 hover:text-white">
+              <FileText className="w-5 h-5" />
+              <span>Feedbacks</span>
               </Link>
-
-              <div className="hidden md:flex items-center space-x-4">
-                <Link
-                  href="/admin"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-blue-500 transition-colors"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <Link
-                  href="/admin/users"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-blue-500 transition-colors"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Users</span>
-                </Link>
-                <Link
-                  href="/admin/jobs"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-blue-500 transition-colors"
-                >
-                  <Briefcase className="w-4 h-4" />
-                  <span>Jobs</span>
-                </Link>
-                <Link
-                  href="/admin/payments"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-blue-500 transition-colors"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>Payments</span>
-                </Link>
-              </div>
-              <div className="md:hidden">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center">
-                      <Menu className="w-5 h-5" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-sm">
-                    <div className="space-y-2">
-                      <Link href="/admin">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <BarChart3 className="w-4 h-4 mr-2" />
-                          Dashboard
-                        </Button>
-                      </Link>
-                      <Link href="/admin/users">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Users className="w-4 h-4 mr-2" />
-                          Users
-                        </Button>
-                      </Link>
-                      <Link href="/admin/jobs">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Briefcase className="w-4 h-4 mr-2" />
-                          Jobs
-                        </Button>
-                      </Link>
-                      <Link href="/admin/payments">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          Payments
-                        </Button>
-                      </Link>
-                      <Link href="/admin/settings">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Settings
-                        </Button>
-                      </Link>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
             </div>
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] cursor-pointer transition-all"
+              onClick={() => signOut()}
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Logout</span>
+            </div>
+          </div>
+        </aside>
 
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-4 h-4 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                  5
-                </Badge>
+        {/* Mobile Header */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#0B0E14] border-b border-[#1e293b] p-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-lg font-bold text-white">Admin</span>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white">
+                <Menu className="w-6 h-6" />
               </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-red-100 text-red-600">AD</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Admin User</p>
-                      <p className="text-xs leading-none text-muted-foreground">admin@freelancedao.com</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/">
-                      <Shield className="mr-2 h-4 w-4" />
-                      <span>View Platform</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+            </DialogTrigger>
+            <DialogContent className="bg-[#1e293b] border-[#2e3b4e] text-slate-300">
+              <nav className="space-y-4 mt-8">
+                <Link href="/admin/disputes" className="flex items-center gap-3 px-4 py-2 hover:text-white">Disputes</Link>
+                <Link href="/admin/users" className="flex items-center gap-3 px-4 py-2 hover:text-white">Users</Link>
+                <Link href="/admin/jobs" className="flex items-center gap-3 px-4 py-2 hover:text-white">Jobs</Link>
+                <Link href="/admin/payments" className="flex items-center gap-3 px-4 py-2 hover:text-white">Payments</Link>
+                <Link href="/admin/feedbacks" className="flex items-center gap-3 px-4 py-2 hover:text-white">Feedbacks</Link>
+                <Link href="/admin" className="flex items-center gap-3 px-4 py-2 text-cyan-400">Analytics</Link>
+              </nav>
+            </DialogContent>
+          </Dialog>
         </div>
-      </nav>
 
-      {/* Alert Banner for Critical Issues */}
-      <div className="bg-red-50 border-b border-red-200">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-red-700">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">5 disputes require immediate attention</span>
-            </div>
-            <Button variant="ghost" size="sm" className="text-red-700 hover:text-red-800">
-              View All
-            </Button>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
+          <div className="p-8">
+            {/* Note: Header is visually part of the dashboard page in the mockup, but we can put a common header here if needed. 
+                 For now, relying on the page to render the "Analytics" title to match mockup exactly. */}
+
+            {/* Alert Banner for Critical Issues (Styled Dark) */}
+            {/* <div className="mb-6 bg-red-900/20 border border-red-900/50 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-red-400">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">5 disputes require immediate attention</span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/30">
+                View All
+              </Button>
+            </div> */}
+
+            {children}
           </div>
-        </div>
-      </div>
-
-        {children}
+        </main>
       </div>
     </ProtectedRoute>
   )

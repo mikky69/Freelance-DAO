@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import {
 	Users,
 	Briefcase,
@@ -215,8 +216,11 @@ export function About() {
 						<div className="flex flex-col sm:flex-row gap-4 pt-6 sm:pt-8 items-center sm:items-start">
 							<button className="group relative overflow-hidden px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
 								<div className="flex items-center justify-center space-x-2">
+                				<Link href="/freelancers" className="flex items-center gap-3 px-4 py-2 hover:text-white">
+
 									<span>Hire Talent Now</span>
 									<ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+									</Link>
 								</div>
 								<div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 							</button>
@@ -224,7 +228,9 @@ export function About() {
 							<button className="group px-6 py-3 md:px-8 md:py-4 border-2 border-purple-500 text-purple-300 hover:text-white hover:bg-purple-500/20 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105">
 								<div className="flex items-center justify-center space-x-2">
 									<Users className="w-4 h-4 md:w-5 md:h-5" />
+									<Link href="/auth/signup/freelancer" className="flex items-center gap-3 px-4 py-2 hover:text-white">
 									<span>I'm a Freelancer</span>
+									</Link>
 								</div>
 							</button>
 						</div>
