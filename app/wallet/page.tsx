@@ -25,10 +25,13 @@ import {
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { MultiWalletConnect } from "@/components/multi-wallet-connect"
-import { walletManager, type HederaAccount } from "@/lib/hedera-wallet"
+import { type HederaAccount } from "@/lib/hedera-wallet"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useWallet } from "@/lib/wallet-context"
+import { TransferTransaction, Hbar, AccountId } from "@hashgraph/sdk"
 
 export default function WalletPage() {
+  const { account: contextAccount, refreshBalance: contextRefreshBalance, walletManager } = useWallet()
   const [account, setAccount] = useState<HederaAccount | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [sendAmount, setSendAmount] = useState("")
@@ -37,12 +40,12 @@ export default function WalletPage() {
   const [isSending, setIsSending] = useState(false)
 
   useEffect(() => {
-    // Check if wallet is already connected
-    const currentAccount = walletManager.getCurrentAccount()
-    if (currentAccount) {
-      setAccount(currentAccount)
+    if (contextAccount) {
+      setAccount(contextAccount)
+    } else {
+      setAccount(null)
     }
-  }, [])
+  }, [contextAccount])
 
   const handleConnectionChange = (connected: boolean, connectedAccount?: HederaAccount) => {
     if (connected && connectedAccount) {
@@ -57,11 +60,8 @@ export default function WalletPage() {
 
     setIsRefreshing(true)
     try {
-      const newBalance = await walletManager.refreshBalance()
-      if (newBalance) {
-        setAccount({ ...account, balance: newBalance })
-        toast.success("Balance updated")
-      }
+      await contextRefreshBalance()
+      toast.success("Balance updated")
     } catch (error) {
       toast.error("Failed to refresh balance")
     } finally {
@@ -89,10 +89,21 @@ export default function WalletPage() {
 
     setIsSending(true)
     try {
-      // In a real implementation, this would create and sign a transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      if (!walletManager) throw new Error("Wallet manager not initialized")
 
-      toast.success(`Successfully sent ${amount} HBAR to ${recipientAddress}`)
+      // 1. Create the transaction
+      const transaction = new TransferTransaction()
+        .addHbarTransfer(AccountId.fromString(account.accountId), Hbar.from(amount).negated()) // Deduct from sender
+        .addHbarTransfer(AccountId.fromString(recipientAddress), Hbar.from(amount)) // Add to recipient
+        .setTransactionMemo(memo)
+        // We set a dummy node ID to allow freezing without a client (WalletConnect handles the rest)
+        .setNodeAccountIds([AccountId.fromString("0.0.3")])
+        .freeze()
+
+      // 2. Sign and execute via WalletConnect
+      const result = await walletManager.signTransaction(transaction.toBytes())
+
+      toast.success(`Successfully sent ${amount} HBAR! Transaction ID: ${result.transactionId}`)
       setSendAmount("")
       setRecipientAddress("")
       setMemo("")
