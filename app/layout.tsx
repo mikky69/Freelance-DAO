@@ -1,15 +1,13 @@
 import type React from "react"
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
 import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
-import RainbowkitHederaProvider from "@/RainbowkitHederaProvider"
+import { WalletProvider } from "@/lib/wallet-context"
 import { ConditionalBottomNavigation, ConditionalFooter, ConditionalNavigation } from "./LayoutComponent"
 import { FeedbackWidget } from "@/components/feedback-widget"
 import type { Metadata } from "next"
-
-const inter = Inter({ subsets: ["latin"] })
+import { TestnetBanner } from "@/components/TestnetBanner"
 
 export const metadata: Metadata = {
   title: "FreeLanceDAO - Decentralized Freelancing Platform",
@@ -24,9 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <AuthProvider>
-          <RainbowkitHederaProvider>
+          <WalletProvider>
+            <TestnetBanner />
             <ConditionalNavigation />
             <main className="pb-20 md:pb-0">{children}</main>
             <ConditionalBottomNavigation />
@@ -34,7 +33,7 @@ export default function RootLayout({
             <ContractNotification />
             <FeedbackWidget />
             <Toaster position="top-right" richColors />
-          </RainbowkitHederaProvider>
+          </WalletProvider>
         </AuthProvider>
       </body>
     </html>
