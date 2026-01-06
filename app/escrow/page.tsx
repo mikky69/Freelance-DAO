@@ -20,75 +20,102 @@ import {
   ArrowRight,
   ExternalLink,
 } from "lucide-react"
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { useWallet } from "@/lib/wallet-context"
+import { getEscrowContract, getReadonlyProvider } from "@/lib/evm-contracts"
+import { formatEther } from "ethers"
+import { toast } from "sonner"
 
 export default function EscrowPage() {
   const [selectedEscrow, setSelectedEscrow] = useState(0)
+  const [escrowContracts, setEscrowContracts] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [txPending, setTxPending] = useState(false)
+  const { walletManager } = useWallet()
 
-  const escrowContracts = [
-    {
-      id: "ESC-001",
-      project: "E-commerce Website Development",
-      client: "TechStartup Inc.",
-      freelancer: "Sarah Johnson",
-      totalAmount: "3,500 HBAR",
-      lockedAmount: "2,100 HBAR",
-      releasedAmount: "1,400 HBAR",
-      status: "Active",
-      progress: 60,
-      milestones: [
-        { name: "Project Setup & Planning", amount: "700 HBAR", status: "Released", date: "Dec 1, 2024" },
-        { name: "Homepage & Navigation", amount: "700 HBAR", status: "Released", date: "Dec 8, 2024" },
-        { name: "Product Catalog", amount: "1,050 HBAR", status: "Locked", date: "Dec 15, 2024" },
-        { name: "Shopping Cart & Checkout", amount: "1,050 HBAR", status: "Pending", date: "Dec 22, 2024" },
-      ],
-      contractAddress: "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4",
-      createdDate: "Nov 28, 2024",
-      deadline: "Dec 30, 2024",
-    },
-    {
-      id: "ESC-002",
-      project: "Smart Contract Security Audit",
-      client: "CryptoLabs",
-      freelancer: "Mike Auditor",
-      totalAmount: "4,800 HBAR",
-      lockedAmount: "4,800 HBAR",
-      releasedAmount: "0 HBAR",
-      status: "Locked",
-      progress: 25,
-      milestones: [
-        { name: "Initial Code Review", amount: "1,200 HBAR", status: "Locked", date: "Dec 10, 2024" },
-        { name: "Vulnerability Assessment", amount: "1,800 HBAR", status: "Pending", date: "Dec 17, 2024" },
-        { name: "Final Report & Recommendations", amount: "1,800 HBAR", status: "Pending", date: "Dec 24, 2024" },
-      ],
-      contractAddress: "0x8D4C0532925a3b8D4C0532925a3b8D4C0532925a",
-      createdDate: "Dec 5, 2024",
-      deadline: "Dec 25, 2024",
-    },
-    {
-      id: "ESC-003",
-      project: "Mobile App UI Design",
-      client: "DesignCorp",
-      freelancer: "Anna Designer",
-      totalAmount: "2,200 HBAR",
-      lockedAmount: "0 HBAR",
-      releasedAmount: "2,200 HBAR",
-      status: "Completed",
-      progress: 100,
-      milestones: [
-        { name: "Wireframes & User Flow", amount: "550 HBAR", status: "Released", date: "Nov 20, 2024" },
-        { name: "UI Design & Prototyping", amount: "1,100 HBAR", status: "Released", date: "Nov 27, 2024" },
-        { name: "Final Assets & Handoff", amount: "550 HBAR", status: "Released", date: "Dec 3, 2024" },
-      ],
-      contractAddress: "0x925a3b8D4C0532925a3b8D4C0532925a3b8D4C05",
-      createdDate: "Nov 15, 2024",
-      deadline: "Dec 5, 2024",
-    },
-  ]
+  const loadJobs = useCallback(async () => {
+    try {
+      setLoading(true)
+      const provider = getReadonlyProvider()
+      const contract = getEscrowContract(provider)
+      const jobs = await contract.getAllJobs()
+      const mapped = jobs.map((j: any) => {
+        const total = Number(formatEther(j.totalAmount))
+        const confirmedAmt = Number(formatEther(j.confirmedAmount))
+        const releasedAmount = confirmedAmt
+        const lockedAmount = Math.max(total - confirmedAmt, 0)
+        const milestones = j.milestones.map((m: any, idx: number) => {
+          const amountHBAR = Number(formatEther(m.amount))
+          const status = m.confirmed ? "Released" : m.delivered ? "Locked" : "Pending"
+          return { name: `Milestone ${idx + 1}`, amount: `${amountHBAR} HBAR`, status, date: "—", idx }
+        })
+        const confirmedCount = j.milestones.filter((m: any) => m.confirmed).length
+        const progress = j.milestones.length > 0 ? Math.round((confirmedCount / j.milestones.length) * 100) : 0
+        const status =
+          j.status === 2 ? "Completed" : j.funded ? "Active" : "Locked"
+        return {
+          id: `JOB-${Number(j.jobId)}`,
+          jobId: Number(j.jobId),
+          project: j.jobTitle || "Escrow Job",
+          client: j.client,
+          freelancer: j.freelancer,
+          totalAmount: `${total} HBAR`,
+          lockedAmount: `${lockedAmount} HBAR`,
+          releasedAmount: `${releasedAmount} HBAR`,
+          status,
+          progress,
+          milestones,
+          contractAddress: contract.target.toString(),
+          createdDate: new Date(Number(j.createdAt) * 1000).toLocaleDateString(),
+          deadline: new Date(Number(j.deadline) * 1000).toLocaleDateString(),
+        }
+      })
+      setEscrowContracts(mapped)
+      if (mapped.length > 0) setSelectedEscrow(0)
+    } catch {
+      toast.error("Failed to load escrow jobs")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const currentEscrow = escrowContracts[selectedEscrow]
+  useEffect(() => {
+    loadJobs()
+  }, [loadJobs])
 
+  const currentEscrow = useMemo(() => escrowContracts[selectedEscrow], [escrowContracts, selectedEscrow])
+
+  const handleRelease = useCallback(
+    async (jobId: number, idx: number) => {
+      try {
+        setTxPending(true)
+        if (!walletManager) {
+          toast.error("Connect HashPack to proceed")
+          return
+        }
+        const signer = await walletManager.getEvmSigner()
+        const contract = getEscrowContract(signer)
+        const tx = await contract.confirmMilestone(jobId, idx)
+        await tx.wait()
+        toast.success(`Milestone confirmed: ${tx.hash}`)
+        await loadJobs()
+      } catch {
+        toast.error("Transaction failed")
+      } finally {
+        setTxPending(false)
+      }
+    },
+    [walletManager, loadJobs]
+  )
+
+  if (loading && escrowContracts.length === 0) {
+    return (
+      <ProtectedRoute requireAuth={true} requireWallet={true} requireCompleteProfile={true}>
+        <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      </ProtectedRoute>
+    )
+  }
   return (
     <ProtectedRoute requireAuth={true} requireWallet={true} requireCompleteProfile={true}>
       <div className="min-h-screen bg-slate-50">
@@ -334,8 +361,13 @@ export default function EscrowPage() {
                               {milestone.status}
                             </Badge>
                           </div>
-                          {milestone.status === "Locked" && (
-                            <Button size="sm" className="bg-blue-500 hover:bg-blue-600">
+                          {milestone.status === "Locked" && currentEscrow && (
+                            <Button
+                              size="sm"
+                              className="bg-blue-500 hover:bg-blue-600"
+                              disabled={txPending}
+                              onClick={() => handleRelease(currentEscrow.jobId, milestone.idx)}
+                            >
                               <Unlock className="w-4 h-4 mr-1" />
                               Release
                             </Button>

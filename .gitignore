@@ -27,3 +27,17 @@ Thumbs.db
 # Git
 .git/
 test-ledger/
+
+# Smart Contract Files
+hedera-contracts/.env
+hedera-contracts/node_modules/
+hedera-contracts/cache/
+hedera-contracts/artifacts/
+hedera-contracts/typechain-types/
+hedera-contracts/coverage/
+
+# Keep deployment info for team
+# hedera-deployments/deployed-contracts.json
+
+# Keep ABIs for frontend
+!hedera-frontend-abi/*.json

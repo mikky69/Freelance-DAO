@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: any) {
   try {
     await connectDB();
     
@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     
     const { action } = await request.json();
-    const proposalId = params.id;
+    const proposalId = (context?.params || {}).id;
     
     // Validate action
     if (!['accepted', 'rejected'].includes(action)) {
@@ -162,7 +162,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: any) {
   try {
     await connectDB();
     
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.id;
     
-    const proposalId = params.id;
+    const proposalId = (context?.params || {}).id;
     
     // Find the proposal with populated data
     const proposal = await Proposal.findById(proposalId)

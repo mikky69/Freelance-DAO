@@ -73,15 +73,14 @@ interface NegotiationOffer {
 
 interface NegotiationModalProps {
   agent: AIAgent | null
-  isOpen: boolean
-  onClose: () => void
 }
 
-export function NegotiationModal({ agent, isOpen, onClose }: NegotiationModalProps) {
+export function NegotiationModal({ agent }: NegotiationModalProps) {
   const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [negotiationHistory, setNegotiationHistory] = useState<NegotiationOffer[]>([])
+  const [isOpen, setIsOpen] = useState(false)
 
   const [offerData, setOfferData] = useState({
     proposedPrice: agent?.basePrice || 0,
@@ -172,7 +171,7 @@ export function NegotiationModal({ agent, isOpen, onClose }: NegotiationModalPro
 
       setNegotiationHistory([...negotiationHistory, newOffer])
       toast.success("Negotiation offer sent successfully!")
-      onClose()
+      setIsOpen(false)
     } catch (error) {
       toast.error("Failed to send offer. Please try again.")
     } finally {
@@ -198,7 +197,7 @@ export function NegotiationModal({ agent, isOpen, onClose }: NegotiationModalPro
   if (!agent) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-2xl">

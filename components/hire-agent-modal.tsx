@@ -34,9 +34,6 @@ interface AIAgent {
   id: string
   name: string
   avatar?: string
-  specialization: string
-  rating: number
-  completedTasks: number
   pricing?: {
     amount: number
     currency: string
@@ -44,8 +41,6 @@ interface AIAgent {
   }
   capabilities?: string[]
   description: string
-  isVerified: boolean
-  responseTime: string
 }
 
 interface HireAgentModalProps {

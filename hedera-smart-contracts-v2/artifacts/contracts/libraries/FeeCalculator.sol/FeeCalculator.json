@@ -1,0 +1,63 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "FeeCalculator",
+  "sourceName": "contracts/libraries/FeeCalculator.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "EARLY_WITHDRAWAL_FEE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "LATE_DELIVERY_FEE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "NORMAL_FEE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PCT_BASE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100195760db908161001f823930815050f35b600080fdfe6080806040526004361015601257600080fd5b600090813560e01c9081632c72eb0b14608c5750806353ae00ad146076578063d0b7f3be1460605763fc157cb414604857600080fd5b80600319360112605d57602060405160648152f35b80fd5b5080600319360112605d57602060405160078152f35b5080600319360112605d57602060405160058152f35b90508160031936011260a15780600a60209252f35b5080fdfea2646970667358221220227b977cbe4e7786ef5ddd6b247582635f02685ba93cf5008c61490ad02fad3764736f6c63430008140033",
+  "deployedBytecode": "0x6080806040526004361015601257600080fd5b600090813560e01c9081632c72eb0b14608c5750806353ae00ad146076578063d0b7f3be1460605763fc157cb414604857600080fd5b80600319360112605d57602060405160648152f35b80fd5b5080600319360112605d57602060405160078152f35b5080600319360112605d57602060405160058152f35b90508160031936011260a15780600a60209252f35b5080fdfea2646970667358221220227b977cbe4e7786ef5ddd6b247582635f02685ba93cf5008c61490ad02fad3764736f6c63430008140033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

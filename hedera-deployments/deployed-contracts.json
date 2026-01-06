@@ -1,0 +1,14 @@
+{
+  "network": "hedera_testnet",
+  "timestamp": "2026-01-05T17:53:42.700Z",
+  "deployer": "0xf16B729588D4160Dc513919a7f108b80EF712ea2",
+  "contracts": {
+    "escrow": "0x37C3f17694b7473eC3c8D536E64542B1883ABD3f",
+    "dispute": "0x8667B45D2aBE559A74E26B452249847a46780C62"
+  },
+  "config": {
+    "daoTreasury": "0xf16B729588D4160Dc513919a7f108b80EF712ea2",
+    "initialQuorum": 3,
+    "owner": "0xf16B729588D4160Dc513919a7f108b80EF712ea2"
+  }
+}

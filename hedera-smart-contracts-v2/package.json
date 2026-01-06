@@ -1,0 +1,30 @@
+{
+  "name": "freelancedao-contracts",
+  "version": "2.0.0",
+  "description": "Smart contracts for FreelanceDAO",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network hedera_testnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network hedera_mainnet",
+    "check-balance": "hardhat run scripts/checkBalance.js --network hedera_testnet",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.28.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^16.6.1",
+    "ethers": "^6.16.0"
+  },
+  "main": "hardhat.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

@@ -31,6 +31,7 @@ export class HederaWalletManager {
   private currentAccount: HederaAccount | null = null
   private listeners: Set<(account: HederaAccount | null) => void> = new Set()
   private isInitialized = false
+  private evmProvider: any | null = null
 
   constructor() {
     // Constructor is now lighter. Initialization is deferred.
@@ -42,8 +43,8 @@ export class HederaWalletManager {
     }
 
     try {
-      // Dynamically import the library to prevent server-side issues
-      const module = await import("@hashgraph/hedera-wallet-connect")
+      const importer: any = Function("return import(arguments[0])")
+      const module = await importer("@hashgraph/hedera-wallet-connect")
 
       // Attempt to resolve the constructor from various export patterns
       let HederaWalletConnect = (module as any).HederaWalletConnect || module.default
@@ -87,6 +88,7 @@ export class HederaWalletManager {
       })
 
       await this.hwc.init()
+      this.evmProvider = this.hwc.getEthereumProvider?.() || this.hwc.getEvmProvider?.() || null
       this.isInitialized = true
       console.log("✅ Hedera Wallet Connect Initialized")
     } catch (error) {
@@ -252,6 +254,22 @@ export class HederaWalletManager {
         details: error,
       })
     }
+  }
+
+  async getEvmSigner(): Promise<any> {
+    if (!this.evmProvider) {
+      await this.initialize()
+      this.evmProvider = this.hwc?.getEthereumProvider?.() || this.hwc?.getEvmProvider?.() || null
+    }
+    if (!this.evmProvider) {
+      throw new WalletException({
+        code: "NO_EVM_PROVIDER",
+        message: "EVM provider is not available from HashPack",
+      })
+    }
+    const { BrowserProvider } = await import("ethers")
+    const provider = new BrowserProvider(this.evmProvider)
+    return await provider.getSigner()
   }
 }
 

@@ -508,23 +508,9 @@ export default function AIAgentsPage() {
       </div>
 
       {/* Modals */}
-      <HireAgentModal
-        agent={selectedAgent}
-        isOpen={isHireModalOpen}
-        onClose={() => {
-          setIsHireModalOpen(false)
-          setSelectedAgent(null)
-        }}
-      />
+      <HireAgentModal agent={selectedAgent} />
 
-      <NegotiationModal
-        agent={selectedAgent}
-        isOpen={isNegotiationModalOpen}
-        onClose={() => {
-          setIsNegotiationModalOpen(false)
-          setSelectedAgent(null)
-        }}
-      />
+      <NegotiationModal agent={selectedAgent} />
     </div>
   )
 }
