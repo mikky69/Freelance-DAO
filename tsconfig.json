@@ -36,6 +36,8 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "smart_contract",
+    "hedera-smart-contracts-v2"
   ]
 }

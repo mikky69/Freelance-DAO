@@ -33,7 +33,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -111,7 +111,7 @@ export default function JobsPage() {
   const urgencyLevels = ["all", "low", "medium", "high"]
 
   // Fetch user's submitted proposals
-  const fetchUserProposals = async () => {
+  const fetchUserProposals = useCallback(async () => {
     if (!user || user.role !== 'freelancer') return
     
     try {
@@ -132,10 +132,10 @@ export default function JobsPage() {
     } catch (error) {
       console.error('Error fetching user proposals:', error)
     }
-  }
+  }, [user])
 
   // Fetch platform statistics
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setIsLoadingStats(true)
       const response = await fetch('/api/platform/stats')
@@ -156,10 +156,10 @@ export default function JobsPage() {
     } finally {
       setIsLoadingStats(false)
     }
-  }
+  }, [])
 
   // Fetch jobs from API
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setIsLoading(true)
       const params = new URLSearchParams({
@@ -214,23 +214,23 @@ export default function JobsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly, searchTerm])
 
   useEffect(() => {
     fetchJobs()
     fetchStats()
-  }, [pagination.page, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly])
+  }, [fetchJobs, fetchStats])
   
   // Fetch stats and user proposals on component mount
   useEffect(() => {
     fetchStats()
     fetchUserProposals()
-  }, [])
+  }, [fetchStats, fetchUserProposals])
   
   // Fetch user proposals when user changes
   useEffect(() => {
     fetchUserProposals()
-  }, [user])
+  }, [fetchUserProposals])
   
   // Debounced search effect
   useEffect(() => {
@@ -243,7 +243,7 @@ export default function JobsPage() {
     }, 500)
     
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [searchTerm, fetchJobs, pagination.page])
 
   useEffect(() => {
     filterJobs()

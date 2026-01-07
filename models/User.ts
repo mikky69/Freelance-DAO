@@ -255,94 +255,8 @@ const FreelancerSchema = new Schema<IFreelancer>(
       default: 0,
     },
 
-    // Settings
-    settings: {
-      privacy: {
-        profileVisibility: {
-          type: String,
-          enum: ["public", "clients-only", "private"],
-          default: "public",
-        },
-        showEmail: {
-          type: Boolean,
-          default: false,
-        },
-        showPhone: {
-          type: Boolean,
-          default: false,
-        },
-        showLocation: {
-          type: Boolean,
-          default: true,
-        },
-        showSpent: {
-          type: Boolean,
-          default: false,
-        },
-        allowDirectContact: {
-          type: Boolean,
-          default: true,
-        },
-      },
-      notifications: {
-        email: {
-          jobAlerts: {
-            type: Boolean,
-            default: true,
-          },
-          messageAlerts: {
-            type: Boolean,
-            default: true,
-          },
-          paymentAlerts: {
-            type: Boolean,
-            default: true,
-          },
-          marketingEmails: {
-            type: Boolean,
-            default: false,
-          },
-        },
-        push: {
-          jobAlerts: {
-            type: Boolean,
-            default: true,
-          },
-          messageAlerts: {
-            type: Boolean,
-            default: true,
-          },
-          paymentAlerts: {
-            type: Boolean,
-            default: true,
-          },
-        },
-        sms: {
-          jobAlerts: {
-            type: Boolean,
-            default: false,
-          },
-          paymentAlerts: {
-            type: Boolean,
-            default: false,
-          },
-        },
-      },
-      security: {
-        twoFactorEnabled: {
-          type: Boolean,
-          default: false,
-        },
-        loginAlerts: {
-          type: Boolean,
-          default: true,
-        },
-        sessionTimeout: {
-          type: Number,
-          default: 30, // minutes
-        },
-      },
-    },
+
+
     completedJobs: {
       type: Number,
       min: 0,
@@ -558,6 +472,94 @@ const ClientSchema = new Schema<IClient>(
       type: Number,
       min: 0,
       default: 0,
+    },
+    // Settings
+    settings: {
+      privacy: {
+        profileVisibility: {
+          type: String,
+          enum: ["public", "clients-only", "private"],
+          default: "public",
+        },
+        showEmail: {
+          type: Boolean,
+          default: false,
+        },
+        showPhone: {
+          type: Boolean,
+          default: false,
+        },
+        showLocation: {
+          type: Boolean,
+          default: true,
+        },
+        showSpent: {
+          type: Boolean,
+          default: false,
+        },
+        allowDirectContact: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      notifications: {
+        email: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          marketingEmails: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        push: {
+          jobAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          messageAlerts: {
+            type: Boolean,
+            default: true,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: true,
+          },
+        },
+        sms: {
+          jobAlerts: {
+            type: Boolean,
+            default: false,
+          },
+          paymentAlerts: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      },
+      security: {
+        twoFactorEnabled: {
+          type: Boolean,
+          default: false,
+        },
+        loginAlerts: {
+          type: Boolean,
+          default: true,
+        },
+        sessionTimeout: {
+          type: Number,
+          default: 30, // minutes
+        },
+      },
     },
   },
   {

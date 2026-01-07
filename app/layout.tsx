@@ -1,13 +1,13 @@
 import type React from "react"
 import "./globals.css"
-import { AuthProvider } from "@/lib/auth-context"
-import { ContractNotification } from "@/components/contract-notification"
 import { Toaster } from "sonner"
-import { WalletProvider } from "@/lib/wallet-context"
+import { Providers } from "@/components/providers"
 import { ConditionalBottomNavigation, ConditionalFooter, ConditionalNavigation } from "./LayoutComponent"
 import { FeedbackWidget } from "@/components/feedback-widget"
+import { ContractNotification } from "@/components/contract-notification"
 import type { Metadata } from "next"
 import { TestnetBanner } from "@/components/TestnetBanner"
+
 
 export const metadata: Metadata = {
   title: "FreeLanceDAO - Decentralized Freelancing Platform",
@@ -23,18 +23,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <AuthProvider>
-          <WalletProvider>
-            <TestnetBanner />
-            <ConditionalNavigation />
-            <main className="pb-20 md:pb-0">{children}</main>
-            <ConditionalBottomNavigation />
-            <ConditionalFooter />
-            <ContractNotification />
-            <FeedbackWidget />
-            <Toaster position="top-right" richColors />
-          </WalletProvider>
-        </AuthProvider>
+        <Providers>
+          <TestnetBanner />
+          <ConditionalNavigation />
+          <main className="pb-20 md:pb-0">{children}</main>
+          <ConditionalBottomNavigation />
+          <ConditionalFooter />
+          <ContractNotification />
+          <FeedbackWidget />
+          <Toaster position="top-right" richColors />
+        </Providers>
       </body>
     </html>
   )

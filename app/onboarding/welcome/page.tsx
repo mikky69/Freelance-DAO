@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, ArrowRight, Users, Shield, DollarSign, Zap, Globe, Award } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 export default function WelcomePage() {
   const [currentFeature, setCurrentFeature] = useState(0)
 
-  const features = [
+  const features = useMemo(() => [
     {
       icon: <Shield className="w-8 h-8 text-green-500" />,
       title: "Secure Smart Contracts",
@@ -32,14 +32,14 @@ export default function WelcomePage() {
       title: "Instant Payments",
       description: "Get paid immediately when work is approved",
     },
-  ]
+  ], [])
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentFeature((prev) => (prev + 1) % features.length)
     }, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [features])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">

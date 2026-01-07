@@ -30,7 +30,7 @@ import { toast } from "sonner"
 export default function EscrowPage() {
   const [selectedEscrow, setSelectedEscrow] = useState(0)
   const [escrowContracts, setEscrowContracts] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [txPending, setTxPending] = useState(false)
   const { walletManager } = useWallet()
 
@@ -113,6 +113,14 @@ export default function EscrowPage() {
     return (
       <ProtectedRoute requireAuth={true} requireWallet={true} requireCompleteProfile={true}>
         <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      </ProtectedRoute>
+    )
+  }
+  
+  if (!currentEscrow) {
+    return (
+      <ProtectedRoute requireAuth={true} requireWallet={true} requireCompleteProfile={true}>
+        <div className="min-h-screen flex items-center justify-center">No escrow contracts found.</div>
       </ProtectedRoute>
     )
   }

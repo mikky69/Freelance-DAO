@@ -33,7 +33,7 @@ export class NotificationService {
     try {
       await connectDB();
       
-      const notification = await Notification.create({
+      const notification = await (Notification as any).create({
         recipient: new mongoose.Types.ObjectId(recipientId),
         recipientModel,
         type,

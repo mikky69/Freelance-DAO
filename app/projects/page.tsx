@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -385,7 +385,7 @@ function ProjectsContent() {
   const { user } = useAuth()
 
   // Fetch projects from API
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!user) return
     
     setIsLoading(true)
@@ -432,7 +432,7 @@ function ProjectsContent() {
         page: 1,
         limit: 10,
         total: 0,
-        pages: 0,
+        pages: 0
       })
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -440,12 +440,12 @@ function ProjectsContent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user, pagination.page, pagination.limit, statusFilter, searchQuery])
 
   // Load projects on component mount and when filters change
   useEffect(() => {
     fetchProjects()
-  }, [user, statusFilter, pagination.page])
+  }, [fetchProjects])
   
   // Debounced search effect
   useEffect(() => {
@@ -456,7 +456,7 @@ function ProjectsContent() {
     }, 500) // 500ms debounce
     
     return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  }, [searchQuery, user, fetchProjects])
 
   // Delete project function
   const deleteProject = async (projectId: string) => {

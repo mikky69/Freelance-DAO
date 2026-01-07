@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,7 +50,7 @@ export default function AdminJobsPage() {
     return params.toString()
   }, [status, category, search, flaggedOnly, page])
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('freelancedao_token')
@@ -68,7 +68,7 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [qs])
 
   const handleJobAction = async (jobId: string, action: 'approve' | 'reject') => {
     try {
@@ -91,7 +91,7 @@ export default function AdminJobsPage() {
     }
   }
 
-  useEffect(() => { fetchJobs() }, [qs])
+  useEffect(() => { fetchJobs() }, [fetchJobs])
 
   const pages = Math.max(1, Math.ceil(total / limit))
 

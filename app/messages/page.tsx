@@ -23,7 +23,7 @@ import {
   ArrowLeft,
   MessageSquare,
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useSearchParams } from "next/navigation"
 

@@ -166,7 +166,7 @@ function ContractContent() {
     }
 
     checkPayment()
-  }, [searchParams])
+  }, [searchParams, verifyingPayment])
 
   useEffect(() => {
     const fetchContract = async () => {

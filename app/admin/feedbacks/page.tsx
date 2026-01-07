@@ -25,7 +25,7 @@ export default function AdminFeedbacksPage() {
   const [total, setTotal] = useState(0)
   const limit = 10
 
-  const fetchFeedbacks = async () => {
+  const fetchFeedbacks = useCallback(async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('freelancedao_token')
@@ -45,9 +45,9 @@ export default function AdminFeedbacksPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, limit])
 
-  useEffect(() => { fetchFeedbacks() }, [page])
+  useEffect(() => { fetchFeedbacks() }, [fetchFeedbacks])
 
   const pages = Math.max(1, Math.ceil(total / limit))
 
