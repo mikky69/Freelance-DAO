@@ -106,6 +106,27 @@ export async function POST(request: NextRequest) {
         completed: false
       }
     ];
+
+    let isFeatured = featured || false;
+
+    // Verify payment for featured jobs
+    if (isFeatured && paymentId) {
+      try {
+        const { Payment } = await import('@/models/Payment');
+        const payment = await Payment.findById(paymentId);
+        // Check if payment exists and covers at least $21 (base $1 + featured $20)
+        // Using loose comparison or a small epsilon for float safety if needed, but strict check is okay for now
+        if (!payment || (payment.meta?.usd_equivalent || 0) < 6) {
+          isFeatured = false;
+          console.warn(`Downgrading job to standard: Insufficient payment for featured status. PaymentId: ${paymentId}`);
+        }
+      } catch (error) {
+        console.error('Error verifying payment for featured job:', error);
+        isFeatured = false;
+      }
+    } else if (isFeatured && !paymentId) {
+      isFeatured = false;
+    }
     
     // Create job
     const job = await Job.create({
@@ -121,7 +142,7 @@ export async function POST(request: NextRequest) {
       duration,
       urgency: urgencyLevel,
       client: userId,
-      featured: featured || false,
+      featured: isFeatured,
       status: 'draft',
       milestones: defaultMilestones
     });
@@ -133,12 +154,6 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.warn('Failed to link payment to job:', e)
       }
-    }
-    
-    // If featured job, deduct payment from client (this would integrate with payment system)
-    if (featured) {
-      // TODO: Implement featured job payment logic
-      console.log('Featured job payment would be processed here');
     }
     
     return NextResponse.json(

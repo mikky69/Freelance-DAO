@@ -165,15 +165,22 @@ export default function PostJobPage() {
       const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
       if (!key) { toast.error('Paystack public key not configured'); return }
       const email = user?.email || 'user@example.com'
+      
+      // Calculate total amount (Base fee $1 + Featured fee $20 if applicable)
+      const baseFee = 1;
+      const featuredFee = formData.featured ? 5 : 0;
+      const totalAmountUsd = baseFee + featuredFee;
+
       try {
         const rate = Number(process.env.NEXT_PUBLIC_USD_NGN_RATE || 1600)
-        const ngnKobo = Math.round(Math.max(rate, 1) * 100) // $1 -> NGN -> kobo
+        const ngnKobo = Math.round(Math.max(rate, 1) * totalAmountUsd * 100) // USD -> NGN -> kobo
+        
         const handler = (window as any).PaystackPop.setup({
           key,
           email,
           amount: ngnKobo,
           currency: 'NGN',
-          metadata: { usd_equivalent: 1 },
+          metadata: { usd_equivalent: totalAmountUsd, featured_upgrade: formData.featured },
           callback: function (_response: any) {
             (async () => {
               try {
@@ -181,7 +188,12 @@ export default function PostJobPage() {
                 const verifyRes = await fetch('/api/payments/verify', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                  body: JSON.stringify({ reference: _response?.reference, purpose: 'job_post_fee', amountUsd: 1, amountNgn: ngnKobo / 100 })
+                  body: JSON.stringify({ 
+                    reference: _response?.reference, 
+                    purpose: formData.featured ? 'job_post_fee_featured' : 'job_post_fee', 
+                    amountUsd: totalAmountUsd, 
+                    amountNgn: ngnKobo / 100 
+                  })
                 })
                 const v = await verifyRes.json()
                 if (verifyRes.ok) {

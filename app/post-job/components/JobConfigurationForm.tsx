@@ -30,9 +30,9 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
                   <div className="text-sm text-slate-500">Pay a set amount for the entire project</div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
-                <RadioGroupItem value="hourly" id="hourly" />
-                <Label htmlFor="hourly" className="flex-1 cursor-pointer">
+              <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg opacity-50">
+                <RadioGroupItem value="hourly" id="hourly" disabled />
+                <Label htmlFor="hourly" className="flex-1 cursor-not-allowed">
                   <div className="font-medium">Hourly Rate</div>
                   <div className="text-sm text-slate-500">Pay based on time worked</div>
                 </Label>
