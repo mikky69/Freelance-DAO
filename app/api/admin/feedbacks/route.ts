@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Verify admin exists
-    const admin = await Admin.findById(decoded.id);
+    const admin = await (Admin as any).findById(decoded.id);
     if (!admin) {
       return NextResponse.json(
         { message: 'Admin not found' },
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     
     const skip = (page - 1) * limit;
     
-    const feedbacks = await Feedback.find()
+    const feedbacks = await (Feedback as any).find()
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

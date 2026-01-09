@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Verify admin exists
-    const admin = await Admin.findById(decoded.id);
+    const admin = await (Admin as any).findById(decoded.id);
     if (!admin) {
       return NextResponse.json(
         { message: 'Admin not found' },
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
     
     // Fetch jobs
-    const jobs = await Job.find(query)
+    const jobs = await (Job as any).find(query)
       .populate('client', 'fullname email avatar company verified')
       .populate('freelancer', 'fullname email avatar verified')
       .sort({ createdAt: -1 })
@@ -223,7 +223,7 @@ export async function PATCH(request: NextRequest) {
         );
     }
     
-    const updatedJob = await Job.findByIdAndUpdate(
+    const updatedJob = await (Job as any).findByIdAndUpdate(
       jobId,
       updateData,
       { new: true }

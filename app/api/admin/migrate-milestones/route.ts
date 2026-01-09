@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const userId = decoded.id;
     
     // Verify user is admin
-    const user = await Admin.findById(userId);
+    const user = await (Admin as any).findById(userId);
     if (!user) {
       return NextResponse.json(
         { message: 'Admin access required' },
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Find all contracts with milestones
-    const contracts = await Contract.find({
+    const contracts = await (Contract as any).find({
       milestones: { $exists: true, $ne: [] }
     });
     
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
         
-        const job = await Job.findById(contract.job);
+        const job = await (Job as any).findById(contract.job);
         if (!job) {
           continue;
         }

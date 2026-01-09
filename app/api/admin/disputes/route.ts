@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Verify admin exists
-    const admin = await Admin.findById(decoded.id);
+    const admin = await (Admin as any).findOne({ _id: decoded.id });
     if (!admin) {
       return NextResponse.json(
         { message: 'Admin not found' },
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
     
     // Fetch disputes
-    const disputes = await Dispute.find(query)
+    const disputes = await (Dispute as any).find(query)
       .populate('client', 'fullname email avatar')
       .populate('freelancer', 'fullname email avatar')
       .populate('job', 'title')
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create dispute
-    const dispute = await Dispute.create({
+    const dispute = await (Dispute as any).create({
       title: title.trim(),
       description: description.trim(),
       job: jobId,
