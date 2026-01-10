@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         const payment = await Payment.findById(paymentId);
         // Check if payment exists and covers at least $21 (base $1 + featured $20)
         // Using loose comparison or a small epsilon for float safety if needed, but strict check is okay for now
-        if (!payment || (payment.meta?.usd_equivalent || 0) < 6) {
+        if (!payment || (payment.meta?.usd_equivalent || 0) < 5) {
           isFeatured = false;
           console.warn(`Downgrading job to standard: Insufficient payment for featured status. PaymentId: ${paymentId}`);
         }
