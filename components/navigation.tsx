@@ -325,45 +325,43 @@ export function TopNavigation() {
                       <ChevronDown className="w-4 h-4 text-[#AE16A7]" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-64 border-[#AE16A7]/30 shadow-2xl rounded-xl backdrop-blur-md"
-                    style={{ backgroundColor: "#1D0225" }}
-                  >
-                    <DropdownMenuLabel className="p-3">
-                      <div className="font-medium">{user?.name}</div>
-                      <div className="text-xs text-slate-500">
-                        {user?.email}
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center">
-                        <User className="w-4 h-4 mr-3" />
-                        My Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center">
-                        <Briefcase className="w-4 h-4 mr-3" />
-                        Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="flex items-center">
-                        <Settings className="w-4 h-4 mr-3" />
-                        Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={signOut}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                 <DropdownMenuContent
+  align="end"
+  className="w-64 border-[#AE16A7]/30 shadow-2xl rounded-xl backdrop-blur-md"
+  style={{ backgroundColor: "#1D0225" }}
+>
+  <DropdownMenuLabel className="p-3 text-white">
+    <div className="font-medium text-white">{user?.name}</div>
+    <div className="text-xs text-slate-400">{user?.email}</div>
+  </DropdownMenuLabel>
+  <DropdownMenuSeparator className="bg-[#AE16A7]/30" />
+  <DropdownMenuItem asChild>
+    <Link href="/profile" className="flex items-center text-white hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 cursor-pointer">
+      <User className="w-4 h-4 mr-3" />
+      My Profile
+    </Link>
+  </DropdownMenuItem>
+  <DropdownMenuItem asChild>
+    <Link href="/dashboard" className="flex items-center text-white hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 cursor-pointer">
+      <Briefcase className="w-4 h-4 mr-3" />
+      Dashboard
+    </Link>
+  </DropdownMenuItem>
+  <DropdownMenuItem asChild>
+    <Link href="/settings" className="flex items-center text-white hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 cursor-pointer">
+      <Settings className="w-4 h-4 mr-3" />
+      Settings
+    </Link>
+  </DropdownMenuItem>
+  <DropdownMenuSeparator className="bg-[#AE16A7]/30" />
+  <DropdownMenuItem
+    onClick={signOut}
+    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:text-red-300 cursor-pointer"
+  >
+    <LogOut className="w-4 h-4 mr-3" />
+    Sign Out
+  </DropdownMenuItem>
+</DropdownMenuContent> 
                 </DropdownMenu>
               ) : (
                 <div className="flex items-center space-x-1 md:space-x-2">
@@ -585,4 +583,5 @@ export function BottomNavigation() {
       </div>
     </nav>
   )
+
 }
