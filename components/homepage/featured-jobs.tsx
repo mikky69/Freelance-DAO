@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,37 +16,65 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Job {
+	_id: string;
+	title: string;
+	budget: {
+		amount: number;
+		currency: string;
+	};
+	client: {
+		fullname: string;
+		avatar?: string;
+	};
+	skills: string[];
+	proposals: any[];
+	urgency: string;
+	category: string;
+	createdAt: string;
+}
 
 export function FeaturedJobs() {
-	const jobs = [
-		{
-			title: "React Developer for DeFi Platform",
-			budget: "2,500 HBAR",
-			client: "CryptoStartup",
-			skills: ["React", "TypeScript", "Web3"],
-			proposals: 12,
-			urgent: true,
-			type: "Human + AI",
-		},
-		{
-			title: "AI Content Generation Agent",
-			budget: "1,800 HBAR",
-			client: "ContentCorp",
-			skills: ["GPT-4", "Content Strategy", "API"],
-			proposals: 8,
-			urgent: false,
-			type: "AI Agent",
-		},
-		{
-			title: "Smart Contract Development",
-			budget: "3,200 HBAR",
-			client: "BlockchainLabs",
-			skills: ["Solidity", "Hedera", "Security"],
-			proposals: 15,
-			urgent: true,
-			type: "Human",
-		},
-	];
+	const [jobs, setJobs] = useState<Job[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchFeaturedJobs = async () => {
+			try {
+				const res = await fetch('/api/jobs?featured=true&limit=3');
+				const data = await res.json();
+				if (res.ok) {
+					setJobs(data.jobs || []);
+				}
+			} catch (error) {
+				console.error("Failed to fetch featured jobs", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchFeaturedJobs();
+	}, []);
+
+	const getJobType = (job: Job) => {
+		// Logic to determine job type based on category or other factors
+		// For now, we can infer from category or default to Human
+		if (job.category === 'ai-agents' || job.title.toLowerCase().includes('agent')) return "AI Agent";
+		if (job.title.toLowerCase().includes('hybrid')) return "Human + AI";
+		return "Human";
+	};
+
+	const getTimeAgo = (dateString: string) => {
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
+		
+		if (diffInHours < 1) return "Just now";
+		if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`;
+		return `${Math.floor(diffInHours / 24)} days ago`;
+	};
 
 	return (
 		<section className="relative py-20 bg-gradient-to-br from-[#1D0225] via-[#15011a] to-[#2b0340] overflow-hidden">
@@ -79,100 +108,129 @@ export function FeaturedJobs() {
 
 				{/* Jobs grid */}
 				<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					{jobs.map((job, index) => (
-						<motion.div
-							key={index}
-							initial={{ opacity: 0, y: 40 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.6, delay: index * 0.2 }}
-							viewport={{ once: true }}
-						>
-							<Link href="/jobs">
-								<Card className="cursor-pointer group relative overflow-hidden border border-purple-500/20 hover:border-[#FA5F04] bg-white/5 backdrop-blur-md shadow-lg transition-all duration-300 hover:shadow-[#FA5F04]/30">
-									{/* Urgent Badge */}
-									{job.urgent && (
-										<div className="absolute top-4 right-4">
-											<Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse shadow-lg">
-												<Clock className="w-3 h-3 mr-1" />
-												Urgent
-											</Badge>
-										</div>
-									)}
-
-									{/* Job type badge */}
-									<div className="absolute top-4 left-4">
-										<Badge
-											className={`${
-												job.type === "AI Agent"
-													? "bg-purple-200 text-purple-700"
-													: job.type === "Human + AI"
-													? "bg-gradient-to-r from-blue-200 to-purple-200 text-blue-800"
-													: "bg-green-200 text-green-800"
-											} shadow-sm`}
-										>
-											{job.type === "AI Agent" && <Bot className="w-3 h-3 mr-1" />}
-											{job.type === "Human + AI" && (
-												<Users className="w-3 h-3 mr-1" />
+					{loading ? (
+						// Loading Skeletons
+						[...Array(3)].map((_, i) => (
+							<Card key={i} className="bg-white/5 border-purple-500/20">
+								<CardHeader className="pt-12">
+									<Skeleton className="h-6 w-3/4 mb-2 bg-purple-500/20" />
+									<Skeleton className="h-4 w-1/2 bg-purple-500/20" />
+								</CardHeader>
+								<CardContent>
+									<Skeleton className="h-20 w-full bg-purple-500/20" />
+								</CardContent>
+							</Card>
+						))
+					) : jobs.length > 0 ? (
+						jobs.map((job, index) => {
+							const jobType = getJobType(job);
+							return (
+								<motion.div
+									key={job._id}
+									initial={{ opacity: 0, y: 40 }}
+									whileInView={{ opacity: 1, y: 0 }}
+									transition={{ duration: 0.6, delay: index * 0.2 }}
+									viewport={{ once: true }}
+								>
+									<Link href={`/jobs/${job._id}`}>
+										<Card className="cursor-pointer group relative overflow-hidden border border-purple-500/20 hover:border-[#FA5F04] bg-white/5 backdrop-blur-md shadow-lg transition-all duration-300 hover:shadow-[#FA5F04]/30 h-full flex flex-col justify-between">
+											{/* Urgent Badge */}
+											{job.urgency === 'high' && (
+												<div className="absolute top-4 right-4">
+													<Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse shadow-lg">
+														<Clock className="w-3 h-3 mr-1" />
+														Urgent
+													</Badge>
+												</div>
 											)}
-											{job.type === "Human" && <User className="w-3 h-3 mr-1" />}
-											{job.type}
-										</Badge>
-									</div>
 
-									<CardHeader className="pt-12">
-										<div className="flex items-start justify-between">
-											<CardTitle className="text-lg md:text-xl text-white line-clamp-2 group-hover:text-[#FA5F04] transition-colors duration-300">
-												{job.title}
-											</CardTitle>
-											<Badge className="bg-gradient-to-r from-green-200 to-green-300 text-green-800 font-semibold shadow-sm ml-2">
-												<DollarSign className="w-3 h-3 mr-1" />
-												{job.budget}
-											</Badge>
-										</div>
-
-										{/* Client info */}
-										<div className="flex items-center space-x-2 text-sm text-gray-300 mt-2">
-											<Avatar className="w-7 h-7 ring-2 ring-purple-200">
-												<AvatarFallback className="text-xs bg-gradient-to-r from-purple-200 to-purple-300 text-purple-800 font-semibold">
-													{job.client[0]}
-												</AvatarFallback>
-											</Avatar>
-											<span className="font-medium">{job.client}</span>
-											<div className="w-1 h-1 bg-gray-400 rounded-full" />
-											<div className="flex items-center">
-												<Star className="w-3 h-3 text-yellow-400 mr-1" />
-												<span>4.8</span>
-											</div>
-										</div>
-									</CardHeader>
-
-									<CardContent>
-										{/* Skills */}
-										<div className="flex flex-wrap gap-2 mb-4">
-											{job.skills.map((skill, skillIndex) => (
+											{/* Job type badge */}
+											<div className="absolute top-4 left-4">
 												<Badge
-													key={skillIndex}
-													variant="outline"
-													className="text-xs text-gray-200 border-gray-500/30 hover:bg-[#FA5F04]/20 hover:text-[#FA5F04] transition-colors"
+													className={`${
+														jobType === "AI Agent"
+															? "bg-purple-200 text-purple-700"
+															: jobType === "Human + AI"
+															? "bg-gradient-to-r from-blue-200 to-purple-200 text-blue-800"
+															: "bg-green-200 text-green-800"
+													} shadow-sm`}
 												>
-													{skill}
+													{jobType === "AI Agent" && <Bot className="w-3 h-3 mr-1" />}
+													{jobType === "Human + AI" && (
+														<Users className="w-3 h-3 mr-1" />
+													)}
+													{jobType === "Human" && <User className="w-3 h-3 mr-1" />}
+													{jobType}
 												</Badge>
-											))}
-										</div>
-
-										{/* Proposals & time */}
-										<div className="flex items-center justify-between text-xs text-gray-400">
-											<span>{job.proposals} proposals</span>
-											<div className="flex items-center">
-												<Clock className="w-3 h-3 mr-1" />
-												<span>2 hours ago</span>
 											</div>
-										</div>
-									</CardContent>
-								</Card>
-							</Link>
-						</motion.div>
-					))}
+
+											<CardHeader className="pt-12 pb-2">
+												<div className="flex items-start justify-between">
+													<CardTitle className="text-lg md:text-xl text-white line-clamp-2 group-hover:text-[#FA5F04] transition-colors duration-300 h-14">
+														{job.title}
+													</CardTitle>
+												</div>
+												<div className="mt-2">
+													<Badge className="bg-gradient-to-r from-green-200 to-green-300 text-green-800 font-semibold shadow-sm">
+														<DollarSign className="w-3 h-3 mr-1" />
+														{job.budget.amount.toLocaleString()} {job.budget.currency}
+													</Badge>
+												</div>
+
+												{/* Client info */}
+												<div className="flex items-center space-x-2 text-sm text-gray-300 mt-3">
+													<Avatar className="w-7 h-7 ring-2 ring-purple-200">
+														<AvatarFallback className="text-xs bg-gradient-to-r from-purple-200 to-purple-300 text-purple-800 font-semibold">
+															{job.client?.fullname?.[0] || 'C'}
+														</AvatarFallback>
+													</Avatar>
+													<span className="font-medium truncate max-w-[120px]">{job.client?.fullname || 'Client'}</span>
+													<div className="w-1 h-1 bg-gray-400 rounded-full" />
+													<div className="flex items-center">
+														<Star className="w-3 h-3 text-yellow-400 mr-1" />
+														<span>4.8</span>
+													</div>
+												</div>
+											</CardHeader>
+
+											<CardContent>
+												{/* Skills */}
+												<div className="flex flex-wrap gap-2 mb-4 h-16 overflow-hidden">
+													{job.skills.slice(0, 3).map((skill, skillIndex) => (
+														<Badge
+															key={skillIndex}
+															variant="outline"
+															className="text-xs text-gray-200 border-gray-500/30 hover:bg-[#FA5F04]/20 hover:text-[#FA5F04] transition-colors"
+														>
+															{skill}
+														</Badge>
+													))}
+													{job.skills.length > 3 && (
+														<Badge variant="outline" className="text-xs text-gray-400 border-gray-500/30">
+															+{job.skills.length - 3}
+														</Badge>
+													)}
+												</div>
+
+												{/* Proposals & time */}
+												<div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-4 border-t border-purple-500/10">
+													<span>{job.proposals?.length || 0} proposals</span>
+													<div className="flex items-center">
+														<Clock className="w-3 h-3 mr-1" />
+														<span>{getTimeAgo(job.createdAt)}</span>
+													</div>
+												</div>
+											</CardContent>
+										</Card>
+									</Link>
+								</motion.div>
+							);
+						})
+					) : (
+						<div className="col-span-full text-center text-gray-400 py-10">
+							<p>No featured jobs available at the moment.</p>
+						</div>
+					)}
 				</div>
 			</div>
 		</section>
