@@ -183,6 +183,7 @@ export default function PostJobPage() {
           metadata: { usd_equivalent: totalAmountUsd, featured_upgrade: formData.featured },
           callback: function (_response: any) {
             (async () => {
+              let verifiedPaymentId: string | undefined;
               try {
                 const token = localStorage.getItem('freelancedao_token')
                 const verifyRes = await fetch('/api/payments/verify', {
@@ -197,7 +198,8 @@ export default function PostJobPage() {
                 })
                 const v = await verifyRes.json()
                 if (verifyRes.ok) {
-                  setPaymentId(v.payment.id)
+                  verifiedPaymentId = v.payment.id;
+                  setPaymentId(verifiedPaymentId || null)
                   toast.success('Payment successful')
                 } else {
                   toast.error(v.message || 'Failed to verify payment')
@@ -206,7 +208,7 @@ export default function PostJobPage() {
                 console.error('Verify payment error:', err)
                 toast.error('Verification error')
               } finally {
-                processJobSubmission(false)
+                processJobSubmission(false, verifiedPaymentId)
               }
             })()
           },
@@ -224,7 +226,7 @@ export default function PostJobPage() {
     }
   }
 
-  const processJobSubmission = async (asDraft = false) => {
+  const processJobSubmission = async (asDraft = false, overridePaymentId?: string) => {
     setIsSubmitting(true)
     setIsDraft(asDraft)
     try {
@@ -247,7 +249,7 @@ export default function PostJobPage() {
           budgetMin: parseFloat(formData.budgetMin),
           budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
           currency: formData.currency,
-          paymentId: paymentId || undefined
+          paymentId: overridePaymentId || paymentId || undefined
         })
       })
 
