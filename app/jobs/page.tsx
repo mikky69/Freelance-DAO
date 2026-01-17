@@ -7,15 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
   Search,
@@ -26,17 +17,16 @@ import {
   Star,
   Bookmark,
   BookmarkCheck,
-  Send,
   Briefcase,
   Users,
   TrendingUp,
   AlertCircle,
-  Loader2,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ApplyJobModal } from "@/components/jobs/ApplyJobModal"
 
 interface Job {
   _id: string
@@ -86,11 +76,6 @@ export default function JobsPage() {
   const [selectedUrgency, setSelectedUrgency] = useState("all")
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [proposalText, setProposalText] = useState("")
-  const [proposalBudget, setProposalBudget] = useState("")
-  const [proposalTimeline, setProposalTimeline] = useState("")
-  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [pagination, setPagination] = useState({
     page: 1,
@@ -265,72 +250,6 @@ export default function JobsPage() {
       toast.success("Job saved successfully")
     }
     setSavedJobs(newSavedJobs)
-  }
-
-  const submitProposal = async () => {
-    if (!selectedJob || !proposalText || !proposalBudget) {
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    if (!user) {
-      toast.error("Please log in to submit a proposal")
-      return
-    }
-
-    setIsSubmittingProposal(true)
-
-    try {
-      const token = localStorage.getItem('freelancedao_token')
-      if (!token) {
-        toast.error('Please log in to submit a proposal')
-        return
-      }
-
-      const response = await fetch('/api/proposals', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          jobId: selectedJob._id,
-          title: `Proposal for ${selectedJob.title}`,
-          description: proposalText,
-          budget: {
-            amount: parseFloat(proposalBudget),
-            currency: selectedJob.budget.currency
-          },
-          timeline: proposalTimeline || 'As discussed',
-          milestones: []
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to submit proposal')
-      }
-
-      const data = await response.json()
-      toast.success("Proposal submitted successfully!")
-      
-      // Add job to submitted proposals
-      setSubmittedProposals(prev => new Set([...prev, selectedJob._id]))
-      
-      // Reset form
-      setSelectedJob(null)
-      setProposalText("")
-      setProposalBudget("")
-      setProposalTimeline("")
-      
-      // Refresh jobs to update proposal count
-      fetchJobs()
-    } catch (error) {
-      console.error('Error submitting proposal:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to submit proposal')
-    } finally {
-      setIsSubmittingProposal(false)
-    }
   }
 
   const getUrgencyColor = (urgency: string) => {
@@ -606,18 +525,6 @@ export default function JobsPage() {
                                 <Badge className="bg-green-100 text-green-700 text-xs">Verified</Badge>
                               )}
                             </div>
-                            {/* <div className="flex items-center space-x-2 text-sm text-slate-600">
-                              {job.client.rating && (
-                                <>
-                                  <div className="flex items-center">
-                                    <Star className="w-3 h-3 text-yellow-500 mr-1" />
-                                    {job.client.rating} ({job.client.reviewCount || 0} reviews)
-                                  </div>
-                                  <span>•</span>
-                                </>
-                              )}
-                              <span>Client since {new Date(job.createdAt).getFullYear()}</span>
-                            </div> */}
                           </div>
                         </div>
 
@@ -631,104 +538,19 @@ export default function JobsPage() {
                               ✓ Submitted
                             </Button>
                           ) : (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button onClick={() => setSelectedJob(job)} className="bg-blue-500 hover:bg-blue-600">
+                            <ApplyJobModal
+                              job={job}
+                              trigger={
+                                <Button className="bg-blue-500 hover:bg-blue-600">
                                   Submit Proposal
                                 </Button>
-                              </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Submit Proposal</DialogTitle>
-                                <DialogDescription>Submit your proposal for "{selectedJob?.title}"</DialogDescription>
-                              </DialogHeader>
-
-                              <div className="space-y-6">
-                                {/* Job Summary */}
-                                {selectedJob && (
-                                  <div className="bg-slate-50 p-4 rounded-lg">
-                                    <h4 className="font-medium text-slate-800 mb-2">{selectedJob.title}</h4>
-                                    <div className="flex items-center space-x-4 text-sm text-slate-600">
-                                      <span>Budget: {selectedJob.budget.amount} {selectedJob.budget.currency}</span>
-                                      <span>Duration: {selectedJob.duration}</span>
-                                      <span>{selectedJob.proposals.length} proposals</span>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Proposal Form */}
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label htmlFor="proposal">Cover Letter *</Label>
-                                    <Textarea
-                                      id="proposal"
-                                      placeholder="Explain why you're the best fit for this project..."
-                                      value={proposalText}
-                                      onChange={(e) => setProposalText(e.target.value)}
-                                      rows={6}
-                                      className="mt-1"
-                                    />
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                      <Label htmlFor="budget">Your Bid ({selectedJob?.budget.currency || 'HBAR'}) *</Label>
-                                      <Input
-                                        id="budget"
-                                        type="number"
-                                        placeholder="Enter your bid"
-                                        value={proposalBudget}
-                                        onChange={(e) => setProposalBudget(e.target.value)}
-                                        className="mt-1"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="timeline">Timeline</Label>
-                                      <Input
-                                        id="timeline"
-                                        placeholder="e.g., 2 weeks"
-                                        value={proposalTimeline}
-                                        onChange={(e) => setProposalTimeline(e.target.value)}
-                                        className="mt-1"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="flex justify-end space-x-3 pt-4">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedJob(null)
-                                        setProposalText("")
-                                        setProposalBudget("")
-                                        setProposalTimeline("")
-                                      }}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      onClick={submitProposal}
-                                      disabled={isSubmittingProposal || !proposalText || !proposalBudget}
-                                      className="bg-blue-500 hover:bg-blue-600"
-                                    >
-                                      {isSubmittingProposal ? (
-                                        <>
-                                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                          Submitting...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Send className="w-4 h-4 mr-2" />
-                                          Submit Proposal
-                                        </>
-                                      )}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </DialogContent>
-                           </Dialog>
-                           )
+                              }
+                              onSuccess={() => {
+                                setSubmittedProposals(prev => new Set([...prev, job._id]))
+                                fetchJobs()
+                              }}
+                            />
+                          )
                         ) : (
                           <Button 
                             disabled 

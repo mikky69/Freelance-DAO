@@ -18,6 +18,10 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ApplyJobModal } from "@/components/jobs/ApplyJobModal";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Job {
 	_id: string;
@@ -26,7 +30,9 @@ interface Job {
 	budget: {
 		amount: number;
 		currency: string;
+		type: "fixed" | "hourly";
 	};
+	duration: string;
 	client: {
 		fullname: string;
 		avatar?: string;
@@ -41,6 +47,8 @@ interface Job {
 export function FeaturedJobs() {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [loading, setLoading] = useState(true);
+	const { user } = useAuth();
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchFeaturedJobs = async () => {
@@ -231,11 +239,30 @@ export function FeaturedJobs() {
 										</CardContent>
 
 										<CardFooter className="pt-0 pb-6 px-6">
-											<Link href={`/jobs/${job._id}`} className="w-full">
-												<Button className="w-full bg-[#FA5F04] hover:bg-[#FF7B47] text-white transition-colors">
+											{user && user.role === 'freelancer' ? (
+												<ApplyJobModal
+													job={job}
+													trigger={
+														<Button className="w-full bg-[#FA5F04] hover:bg-[#FF7B47] text-white transition-colors">
+															Apply Now
+														</Button>
+													}
+												/>
+											) : (
+												<Button 
+													className="w-full bg-[#FA5F04] hover:bg-[#FF7B47] text-white transition-colors"
+													onClick={() => {
+														if (!user) {
+															toast.error("Please log in to apply");
+															router.push("/auth/signin/freelancer");
+														} else if (user.role !== 'freelancer') {
+															toast.error("Only freelancers can apply for jobs");
+														}
+													}}
+												>
 													Apply Now
 												</Button>
-											</Link>
+											)}
 										</CardFooter>
 									</Card>
 								</motion.div>
