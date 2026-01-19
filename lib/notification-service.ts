@@ -59,7 +59,7 @@ export class NotificationService {
       message: `Your job "${jobTitle}" has been approved by the admin and is now live.`,
       data: {
         jobId,
-        actionUrl: `/jobs/${jobId}`
+        actionUrl: `/dashboard`
       }
     });
   }
@@ -82,7 +82,7 @@ export class NotificationService {
         proposalId,
         jobId,
         senderName: freelancerName,
-        actionUrl: `/jobs/${jobId}?tab=proposals`
+        actionUrl: `/dashboard`
       }
     });
   }
