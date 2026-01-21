@@ -232,7 +232,7 @@ export function TopNavigation() {
 			)}
 
 			<nav
-				className="border-b border-[#AE16A7]/30 sticky top-0 z-50 backdrop-blur-md shadow-2xl relative overflow-hidden"
+				className="border-b border-[#AE16A7]/30 sticky top-0 z-50 backdrop-blur-md shadow-2xl relative"
 				style={{ backgroundColor: "#1D0225" }}
 			>
 				{/* Enhanced Background gradient overlay */}
@@ -295,11 +295,10 @@ export function TopNavigation() {
 										<div key={item.href} className="relative">
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${
-													isActive(item.href)
+												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${isActive(item.href)
 														? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white scale-105 shadow-xl shadow-[#AE16A7]/30 border-[#AE16A7]/50"
 														: "hover:text-white"
-												}`}
+													}`}
 												onClick={() => handleDropdownToggle(item.href)}
 											>
 												<item.icon className="w-4 h-4" />
@@ -307,9 +306,8 @@ export function TopNavigation() {
 													{item.label}
 												</span>
 												<ChevronDown
-													className={`w-4 h-4 transition-transform duration-300 ${
-														openDropdown === item.href ? "rotate-180" : ""
-													}`}
+													className={`w-4 h-4 transition-transform duration-300 ${openDropdown === item.href ? "rotate-180" : ""
+														}`}
 												/>
 												{isActive(item.href) && (
 													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#FF068D] rounded-full animate-pulse shadow-lg shadow-[#FF068D]/50" />
@@ -317,9 +315,8 @@ export function TopNavigation() {
 											</Button>
 											{openDropdown === item.href && (
 												<div
-													className={`absolute mt-3 w-56 border border-[#AE16A7]/30 rounded-xl shadow-2xl z-[9999] backdrop-blur-md overflow-hidden ${
-														index >= navigationItems.length - 2 ? 'right-0' : 'left-0'
-													}`}
+													className={`absolute mt-3 w-56 border border-[#AE16A7]/30 rounded-xl shadow-2xl z-[9999] backdrop-blur-md overflow-hidden ${index >= navigationItems.length - 2 ? 'right-0' : 'left-0'
+														}`}
 													style={{ backgroundColor: "#1D0225" }}
 												>
 													<div className="absolute inset-0 bg-gradient-to-br from-[#AE16A7]/10 to-[#FF068D]/10"></div>
@@ -349,11 +346,10 @@ export function TopNavigation() {
 										<Link key={item.href} href={item.href}>
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${
-													isActive(item.href)
+												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${isActive(item.href)
 														? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white scale-105 shadow-xl shadow-[#AE16A7]/30 border-[#AE16A7]/50"
 														: "hover:text-white"
-												}`}
+													}`}
 											>
 												<item.icon className="w-4 h-4" />
 												<span className="font-semibold text-sm">
@@ -421,9 +417,8 @@ export function TopNavigation() {
 														{user?.role}
 													</span>
 													<div
-														className={`w-2 h-2 rounded-full ${
-															user?.isVerified ? "bg-[#FA5F04]" : "bg-gray-400"
-														} animate-pulse`}
+														className={`w-2 h-2 rounded-full ${user?.isVerified ? "bg-[#FA5F04]" : "bg-gray-400"
+															} animate-pulse`}
 													></div>
 												</div>
 											</div>
@@ -459,9 +454,8 @@ export function TopNavigation() {
 														<span>
 															{user?.role === "freelancer"
 																? `${user?.profile?.completedJobs || 0} Jobs`
-																: `${
-																		user?.profile?.projectsPosted || 0
-																  } Projects`}
+																: `${user?.profile?.projectsPosted || 0
+																} Projects`}
 														</span>
 													</div>
 												</div>
@@ -682,11 +676,10 @@ export function TopNavigation() {
 								>
 									<Button
 										variant="ghost"
-										className={`w-full justify-start transition-all duration-300 py-4 rounded-xl border ${
-											isActive(item.href)
+										className={`w-full justify-start transition-all duration-300 py-4 rounded-xl border ${isActive(item.href)
 												? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white border-[#AE16A7]/50 shadow-lg"
 												: "text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border-transparent hover:border-[#AE16A7]/30"
-										}`}
+											}`}
 									>
 										<item.icon className="w-5 h-5 mr-4" />
 										<span className="font-semibold">{item.label}</span>
@@ -825,16 +818,14 @@ export function BottomNavigation() {
 						<Button
 							variant="ghost"
 							size="sm"
-							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-300 relative border-t-2 ${
-								isActive(item.href)
+							className={`flex flex-col items-center space-y-1 h-full w-full rounded-none transition-all duration-300 relative border-t-2 ${isActive(item.href)
 									? "bg-gradient-to-b from-[#AE16A7]/30 to-transparent text-white border-t-[#FF068D] scale-105 shadow-lg"
 									: "text-[#AE16A7] hover:text-white hover:bg-gradient-to-b hover:from-[#AE16A7]/20 hover:to-transparent border-t-transparent"
-							}`}
+								}`}
 						>
 							<item.icon
-								className={`w-6 h-6 ${
-									isActive(item.href) ? "text-[#FF068D]" : ""
-								}`}
+								className={`w-6 h-6 ${isActive(item.href) ? "text-[#FF068D]" : ""
+									}`}
 							/>
 							<span className="text-xs font-bold">{item.label}</span>
 							{item.badge && (
