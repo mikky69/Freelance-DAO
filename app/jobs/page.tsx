@@ -56,7 +56,7 @@ interface Job {
 // Job categories mapping
 const categoryMap: { [key: string]: string } = {
   'web-dev': 'Web Development',
-  'mobile-dev': 'Mobile Development', 
+  'mobile-dev': 'Mobile Development',
   'design': 'Design',
   'writing': 'Writing',
   'marketing': 'Marketing',
@@ -98,17 +98,17 @@ export default function JobsPage() {
   // Fetch user's submitted proposals
   const fetchUserProposals = async () => {
     if (!user || user.role !== 'freelancer') return
-    
+
     try {
       const token = localStorage.getItem('freelancedao_token')
       if (!token) return
-      
+
       const response = await fetch('/api/proposals', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         const jobIds = new Set(data.proposals.map((proposal: any) => proposal.job._id || proposal.job))
@@ -124,11 +124,11 @@ export default function JobsPage() {
     try {
       setIsLoadingStats(true)
       const response = await fetch('/api/platform/stats')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch stats')
       }
-      
+
       const data = await response.json()
       setStats({
         activeClients: data.stats.totalClients || 0,
@@ -151,7 +151,7 @@ export default function JobsPage() {
         page: pagination.page.toString(),
         limit: pagination.limit.toString()
       })
-      
+
       if (selectedCategory !== 'all') {
         // Map display category to backend category
         const backendCategory = Object.keys(categoryMap).find(
@@ -161,29 +161,29 @@ export default function JobsPage() {
           params.append('category', backendCategory)
         }
       }
-      
+
       if (selectedBudgetType !== 'all') {
         params.append('budgetType', selectedBudgetType)
       }
-      
+
       if (selectedUrgency !== 'all') {
         params.append('urgency', selectedUrgency)
       }
-      
+
       if (showFeaturedOnly) {
         params.append('featured', 'true')
       }
-      
+
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim())
       }
 
       const response = await fetch(`/api/jobs?${params}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch jobs')
       }
-      
+
       const data = await response.json()
       setJobs(data.jobs || [])
       setPagination(data.pagination || {
@@ -205,18 +205,18 @@ export default function JobsPage() {
     fetchJobs()
     fetchStats()
   }, [pagination.page, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly])
-  
+
   // Fetch stats and user proposals on component mount
   useEffect(() => {
     fetchStats()
     fetchUserProposals()
   }, [])
-  
+
   // Fetch user proposals when user changes
   useEffect(() => {
     fetchUserProposals()
   }, [user])
-  
+
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -226,7 +226,7 @@ export default function JobsPage() {
         setPagination(prev => ({ ...prev, page: 1 }))
       }
     }, 500)
-    
+
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
@@ -255,63 +255,63 @@ export default function JobsPage() {
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case "high":
-        return "bg-red-100 text-red-700"
+        return "bg-[#FF068D]/20 text-[#FF068D] border border-[#FF068D]/50"
       case "medium":
-        return "bg-yellow-100 text-yellow-700"
+        return "bg-[#FA5F04]/20 text-[#FA5F04] border border-[#FA5F04]/50"
       case "low":
-        return "bg-green-100 text-green-700"
+        return "bg-[#AE16A7]/20 text-[#AE16A7] border border-[#AE16A7]/50"
       default:
-        return "bg-slate-100 text-slate-700"
+        return "bg-slate-800 text-slate-400 border border-slate-700"
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#1D0225] text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Find Your Next Project</h1>
-          <p className="text-slate-600">Discover opportunities that match your skills and interests</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Find Your Next Project</h1>
+          <p className="text-slate-400">Discover opportunities that match your skills and interests</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
+          <Card className="bg-[#2A0632] border-[#AE16A7]/30">
             <CardContent className="p-4 text-center">
-              <Briefcase className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-slate-800">{filteredJobs.length}</div>
-              <div className="text-sm text-slate-600">Available Jobs</div>
+              <Briefcase className="w-8 h-8 text-[#AE16A7] mx-auto mb-2" />
+              <div className="text-2xl font-bold text-white">{filteredJobs.length}</div>
+              <div className="text-sm text-slate-400">Available Jobs</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-[#2A0632] border-[#AE16A7]/30">
             <CardContent className="p-4 text-center">
-              <Users className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <Users className="w-8 h-8 text-[#FA5F04] mx-auto mb-2" />
               {isLoadingStats ? (
-                <Skeleton className="h-8 w-16 mx-auto mb-2" />
+                <Skeleton className="h-8 w-16 mx-auto mb-2 bg-slate-700" />
               ) : (
-                <div className="text-2xl font-bold text-slate-800">{stats.activeClients.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-white">{stats.activeClients.toLocaleString()}</div>
               )}
-              <div className="text-sm text-slate-600">Active Clients</div>
+              <div className="text-sm text-slate-400">Active Clients</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-[#2A0632] border-[#AE16A7]/30">
             <CardContent className="p-4 text-center">
-              <TrendingUp className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+              <TrendingUp className="w-8 h-8 text-[#FF068D] mx-auto mb-2" />
               {isLoadingStats ? (
-                <Skeleton className="h-8 w-20 mx-auto mb-2" />
+                <Skeleton className="h-8 w-20 mx-auto mb-2 bg-slate-700" />
               ) : (
-                <div className="text-2xl font-bold text-slate-800">
+                <div className="text-2xl font-bold text-white">
                   {stats.totalPaid.toLocaleString()} HBAR
                 </div>
               )}
-              <div className="text-sm text-slate-600">Total Paid</div>
+              <div className="text-sm text-slate-400">Total Paid</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-[#2A0632] border-[#AE16A7]/30">
             <CardContent className="p-4 text-center">
-              <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-slate-800">4.8</div>
-              <div className="text-sm text-slate-600">Avg Rating</div>
+              <Star className="w-8 h-8 text-[#FA5F04] mx-auto mb-2" />
+              <div className="text-2xl font-bold text-white">4.8</div>
+              <div className="text-sm text-slate-400">Avg Rating</div>
             </CardContent>
           </Card>
         </div>
@@ -319,9 +319,9 @@ export default function JobsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
+            <Card className="sticky top-4 bg-[#2A0632] border-[#AE16A7]/30 text-white">
               <CardHeader>
-                <CardTitle className="flex items-center">
+                <CardTitle className="flex items-center text-white">
                   <Filter className="w-5 h-5 mr-2" />
                   Filters
                 </CardTitle>
@@ -329,7 +329,7 @@ export default function JobsPage() {
               <CardContent className="space-y-6">
                 {/* Search */}
                 <div>
-                  <Label htmlFor="search">Search Jobs</Label>
+                  <Label htmlFor="search" className="text-slate-300">Search Jobs</Label>
                   <div className="relative mt-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                     <Input
@@ -337,21 +337,21 @@ export default function JobsPage() {
                       placeholder="Search by title, skills..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 bg-[#1D0225] border-[#AE16A7]/30 text-white placeholder:text-slate-500 focus:border-[#AE16A7]"
                     />
                   </div>
                 </div>
 
                 {/* Category */}
                 <div>
-                  <Label>Category</Label>
+                  <Label className="text-slate-300">Category</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 bg-[#1D0225] border-[#AE16A7]/30 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#2A0632] border-[#AE16A7]/30 text-white">
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
+                        <SelectItem key={category} value={category} className="focus:bg-[#AE16A7]/20 focus:text-white">
                           {category === "all" ? "All Categories" : category}
                         </SelectItem>
                       ))}
@@ -361,14 +361,14 @@ export default function JobsPage() {
 
                 {/* Budget Type */}
                 <div>
-                  <Label>Budget Type</Label>
+                  <Label className="text-slate-300">Budget Type</Label>
                   <Select value={selectedBudgetType} onValueChange={setSelectedBudgetType}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 bg-[#1D0225] border-[#AE16A7]/30 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#2A0632] border-[#AE16A7]/30 text-white">
                       {budgetTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
+                        <SelectItem key={type} value={type} className="focus:bg-[#AE16A7]/20 focus:text-white">
                           {type === "all" ? "All Types" : type === "fixed" ? "Fixed Price" : "Hourly Rate"}
                         </SelectItem>
                       ))}
@@ -378,14 +378,14 @@ export default function JobsPage() {
 
                 {/* Urgency */}
                 <div>
-                  <Label>Urgency</Label>
+                  <Label className="text-slate-300">Urgency</Label>
                   <Select value={selectedUrgency} onValueChange={setSelectedUrgency}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 bg-[#1D0225] border-[#AE16A7]/30 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#2A0632] border-[#AE16A7]/30 text-white">
                       {urgencyLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
+                        <SelectItem key={level} value={level} className="focus:bg-[#AE16A7]/20 focus:text-white">
                           {level === "all" ? "All Levels" : level.charAt(0).toUpperCase() + level.slice(1)}
                         </SelectItem>
                       ))}
@@ -395,8 +395,13 @@ export default function JobsPage() {
 
                 {/* Featured Only */}
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="featured" checked={showFeaturedOnly} onCheckedChange={setShowFeaturedOnly} />
-                  <Label htmlFor="featured" className="text-sm">
+                  <Checkbox
+                    id="featured"
+                    checked={showFeaturedOnly}
+                    onCheckedChange={setShowFeaturedOnly}
+                    className="border-[#AE16A7]/50 data-[state=checked]:bg-[#AE16A7] data-[state=checked]:text-white"
+                  />
+                  <Label htmlFor="featured" className="text-sm text-slate-300">
                     Featured jobs only
                   </Label>
                 </div>
@@ -411,25 +416,25 @@ export default function JobsPage() {
                 // Loading skeleton
                 <div className="space-y-6">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Card key={i}>
+                    <Card key={i} className="bg-[#2A0632] border-[#AE16A7]/30">
                       <CardContent className="p-6">
                         <div className="space-y-4">
                           <div className="flex justify-between items-start">
                             <div className="flex-1 space-y-2">
-                              <Skeleton className="h-6 w-3/4" />
-                              <Skeleton className="h-4 w-full" />
-                              <Skeleton className="h-4 w-2/3" />
+                              <Skeleton className="h-6 w-3/4 bg-slate-700" />
+                              <Skeleton className="h-4 w-full bg-slate-700" />
+                              <Skeleton className="h-4 w-2/3 bg-slate-700" />
                             </div>
-                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <Skeleton className="h-8 w-8 rounded-full bg-slate-700" />
                           </div>
                           <div className="flex gap-2">
-                            <Skeleton className="h-6 w-16" />
-                            <Skeleton className="h-6 w-20" />
-                            <Skeleton className="h-6 w-18" />
+                            <Skeleton className="h-6 w-16 bg-slate-700" />
+                            <Skeleton className="h-6 w-20 bg-slate-700" />
+                            <Skeleton className="h-6 w-18 bg-slate-700" />
                           </div>
                           <div className="flex justify-between items-center">
-                            <Skeleton className="h-8 w-32" />
-                            <Skeleton className="h-8 w-24" />
+                            <Skeleton className="h-8 w-32 bg-slate-700" />
+                            <Skeleton className="h-8 w-24 bg-slate-700" />
                           </div>
                         </div>
                       </CardContent>
@@ -437,56 +442,57 @@ export default function JobsPage() {
                   ))}
                 </div>
               ) : filteredJobs.length === 0 ? (
-                <Card>
+                <Card className="bg-[#2A0632] border-[#AE16A7]/30">
                   <CardContent className="p-12 text-center">
                     <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-800 mb-2">No jobs found</h3>
-                    <p className="text-slate-600">Try adjusting your filters or search terms</p>
+                    <h3 className="text-lg font-semibold text-white mb-2">No jobs found</h3>
+                    <p className="text-slate-400">Try adjusting your filters or search terms</p>
                   </CardContent>
                 </Card>
               ) : (
                 filteredJobs.map((job) => (
                   <Card
                     key={job._id}
-                    className={`hover:shadow-lg transition-shadow duration-300 ${job.featured ? "ring-2 ring-blue-200" : ""}`}
+                    className={`hover:shadow-lg transition-shadow duration-300 bg-[#2A0632] border-[#AE16A7]/30 ${job.featured ? "ring-2 ring-[#AE16A7]" : ""
+                      }`}
                   >
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-xl font-semibold text-slate-800 hover:text-blue-600 cursor-pointer">
+                            <h3 className="text-xl font-semibold text-white hover:text-[#AE16A7] cursor-pointer transition-colors">
                               {job.title}
                             </h3>
-                            {job.featured && <Badge className="bg-blue-100 text-blue-700 text-xs">Featured</Badge>}
+                            {job.featured && <Badge className="bg-[#AE16A7]/20 text-[#AE16A7] border border-[#AE16A7]/50 text-xs">Featured</Badge>}
                             <Badge className={`text-xs ${getUrgencyColor(job.urgency)}`}>{job.urgency} priority</Badge>
                           </div>
-                          <p className="text-slate-600 mb-4 line-clamp-3">{job.description}</p>
+                          <p className="text-slate-300 mb-4 line-clamp-3">{job.description}</p>
 
                           {/* Skills */}
                           <div className="flex flex-wrap gap-2 mb-4">
                             {job.skills.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
+                              <Badge key={index} variant="outline" className="text-xs border-[#AE16A7]/30 text-slate-300">
                                 {skill}
                               </Badge>
                             ))}
                           </div>
 
                           {/* Job Details */}
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                             <div className="flex items-center">
-                              <DollarSign className="w-4 h-4 mr-1" />
+                              <DollarSign className="w-4 h-4 mr-1 text-[#FA5F04]" />
                               {job.budget.type === "fixed" ? `${job.budget.amount} ${job.budget.currency}` : `${job.budget.amount} ${job.budget.currency}/hr`}
                             </div>
                             <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
+                              <Clock className="w-4 h-4 mr-1 text-[#AE16A7]" />
                               {job.duration}
                             </div>
                             <div className="flex items-center">
-                              <Users className="w-4 h-4 mr-1" />
+                              <Users className="w-4 h-4 mr-1 text-[#FF068D]" />
                               {job.proposals.length} proposals
                             </div>
                             <div className="flex items-center">
-                              <Briefcase className="w-4 h-4 mr-1" />
+                              <Briefcase className="w-4 h-4 mr-1 text-[#FA5F04]" />
                               {categoryMap[job.category] || job.category}
                             </div>
                           </div>
@@ -497,10 +503,10 @@ export default function JobsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleSaveJob(job._id)}
-                            className="text-slate-500 hover:text-blue-600"
+                            className="text-slate-400 hover:text-[#AE16A7] hover:bg-[#AE16A7]/10"
                           >
                             {savedJobs.has(job._id) ? (
-                              <BookmarkCheck className="w-4 h-4" />
+                              <BookmarkCheck className="w-4 h-4 text-[#AE16A7]" />
                             ) : (
                               <Bookmark className="w-4 h-4" />
                             )}
@@ -512,17 +518,17 @@ export default function JobsPage() {
                       </div>
 
                       {/* Client Info */}
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-4 border-t border-[#AE16A7]/20">
                         <div className="flex items-center space-x-3">
-                          <Avatar className="w-8 h-8">
+                          <Avatar className="w-8 h-8 ring-2 ring-[#AE16A7]/30">
                             <AvatarImage src={job.client.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{job.client.fullname[0]}</AvatarFallback>
+                            <AvatarFallback className="bg-[#AE16A7] text-white">{job.client.fullname[0]}</AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="flex items-center space-x-2">
-                              <span className="font-medium text-slate-800">{job.client.fullname}</span>
+                              <span className="font-medium text-white">{job.client.fullname}</span>
                               {job.client.verified && (
-                                <Badge className="bg-green-100 text-green-700 text-xs">Verified</Badge>
+                                <Badge className="bg-[#FA5F04]/20 text-[#FA5F04] border border-[#FA5F04]/50 text-xs">Verified</Badge>
                               )}
                             </div>
                           </div>
@@ -530,9 +536,9 @@ export default function JobsPage() {
 
                         {user && user.role === 'freelancer' ? (
                           submittedProposals.has(job._id) ? (
-                            <Button 
-                              disabled 
-                              className="bg-green-100 text-green-700 cursor-not-allowed border border-green-200"
+                            <Button
+                              disabled
+                              className="bg-green-900/20 text-green-500 cursor-not-allowed border border-green-900/50"
                               title="You have already submitted a proposal for this job"
                             >
                               ✓ Submitted
@@ -541,7 +547,7 @@ export default function JobsPage() {
                             <ApplyJobModal
                               job={job}
                               trigger={
-                                <Button className="bg-blue-500 hover:bg-blue-600">
+                                <Button className="bg-gradient-to-r from-[#AE16A7] to-[#FF068D] hover:from-[#AE16A7]/80 hover:to-[#FF068D]/80 text-white border-0">
                                   Submit Proposal
                                 </Button>
                               }
@@ -552,9 +558,9 @@ export default function JobsPage() {
                             />
                           )
                         ) : (
-                          <Button 
-                            disabled 
-                            className="bg-slate-300 text-slate-500 cursor-not-allowed"
+                          <Button
+                            disabled
+                            className="bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                             title={!user ? "Please log in as a freelancer to submit proposals" : "Only freelancers can submit proposals"}
                           >
                             {!user ? "Login to Apply" : "Freelancers Only"}
