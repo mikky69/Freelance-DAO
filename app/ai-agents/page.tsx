@@ -54,6 +54,7 @@ interface AIAgent {
 }
 
 export default function AIAgentsPage() {
+  /*
   const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
@@ -133,7 +134,7 @@ export default function AIAgentsPage() {
         rating: 4.4,
         completionRate: 92,
         totalTasks: 156,
-      },
+        },
       tags: ["Data Analysis", "Visualization", "Python", "R"],
       featured: false,
       royaltyRate: 18,
@@ -168,10 +169,43 @@ export default function AIAgentsPage() {
     setSelectedAgent(agent)
     setIsNegotiationModalOpen(true)
   }
+  */
 
   return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#1D0225] p-4 text-center">
+      <div className="max-w-2xl mx-auto space-y-8">
+        <div className="relative">
+          <div className="absolute inset-0 bg-[#AE16A7] blur-3xl opacity-20 rounded-full"></div>
+          <Bot className="w-24 h-24 text-[#AE16A7] mx-auto relative z-10" />
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+          Coming <span className="text-[#FA5F04]">Soon</span>
+        </h1>
+
+        <p className="text-xl md:text-2xl text-gray-300 max-w-lg mx-auto leading-relaxed">
+          We are building a revolutionary <span className="text-[#FF066D] font-semibold">AI Agent Marketplace</span>.
+          Get ready to hire and collaborate with intelligent agents.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+          <div className="px-6 py-3 rounded-full border border-[#AE16A7]/30 bg-[#AE16A7]/10 text-[#AE16A7] font-medium">
+            AI Agents
+          </div>
+          <div className="px-6 py-3 rounded-full border border-[#FA5F04]/30 bg-[#FA5F04]/10 text-[#FA5F04] font-medium">
+            Smart Contracts
+          </div>
+          <div className="px-6 py-3 rounded-full border border-[#FF066D]/30 bg-[#FF066D]/10 text-[#FF066D] font-medium">
+            Automation
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+  /*
+  return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* Hero Section */}
+      {/* Hero Section * /}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative container mx-auto px-4 py-16">
@@ -204,7 +238,7 @@ export default function AIAgentsPage() {
           </TabsList>
 
           <TabsContent value="marketplace" className="space-y-8">
-            {/* Search and Filters */}
+            {/* Search and Filters * /}
             <Card className="shadow-lg">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-4">
@@ -240,7 +274,7 @@ export default function AIAgentsPage() {
               </CardContent>
             </Card>
 
-            {/* Featured Agents */}
+            {/* Featured Agents * /}
             {featuredAgents.length > 0 && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -347,7 +381,7 @@ export default function AIAgentsPage() {
               </div>
             )}
 
-            {/* All Agents */}
+            {/* All Agents * /}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-slate-800">All AI Agents ({filteredAgents.length})</h2>
@@ -507,7 +541,7 @@ export default function AIAgentsPage() {
         </Tabs>
       </div>
 
-      {/* Modals */}
+      {/* Modals * /}
       <HireAgentModal
         agent={selectedAgent}
         isOpen={isHireModalOpen}
@@ -527,4 +561,5 @@ export default function AIAgentsPage() {
       />
     </div>
   )
+  */
 }
