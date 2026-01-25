@@ -93,7 +93,7 @@ export default function DAOPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
+      <div className="bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-4">FreeLanceDAO Governance</h1>
