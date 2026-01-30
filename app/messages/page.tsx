@@ -64,6 +64,10 @@ export default function MessagesPage() {
   const [loadingConversations, setLoadingConversations] = useState<boolean>(true)
   const [loadingMessages, setLoadingMessages] = useState<boolean>(false)
 
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; avatar: string; role: string; email: string }[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
   const searchParams = useSearchParams()
   const recipientIdParam = searchParams.get("recipientId")
   const recipientRoleParam = searchParams.get("recipientRole")
@@ -271,8 +275,66 @@ export default function MessagesPage() {
       <div className="p-4 border-b border-slate-200 flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <Input placeholder="Search conversations..." className="pl-10" />
+          <Input 
+            placeholder="Search conversations or people..." 
+            className="pl-10" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+
+        {searchQuery.length >= 2 && (
+          <div className="absolute z-10 w-[calc(100%-2rem)] mt-2 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-y-auto">
+            {isSearching ? (
+              <div className="p-4 text-center text-sm text-slate-500">Searching...</div>
+            ) : searchResults.length > 0 ? (
+              <div className="py-2">
+                <div className="px-3 py-1 text-xs font-semibold text-slate-500 uppercase">People</div>
+                {searchResults.map((user) => (
+                  <div 
+                    key={user.id}
+                    className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center space-x-3"
+                    onClick={() => {
+                      const idx = conversations.findIndex(c => c.otherPartyId === user.id)
+                      if (idx >= 0) {
+                        handleConversationSelect(idx)
+                      } else {
+                        const newConv = {
+                          id: `new:${user.id}`,
+                          name: user.name,
+                          avatar: (user.name || "U")[0],
+                          lastMessage: "Start the conversation...",
+                          timestamp: "Just now",
+                          unread: 0,
+                          online: false,
+                          project: "New Conversation",
+                          type: user.role === "freelancer" ? "freelancer" : "client",
+                          otherPartyId: user.id,
+                          isPlaceholder: true
+                        }
+                        setConversations([newConv as ConversationSummary, ...conversations])
+                        setSelectedChat(0)
+                        setIsMobileConversationOpen(true)
+                      }
+                      setSearchQuery("")
+                      setSearchResults([])
+                    }}
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback>{(user.name || "U")[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="text-sm font-medium text-slate-800">{user.name}</div>
+                      <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-sm text-slate-500">No users found</div>
+            )}
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -344,7 +406,69 @@ export default function MessagesPage() {
   const ChatArea = () => {
     const conversation = conversations[selectedChat]
     if (!conversation) {
-      return (
+      // Handle user search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        setSearchResults([])
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        const token = localStorage.getItem('freelancedao_token')
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setSearchResults(data.users)
+        }
+      } catch (error) {
+        console.error("Error searching users:", error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
+  const startConversation = (user: { id: string; name: string; avatar: string; role: string }) => {
+    // Check if conversation already exists
+    const existingConv = conversations.find(c => c.otherParty._id === user.id)
+    
+    if (existingConv) {
+      setSelectedConversation(existingConv)
+      setSearchQuery("") // Clear search
+    } else {
+      // Create a temporary conversation object
+      const newConv: Conversation = {
+        _id: `temp-${Date.now()}`,
+        otherParty: {
+          _id: user.id,
+          fullname: user.name,
+          avatar: user.avatar,
+          role: user.role
+        },
+        lastMessage: {
+          content: "Start a conversation",
+          createdAt: new Date().toISOString(),
+          read: true
+        },
+        unreadCount: 0
+      }
+      
+      setConversations([newConv, ...conversations])
+      setSelectedConversation(newConv)
+      setSearchQuery("") // Clear search
+    }
+  }
+
+  return (
         <div className="flex-1 flex items-center justify-center bg-white">
           <div className="text-slate-500 text-sm">Select a conversation to start chatting</div>
         </div>
