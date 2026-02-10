@@ -7,7 +7,7 @@ export default function HeroSection() {
   return (
 		<section className="relative min-h-screen flex items-center justify-center bg-[#1D0225] text-white overflow-hidden">
 			 {/* Background pattern */}
-      <div className="absolute inset-0 -z-10 opacity-70">
+      {/* <div className="absolute inset-0 -z-10 opacity-70">
         <svg
           className="h-full w-full"
           xmlns="http://www.w3.org/2000/svg"
@@ -23,10 +23,7 @@ export default function HeroSection() {
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
-      </div>
-
-			{/* Gradient Overlay for Depth */}
-			<div className="absolute inset-0 bg-gradient-to-b from-[#1D0225] via-[#1D0225]/95 to-[#1D0225]" />
+      </div> */}
 
 			<div className="container mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center relative z-10">
 				{/* Left Content */}
