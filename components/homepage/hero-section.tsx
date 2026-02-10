@@ -6,7 +6,7 @@ import Image from "next/image";
 export default function HeroSection() {
   return (
 		<section className="relative min-h-screen flex items-center justify-center bg-[#1D0225] text-white overflow-hidden">
-			 {/* Background pattern */}
+			 {/* Background pattern - commented out per PR layout tweaks */}
       {/* <div className="absolute inset-0 -z-10 opacity-70">
         <svg
           className="h-full w-full"

@@ -15,6 +15,7 @@
 
 ## 📑 Table of Contents
 - [Overview](#-overview)
+- [Recent Updates](#-recent-updates)
 - [Hedera Integration Summary](#-hedera-integration-summary)
 - [Architecture Diagram](#-architecture-diagram)
 - [Deployed Hedera IDs](#-deployed-hedera-ids)
@@ -43,6 +44,27 @@ FreeLanceDAO revolutionizes the freelance economy by addressing critical pain po
 - **Transparent Governance:** DAO-based decision making with $FDAO token
 - **AI Workforce Integration:** Hybrid human-AI freelance marketplace
 - **Fair Economics:** Only 5% platform fee with lifetime royalties for AI agent creators
+
+---
+
+## 📋 Recent Updates
+
+### Authentication (Privy + Hedera)
+- **Sign-in on Hedera:** The app uses **Privy** for authentication with **Hedera** as the target network (not Ethereum). Wallets connect and sign on Hedera Testnet by default.
+- **PrivyHederaProvider:** Wraps the app with Privy + Wagmi, configured for Hedera chains (Testnet, Previewnet, Mainnet). Embedded wallets are created on Hedera; external wallets (e.g. MetaMask, Coinbase Wallet) are supported.
+- **Automatic chain switching:** If a user connects an external wallet on another network, the app prompts to switch to Hedera Testnet and supports a manual “Switch to Hedera” action in the wallet dropdown when on the wrong network.
+
+### UI & Theming
+- **Universal icon system:** All icons use **Iconify** (`@iconify/react`, `@iconify/utils`, `@iconify/json`). A shared `IconifyIcon` component is used across the app; emojis in the header and elsewhere have been replaced with Iconify icons.
+- **Consistent active-route styling:** Active navigation (header and sidebar) uses the app’s universal palette: primary `#AE16A7`, secondary `#FF068D`, accent `#FA5F04`. Sidebar and header no longer use blue for active/hover states.
+
+### User Menu & Wallet Display
+- **Wallet address in dropdown:** In the logged-in user dropdown (and wallet dropdown), the address is shown in short form **0xXXXX...XXXX** (6 characters at start, 4 at end). Clicking the address copies the **full** address to the clipboard and shows a check icon and toast.
+- **Role badge:** The user’s role (e.g. Freelancer/Client) is shown as a badge in the header trigger and in the dropdown.
+- **No placeholder stats:** “0 Rating” and “0 Jobs” (or “0 Projects”) are hidden until the user has real data; the stats row only appears when at least one value is greater than zero.
+
+### Development
+- **Package manager:** Scripts and install instructions use **pnpm** (e.g. `pnpm install`, `pnpm run dev`). Use pnpm for consistency with the project setup.
 
 ---
 
@@ -122,7 +144,7 @@ Decentralized storage prevents censorship and ensures freelancer portfolios rema
 │                         USER INTERFACE                          │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Next.js Frontend (localhost:3000)                       │  │
-│  │  - React Components - Tailwind CSS - HashPack Wallet    │  │
+│  │  - React - Tailwind - Privy (Hedera) - Iconify          │  │
 │  └────────────┬───────────────────────────┬─────────────────┘  │
 │               │                           │                     │
 └───────────────┼───────────────────────────┼─────────────────────┘
@@ -182,7 +204,7 @@ Decentralized storage prevents censorship and ensures freelancer portfolios rema
      └─────────────┘
 
 DATA FLOW:
-1. User authenticates via HashPack Wallet → Frontend
+1. User authenticates via Privy (email or wallet on Hedera) → Frontend
 2. Frontend sends job creation → Backend API validates
 3. Backend logs activity to HCS Topic → Hedera Network
 4. User deposits payment → HSCS Escrow Contract → Hedera
@@ -216,21 +238,23 @@ DATA FLOW:
 ### Blockchain & Web3
 - **Hedera Hashgraph:** HCS, HTS, HSCS, HFS
 - **Smart Contracts:** Solidity 0.8.x
-- **Wallets:** HashPack, Blade Wallet integration
+- **Wallets:** Privy (embedded + external: MetaMask, Coinbase Wallet), HashPack, Blade Wallet
+- **Auth & chains:** Privy + Wagmi; default chain Hedera Testnet with automatic chain switching
 - **Hedera SDK:** @hashgraph/sdk v2.x
 
 ### Frontend
-- **Framework:** Next.js 14 (App Router)
-- **UI Library:** React 18
+- **Framework:** Next.js (App Router)
+- **UI Library:** React 19
 - **Styling:** Tailwind CSS, Shadcn/ui
-- **State Management:** React Query, Zustand
-- **Web3 Integration:** Hedera SDK + Wallet Connect
+- **Icons:** Iconify (@iconify/react, @iconify/utils, @iconify/json) as the universal icon set
+- **State Management:** React Query, React Context (Auth)
+- **Web3 Integration:** Privy, Wagmi, Hedera SDK
 
 ### Backend
 - **Runtime:** Node.js 20+, TypeScript
 - **API Framework:** tRPC, Express.js
 - **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** NextAuth.js with Hedera DID
+- **Authentication:** Privy (Hedera-focused), NextAuth.js with Hedera DID
 - **Real-time:** WebSockets for live updates
 
 ### Storage & Indexing
@@ -252,11 +276,11 @@ DATA FLOW:
 
 Before you begin, ensure you have the following installed:
 - **Node.js** 18 or higher ([Download](https://nodejs.org/))
-- **npm** or **yarn** package manager
+- **pnpm** ([Install](https://pnpm.io/installation))
 - **Git** ([Download](https://git-scm.com/))
 - **PostgreSQL** 14+ ([Download](https://www.postgresql.org/download/))
 - **Hedera Testnet Account** ([Create free account](https://portal.hedera.com/))
-- **HashPack Wallet** or **Blade Wallet** ([HashPack](https://www.hashpack.app/))
+- **Privy App ID** from [Privy Dashboard](https://dashboard.privy.io/) for auth and Hedera wallet connection
 
 ### Deployment & Setup Instructions
 
@@ -268,11 +292,8 @@ cd Freelance-DAO
 
 #### Step 2: Install Dependencies
 ```bash
-# Install all project dependencies
-npm install
-
-# Or if you prefer yarn
-yarn install
+# Install all project dependencies (project uses pnpm)
+pnpm install
 ```
 
 #### Step 3: Configure Environment Variables
@@ -320,6 +341,9 @@ IPFS_GATEWAY=https://ipfs.io/ipfs/
 # Application URLs
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 BACKEND_API_URL=http://localhost:5000
+
+# Privy (auth + Hedera wallet connection)
+NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id
 ```
 
 **⚠️ CRITICAL SECURITY NOTE:**
@@ -366,21 +390,21 @@ npm run dev
 
 **Terminal 2 - Start the Frontend:**
 ```bash
-npm run dev
+pnpm run dev
 # Frontend runs on http://localhost:3000
 ```
 
 **Terminal 3 - (Optional) Start Database Studio:**
 ```bash
-npx prisma studio
+pnpm exec prisma studio
 # Prisma Studio runs on http://localhost:5555
 ```
 
 #### Step 7: Access the Application
 
 1. Open your browser and navigate to `http://localhost:3000`
-2. Connect your HashPack or Blade Wallet (set to Hedera Testnet)
-3. Request testnet HBAR from the [Hedera Faucet](https://portal.hedera.com/faucet)
+2. Sign in with **Privy** (email or wallet). The app uses **Hedera Testnet**; external wallets will be prompted to switch to Hedera if needed.
+3. Request testnet HBAR from the [Hedera Faucet](https://portal.hedera.com/faucet) if using a Hedera wallet
 4. Start exploring FreeLanceDAO!
 
 ### Running Environment
@@ -399,10 +423,10 @@ To test the platform, you can use the following test credentials provided in the
 
 - **Test Account ID:** Provided in DoraHacks submission text field
 - **Test Private Key:** Provided in DoraHacks submission text field
-- **Test Wallet:** HashPack wallet with testnet HBAR pre-funded
+- **Test Wallet:** Hedera-capable wallet (e.g. HashPack) with testnet HBAR, or use Privy email login
 
 **Testing Workflow:**
-1. Connect with provided test wallet
+1. Sign in with Privy (email or wallet); ensure wallet is on Hedera Testnet
 2. Browse existing jobs or create a test job
 3. Apply to jobs as a freelancer
 4. Test escrow deposit/release functionality
@@ -418,8 +442,9 @@ To test the platform, you can use the following test credentials provided in the
 
 #### Core Functionality
 - **User Authentication & Profiles**
-  - Wallet and Email authentication with Hedera DID
-  - Multi-role support: Client, Freelancer, Admin
+  - **Privy** sign-in (email or wallet) on **Hedera** (Testnet by default); automatic chain switching for external wallets
+  - Multi-role support: Client, Freelancer, Admin; role badge in header and user dropdown
+  - Wallet address shown as 0xXXXX...XXXX in dropdown; click to copy full address
   - Comprehensive profile system with skills, portfolio, and work history
   - KYC verification integration (optional for premium features)
 
@@ -520,7 +545,8 @@ To test the platform, you can use the following test credentials provided in the
 - ✅ Staking mechanism with reward distribution
 - ✅ Governance proposal creation and voting
 - ✅ Basic dispute resolution workflow
-- ✅ Frontend UI with wallet integration (HashPack)
+- ✅ Frontend UI with Privy auth and Hedera wallet integration (embedded + MetaMask, etc.)
+- ✅ Universal Iconify icons and consistent theme (active route, sidebar, user dropdown)
 - ✅ Backend API with database integration
 - 🚧 HCS logging integration (in progress)
 - 🚧 HTS token creation (pending)

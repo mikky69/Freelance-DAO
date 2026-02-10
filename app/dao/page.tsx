@@ -94,7 +94,8 @@ export default function DAOPage() {
     <div className="min-h-screen bg-[#1D0225] text-white">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] text-white relative overflow-hidden">
-        <div className="container mx-auto px-4 py-16">
+        <div className="absolute inset-0 bg-[#1D0225] opacity-20"></div>
+        <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-4">FreeLanceDAO Governance</h1>
             <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
