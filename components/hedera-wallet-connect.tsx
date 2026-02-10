@@ -32,6 +32,7 @@ import {
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { walletManager, type HederaAccount, type WalletError } from "@/lib/hedera-wallet"
+import { IconifyIcon } from "@/components/iconify-icon"
 
 interface HederaWalletConnectProps {
   onConnectionChange?: (connected: boolean, account?: HederaAccount) => void
@@ -144,7 +145,7 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
       hashpack: {
         name: "HashPack",
         description: "The most popular Hedera wallet",
-        icon: "🔐",
+        iconName: "mdi:lock",
         recommended: true,
         gradient: "from-purple-500 to-purple-600",
         installUrl: "https://chrome.google.com/webstore/detail/hashpack/gjagmgiddbbciopjhllkdnddhcglnemk",
@@ -152,7 +153,7 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
       blade: {
         name: "Blade Wallet",
         description: "User-friendly with DeFi features",
-        icon: "⚡",
+        iconName: "mdi:flash",
         recommended: false,
         gradient: "from-blue-500 to-blue-600",
         installUrl:
@@ -161,7 +162,7 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
       metamask: {
         name: "MetaMask",
         description: "Popular EVM wallet. Now supports Hedera via JSON-RPC.",
-        icon: "🦊",
+        iconName: "mdi:fox",
         recommended: false,
         gradient: "from-orange-500 to-amber-500",
         installUrl: "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
@@ -169,7 +170,7 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
       kabila: {
         name: "Kabila Wallet",
         description: "Enterprise-grade security",
-        icon: "🛡️",
+        iconName: "mdi:shield-check",
         recommended: false,
         gradient: "from-green-500 to-green-600",
         installUrl: "#",
@@ -326,9 +327,9 @@ export function HederaWalletConnect({ onConnectionChange }: HederaWalletConnectP
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div
-                            className={`w-12 h-12 bg-gradient-to-r ${config.gradient} rounded-xl flex items-center justify-center text-2xl shadow-lg`}
+                            className={`w-12 h-12 bg-gradient-to-r ${config.gradient} rounded-xl flex items-center justify-center shadow-lg`}
                           >
-                            {config.icon}
+                            <IconifyIcon icon={config.iconName} className="w-6 h-6 text-white" />
                           </div>
                           <div>
                             <div className="flex items-center space-x-2">

@@ -91,7 +91,6 @@ export default function DAOPage() {
   ]
 
   return (
-  return (
     <div className="min-h-screen bg-[#1D0225] text-white">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] text-white relative overflow-hidden">

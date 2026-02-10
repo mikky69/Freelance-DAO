@@ -150,15 +150,16 @@ export function SidebarNavigation({ isOpen, onClose }: SidebarNavigationProps) {
 			<div
 				id="sidebar-navigation"
 				className={cn(
-					"fixed left-0 top-0 h-full w-80 bg-white border-r border-slate-200 shadow-lg transform transition-transform duration-300 ease-in-out z-50",
+					"fixed left-0 top-0 h-full w-80 border-r border-[#AE16A7]/30 shadow-lg transform transition-transform duration-300 ease-in-out z-50",
 					isOpen ? "translate-x-0" : "-translate-x-full"
 				)}
+				style={{ backgroundColor: "#1D0225" }}
 			>
 				{/* Header */}
-				<div className="flex items-center justify-between p-4 border-b border-slate-200">
+				<div className="flex items-center justify-between p-4 border-b border-[#AE16A7]/30">
 					<div className="flex items-center space-x-3">
 						<Avatar className="w-10 h-10">
-							<AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold">
+							<AvatarFallback className="bg-gradient-to-r from-[#AE16A7] to-[#FF068D] text-white font-semibold">
 								{user?.name
 									?.split(" ")
 									.map((n) => n[0])
@@ -166,10 +167,10 @@ export function SidebarNavigation({ isOpen, onClose }: SidebarNavigationProps) {
 							</AvatarFallback>
 						</Avatar>
 						<div>
-							<div className="font-medium text-slate-800">{user?.name}</div>
-							<div className="flex items-center space-x-1 text-xs text-slate-500">
+							<div className="font-medium text-white">{user?.name}</div>
+							<div className="flex items-center space-x-1 text-xs text-[#AE16A7]/70">
 								{user?.isVerified && (
-									<CheckCircle className="w-3 h-3 text-green-500" />
+									<CheckCircle className="w-3 h-3 text-[#FA5F04]" />
 								)}
 								<span className="capitalize">
 									{user?.role} {user?.isVerified ? "• Verified" : "• Unverified"}
@@ -177,7 +178,7 @@ export function SidebarNavigation({ isOpen, onClose }: SidebarNavigationProps) {
 							</div>
 						</div>
 					</div>
-					<Button variant="ghost" size="sm" onClick={onClose}>
+					<Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-[#AE16A7]/20">
 						<X className="w-5 h-5" />
 					</Button>
 				</div>
@@ -188,77 +189,77 @@ export function SidebarNavigation({ isOpen, onClose }: SidebarNavigationProps) {
 						<div key={item.href}>
 							{item.subItems ? (
 								<>
-									<Button
-										variant="ghost"
+								<Button
+									variant="ghost"
+									className={cn(
+										"w-full justify-start transition-all duration-200",
+										isActive(item.href)
+											? "bg-gradient-to-r from-[#AE16A7]/25 to-[#FF068D]/25 text-white border-l-4 border-[#AE16A7] shadow-md shadow-[#AE16A7]/10"
+											: "text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/10 hover:to-[#FF068D]/10"
+									)}
+									onClick={() => toggleExpanded(item.href)}
+								>
+									<item.icon className={cn("w-5 h-5 mr-3", isActive(item.href) ? "text-[#FA5F04]" : "")} />
+									<span className="flex-1 text-left">{item.label}</span>
+									<ChevronRight
 										className={cn(
-											"w-full justify-start transition-all duration-200",
-											isActive(item.href)
-												? "bg-blue-100 text-blue-600"
-												: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+											"w-4 h-4 transition-transform",
+											expandedItems.includes(item.href) ? "rotate-90" : ""
 										)}
-										onClick={() => toggleExpanded(item.href)}
-									>
-										<item.icon className="w-5 h-5 mr-3" />
-										<span className="flex-1 text-left">{item.label}</span>
-										<ChevronRight
-											className={cn(
-												"w-4 h-4 transition-transform",
-												expandedItems.includes(item.href) ? "rotate-90" : ""
-											)}
-										/>
+									/>
 									</Button>
 									{expandedItems.includes(item.href) && (
 										<div className="ml-8 mt-2 space-y-1">
 											{item.subItems.map((sub) => (
 												<Link key={sub.href} href={sub.href} onClick={onClose}>
-													<Button
-														variant="ghost"
-														size="sm"
-														className={cn(
-															"w-full justify-start transition-all duration-200",
-															isActive(sub.href)
-																? "bg-blue-100 text-blue-600"
-																: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-														)}
-													>
-														<sub.icon className="w-4 h-4 mr-3" />
-														{sub.name}
-													</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													className={cn(
+														"w-full justify-start transition-all duration-200",
+														isActive(sub.href)
+															? "bg-gradient-to-r from-[#AE16A7]/25 to-[#FF068D]/25 text-white border-l-4 border-[#FF068D] shadow-md shadow-[#FF068D]/10"
+															: "text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/10 hover:to-[#FF068D]/10"
+													)}
+												>
+													<sub.icon className={cn("w-4 h-4 mr-3", isActive(sub.href) ? "text-[#FA5F04]" : "")} />
+													{sub.name}
+												</Button>
 												</Link>
 											))}
 										</div>
 									)}
 								</>
 							) : (
-								<Link href={item.href} onClick={onClose}>
-									<Button
-										variant="ghost"
-										className={cn(
-											"w-full justify-start transition-all duration-200",
-											isActive(item.href)
-												? "bg-blue-100 text-blue-600"
-												: "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-										)}
-									>
-										<item.icon className="w-5 h-5 mr-3" />
-										<span className="flex-1 text-left">{item.label}</span>
-										{item.badge && (
-											<Badge className="bg-red-500 text-white text-xs px-1.5 py-0.5">
-												{item.badge}
-											</Badge>
-										)}
-									</Button>
-								</Link>
+							<Link href={item.href} onClick={onClose}>
+								<Button
+									variant="ghost"
+									className={cn(
+										"w-full justify-start transition-all duration-200",
+										isActive(item.href)
+											? "bg-gradient-to-r from-[#AE16A7]/25 to-[#FF068D]/25 text-white border-l-4 border-[#AE16A7] shadow-md shadow-[#AE16A7]/10"
+											: "text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/10 hover:to-[#FF068D]/10"
+									)}
+								>
+									<item.icon className={cn("w-5 h-5 mr-3", isActive(item.href) ? "text-[#FA5F04]" : "")} />
+									<span className="flex-1 text-left">{item.label}</span>
+									{item.badge && (
+										<Badge className="bg-gradient-to-r from-[#FF068D] to-[#FA5F04] text-white text-xs px-1.5 py-0.5">
+											{item.badge}
+										</Badge>
+									)}
+								</Button>
+							</Link>
 							)}
 						</div>
 					))}
 				</div>
 
 				{/* Footer */}
-				<div className="border-t border-slate-200 p-4">
+				<div className="border-t border-[#AE16A7]/30 p-4">
 					<Button
 						variant="ghost"
-						className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+						className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
 						onClick={() => {
 							signOut();
 							onClose();

@@ -11,6 +11,7 @@ import {
 	Verified,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { IconifyIcon } from "@/components/iconify-icon";
 
 interface Testimonial {
 	name: string;
@@ -322,7 +323,8 @@ export function TestimonialsSection() {
 							onClick={() => setIsAutoPlaying(!isAutoPlaying)}
 							className="text-sm text-gray-400 hover:text-white transition-colors duration-300 px-4 py-2 rounded-lg hover:bg-white/5"
 						>
-							{isAutoPlaying ? "⏸️ Pause" : "▶️ Play"} Auto-slide
+							<IconifyIcon icon={isAutoPlaying ? "mdi:pause" : "mdi:play"} className="w-4 h-4 mr-1 inline-block" />
+						{isAutoPlaying ? "Pause" : "Play"} Auto-slide
 						</button>
 					</div>
 				</div>

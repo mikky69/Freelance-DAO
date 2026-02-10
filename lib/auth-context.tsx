@@ -2,9 +2,10 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { usePrivy, useWallets } from "@privy-io/react-auth"
 
 interface User {
   id: string
@@ -31,12 +32,16 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isWalletConnected: boolean
+  privyAuthenticated: boolean
+  privyReady: boolean
   signIn: (email: string, password: string, role: "freelancer" | "client" | "admin") => Promise<boolean>
   signUp: (email: string, password: string, name: string, role: "freelancer" | "client" | "admin", adminToken?: string) => Promise<boolean>
   signOut: () => void
   connectWallet: (address: string) => void
   disconnectWallet: () => void
   updateUser: (updates: Partial<User>) => Promise<boolean>
+  openPrivyLogin: () => void
+  setUserRole: (role: "freelancer" | "client" | "admin") => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -46,15 +51,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [pendingRole, setPendingRole] = useState<"freelancer" | "client" | "admin" | null>(null)
   const router = useRouter()
 
-  const isAuthenticated = !!user
-  const isWalletConnected = !!user?.walletAddress
+  // Privy hooks
+  const { 
+    ready: privyReady, 
+    authenticated: privyAuthenticated, 
+    user: privyUser, 
+    login: privyLogin, 
+    logout: privyLogout,
+    connectWallet: privyConnectWallet 
+  } = usePrivy()
+  const { wallets } = useWallets()
 
-  useEffect(() => {
-    checkExistingSession()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const isAuthenticated = !!user || privyAuthenticated
+  const isWalletConnected = !!user?.walletAddress || wallets.length > 0
 
   // token helpers
   const setToken = (token: string | null) => {
@@ -64,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getToken = () => localStorage.getItem("freelancedao_token")
 
   // fetch wrapper - will attach Authorization header automatically
-  const authFetch = (url: string, options: RequestInit = {}) => {
+  const authFetch = useCallback((url: string, options: RequestInit = {}) => {
     const token = getToken()
     const headers = {
       "Content-Type": "application/json",
@@ -72,9 +84,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }
     return fetch(url, { ...options, headers })
-  }
+  }, [])
 
-  // restore session on load
+  // Sync Privy user with local user state
+  useEffect(() => {
+    if (privyReady && privyAuthenticated && privyUser) {
+      // Get email from Privy user
+      const privyEmail = privyUser.email?.address || privyUser.google?.email || privyUser.apple?.email
+      
+      // Get wallet address from Privy
+      const privyWalletAddress = wallets.length > 0 ? wallets[0].address : undefined
+
+      // Get stored role from localStorage or use pending role
+      const storedRole = localStorage.getItem("freelancedao_role") as "freelancer" | "client" | "admin" | null
+      const role = pendingRole || storedRole || "freelancer"
+
+      // Create or update user from Privy data
+      const privyBasedUser: User = {
+        id: privyUser.id,
+        email: privyEmail,
+        walletAddress: privyWalletAddress,
+        name: privyEmail?.split("@")[0] || privyWalletAddress?.slice(0, 8) || "User",
+        isVerified: !!privyUser.email?.address,
+        accountType: role,
+        role: role,
+      }
+
+      // Check if we have an existing user in localStorage that we should merge
+      const savedUser = localStorage.getItem("freelancedao_user")
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser)
+        // Merge existing user data with Privy data
+        privyBasedUser.name = parsedUser.name || privyBasedUser.name
+        privyBasedUser.avatar = parsedUser.avatar
+        privyBasedUser.profile = parsedUser.profile
+        privyBasedUser.role = parsedUser.role || role
+        privyBasedUser.accountType = parsedUser.accountType || role
+      }
+
+      setUser(privyBasedUser)
+      localStorage.setItem("freelancedao_user", JSON.stringify(privyBasedUser))
+      setIsLoading(false)
+    } else if (privyReady && !privyAuthenticated) {
+      // Not authenticated with Privy, check for legacy session
+      checkExistingSession()
+    }
+  }, [privyReady, privyAuthenticated, privyUser, wallets, pendingRole])
+
+  // Update wallet address when wallets change
+  useEffect(() => {
+    if (wallets.length > 0 && user) {
+      const walletAddress = wallets[0].address
+      if (walletAddress !== user.walletAddress) {
+        const updatedUser = { ...user, walletAddress }
+        setUser(updatedUser)
+        localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
+        localStorage.setItem("walletConnected", "true")
+        localStorage.setItem("walletAddress", walletAddress)
+      }
+    }
+  }, [wallets, user])
+
+  // restore session on load (legacy support)
   const checkExistingSession = async () => {
     setIsLoading(true)
     try {
@@ -104,7 +175,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // sign in
+  // Open Privy login modal
+  const openPrivyLogin = useCallback(() => {
+    privyLogin()
+  }, [privyLogin])
+
+  // Set user role before or after login
+  const setUserRole = useCallback((role: "freelancer" | "client" | "admin") => {
+    setPendingRole(role)
+    localStorage.setItem("freelancedao_role", role)
+    
+    // Update existing user if present
+    if (user) {
+      const updatedUser = { ...user, role, accountType: role }
+      setUser(updatedUser)
+      localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
+    }
+  }, [user])
+
+  // sign in (legacy support for existing email/password auth)
   const signIn = async (email: string, password: string, role: "freelancer" | "client" | "admin"): Promise<boolean> => {
     setIsLoading(true)
     try {
@@ -131,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setToken(data.token)
+      localStorage.setItem("freelancedao_role", role)
 
       // fetch profile
       const meRes = await authFetch(`${API_URL}/api/auth/me`, { method: "GET" })
@@ -162,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // sign up
+  // sign up (legacy support for existing email/password auth)
   const signUp = async (
     email: string,
     password: string,
@@ -176,7 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (role === "client") endpoint = "/api/auth/register/client"
       if (role === "admin") endpoint = "/api/auth/register/admin"
       
-      const body: any = { email, password, fullname: name }
+      const body: Record<string, string> = { email, password, fullname: name }
       
       // Add adminToken for admin registration if provided
       if (role === "admin" && adminToken) {
@@ -196,6 +286,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await res.json()
+      localStorage.setItem("freelancedao_role", role)
+      
       if (data.token) {
         setToken(data.token)
         const meRes = await authFetch(`${API_URL}/api/auth/me`, { method: "GET" })
@@ -222,27 +314,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signOut = () => {
+  const signOut = useCallback(async () => {
+    // Sign out from Privy if authenticated
+    if (privyAuthenticated) {
+      await privyLogout()
+    }
+    
     setUser(null)
     setToken(null)
+    setPendingRole(null)
     localStorage.removeItem("freelancedao_user")
+    localStorage.removeItem("freelancedao_role")
     localStorage.removeItem("walletConnected")
     localStorage.removeItem("walletAddress")
     toast.success("Successfully signed out")
     router.push("/")
-  }
+  }, [privyAuthenticated, privyLogout, router])
 
-  const connectWallet = (address: string) => {
+  const connectWallet = useCallback((address: string) => {
     if (user) {
       const updatedUser = { ...user, walletAddress: address }
       setUser(updatedUser)
       localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
       localStorage.setItem("walletConnected", "true")
       localStorage.setItem("walletAddress", address)
+    } else {
+      // If no user yet, try to connect via Privy
+      privyConnectWallet()
     }
-  }
+  }, [user, privyConnectWallet])
 
-  const disconnectWallet = () => {
+  const disconnectWallet = useCallback(() => {
     if (user) {
       const updatedUser = { ...user, walletAddress: undefined }
       setUser(updatedUser)
@@ -250,7 +352,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("walletConnected")
       localStorage.removeItem("walletAddress")
     }
-  }
+  }, [user])
 
   const updateUser = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false
@@ -294,12 +396,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated,
         isWalletConnected,
+        privyAuthenticated,
+        privyReady,
         signIn,
         signUp,
         signOut,
         connectWallet,
         disconnectWallet,
         updateUser,
+        openPrivyLogin,
+        setUserRole,
       }}
     >
       {children}

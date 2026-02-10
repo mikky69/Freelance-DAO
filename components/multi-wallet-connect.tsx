@@ -34,6 +34,7 @@ import { toast } from "sonner"
 import { walletManager, type HederaAccount, type WalletError } from "@/lib/hedera-wallet"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
+import { IconifyIcon } from "@/components/iconify-icon"
 
 interface MultiWalletConnectProps {
   onConnectionChange?: (connected: boolean, account?: HederaAccount, walletType?: 'hedera' | 'solana') => void
@@ -233,7 +234,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
         id: "phantom",
         name: "Phantom",
         description: "The most popular Solana wallet",
-        icon: "👻",
+        icon: "phantom",
         recommended: true,
         gradient: "from-purple-500 to-indigo-600",
         installUrl: "https://phantom.app/",
@@ -243,7 +244,7 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
         id: "solflare",
         name: "Solflare",
         description: "Secure Solana wallet",
-        icon: "🔥",
+        icon: "solflare",
         recommended: false,
         gradient: "from-orange-500 to-red-600",
         installUrl: "https://solflare.com/",
@@ -362,8 +363,8 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">
-                    🌐
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <IconifyIcon icon="mdi:web" className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
@@ -389,8 +390,8 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">
-                    ☀️
+                  <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <IconifyIcon icon="mdi:white-balance-sunny" className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
@@ -518,8 +519,14 @@ export function MultiWalletConnect({ onConnectionChange, showDialog = true }: Mu
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${wallet.gradient} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
-                      {wallet.icon}
+                    <div className={`w-12 h-12 bg-gradient-to-r ${wallet.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                      {wallet.id === "phantom" ? (
+                        <IconifyIcon icon="simple-icons:phantom" className="w-6 h-6 text-white" />
+                      ) : wallet.id === "solflare" ? (
+                        <IconifyIcon icon="mdi:fire" className="w-6 h-6 text-white" />
+                      ) : (
+                        <IconifyIcon icon="mdi:wallet" className="w-6 h-6 text-white" />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
