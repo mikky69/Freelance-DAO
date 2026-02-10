@@ -252,26 +252,10 @@ export function TopNavigation() {
 			)}
 
 			<nav
-				className="border-b border-[#AE16A7]/30 sticky top-0 z-50 backdrop-blur-md shadow-2xl relative"
+				className="sticky top-0 z-50 backdrop-blur-md shadow-2xl relative border-b border-[#AE16A7]/20"
 				style={{ backgroundColor: "#1D0225" }}
 			>
-				{/* Enhanced Background gradient overlay */}
-				<div className="absolute inset-0 bg-gradient-to-r from-[#1D0225] via-[#AE16A7]/5 to-[#1D0225]"></div>
-
-				{/* Animated background patterns */}
-				<div className="absolute inset-0 opacity-10">
-					<div className="absolute top-0 left-10 w-16 h-16 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-[#AE16A7]/40 to-[#FF068D]/40 blur-xl animate-pulse"></div>
-					<div className="absolute top-0 right-10 w-12 h-12 md:w-20 md:h-20 rounded-full bg-gradient-to-r from-[#FA5F04]/40 to-[#FF068D]/40 blur-xl animate-pulse delay-1000"></div>
-					<div className="absolute top-2 left-1/2 w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-[#FF068D]/30 to-transparent blur-lg animate-bounce delay-500"></div>
-				</div>
-
-				{/* Decorative elements */}
-				<div className="absolute inset-0 pointer-events-none">
-					<div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[#AE16A7] via-[#FF068D] to-transparent opacity-50"></div>
-					<div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-[#FA5F04] via-[#FF068D] to-transparent opacity-50"></div>
-				</div>
-
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+				<div className="w-full sm:px-4 lg:px-8 relative z-10">
 					<div className="flex items-center justify-between h-16 md:h-20">
 						{/* Enhanced Logo */}
 						<Link
@@ -279,7 +263,7 @@ export function TopNavigation() {
 							className="flex items-center space-x-2 md:space-x-3 group relative flex-shrink-0"
 						>
 							<div className="relative">
-								<div className="absolute -inset-2 bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition-all duration-300 animate-pulse"></div>
+								<div className="absolute -inset-2 bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
 								<Image
 									src="/images/freelancedao-logo.png"
 									alt="FreeLanceDAO"
@@ -287,7 +271,6 @@ export function TopNavigation() {
 									height={36}
 									className="md:w-10 md:h-10 rounded-xl shadow-2xl group-hover:scale-110 transition-transform duration-300 relative z-10 border border-[#AE16A7]/20"
 								/>
-								<Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-[#FF068D] animate-spin opacity-70" />
 							</div>
 							<div className="hidden sm:block">
 								<span
