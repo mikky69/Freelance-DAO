@@ -232,19 +232,18 @@ export function TopNavigation() {
 			)}
 
 			<nav
-				className="sticky top-0 z-50 backdrop-blur-md shadow-2xl relative"
+				className="sticky top-0 z-50 bg-white relative"
 			>
 				
 
 				<div className="w-full sm:px-4 lg:px-8 relative z-10">
-					<div className="flex items-center justify-between h-16 md:h-20">
+					<div className="flex items-center justify-between gap-8 h-16 md:h-20">
 						{/* Enhanced Logo */}
 						<Link
 							href="/"
-							className="flex items-center space-x-2 md:space-x-3 group relative flex-shrink-0"
+							className="flex items-center gap-4 md:space-x-3 group relative flex-shrink-0"
 						>
-							<div className="relative">
-								<div className="absolute -inset-2 bg-gradient-to-r from-[#AE16A7] via-[#FF068D] to-[#FA5F04] rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
+							<div className="relative flex gap-2">
 								<Image
 									src="/images/freelancedao-logo.png"
 									alt="FreeLanceDAO"
@@ -252,9 +251,7 @@ export function TopNavigation() {
 									height={36}
 									className="md:w-10 md:h-10 rounded-xl shadow-2xl group-hover:scale-110 transition-transform duration-300 relative z-10 border border-[#AE16A7]/20"
 								/>
-								{/* <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-[#FF068D] animate-spin opacity-70" /> */}
-							</div>
-							<div className="hidden sm:block">
+								<div className="hidden sm:block">
 								<span
 									className="text-lg md:text-xl font-bold group-hover:scale-105 transition-all duration-300 bg-gradient-to-r bg-clip-text text-transparent drop-shadow-lg"
 									style={{
@@ -270,23 +267,22 @@ export function TopNavigation() {
 									Decentralized Freelancing
 								</div>
 							</div>
-						</Link>
-
-						{/* Enhanced Desktop Navigation */}
+							
+							</div>
+							{/* Enhanced Desktop Navigation */}
 						{!isAuthenticated && (
-							<div className="hidden lg:flex items-center space-x-1 relative flex-1 justify-center max-w-2xl">
+							<div className="hidden lg:flex items-center  relative flex-1 justify-center">
 								{navigationItems.map((item, index) =>
 									item.subItems ? (
 										<div key={item.href} className="relative">
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${isActive(item.href)
-														? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white scale-105 shadow-xl shadow-[#AE16A7]/30 border-[#AE16A7]/50"
-														: "hover:text-white"
+												className={`flex items-center px-3 py-2 transition-all duration-300 relative rounded-md ${isActive(item.href)
+														? "text-black bg-[#AE16A7]/10"
+														: "text-black "
 													}`}
 												onClick={() => handleDropdownToggle(item.href)}
 											>
-												<item.icon className="w-4 h-4" />
 												<span className="font-semibold text-sm">
 													{item.label}
 												</span>
@@ -294,9 +290,7 @@ export function TopNavigation() {
 													className={`w-4 h-4 transition-transform duration-300 ${openDropdown === item.href ? "rotate-180" : ""
 														}`}
 												/>
-												{isActive(item.href) && (
-													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#FF068D] rounded-full animate-pulse shadow-lg shadow-[#FF068D]/50" />
-												)}
+											
 											</Button>
 											{openDropdown === item.href && (
 												<div
@@ -320,7 +314,7 @@ export function TopNavigation() {
 																>
 																	{sub.name}
 																</span>
-																<Sparkles className="w-3 h-3 ml-auto text-[#FF068D]/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+																{/* <Sparkles className="w-3 h-3 ml-auto text-[#FF068D]/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
 															</div>
 														</Link>
 													))}
@@ -331,24 +325,24 @@ export function TopNavigation() {
 										<Link key={item.href} href={item.href}>
 											<Button
 												variant="ghost"
-												className={`flex items-center space-x-2 px-3 py-2 transition-all duration-300 relative text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:shadow-lg hover:shadow-[#AE16A7]/20 border border-transparent hover:border-[#AE16A7]/30 rounded-xl ${isActive(item.href)
-														? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white scale-105 shadow-xl shadow-[#AE16A7]/30 border-[#AE16A7]/50"
-														: "hover:text-white"
+												className={`flex items-center space-x-2 px-3 py-2  ${isActive(item.href) ? "text-[#AE16A7]": "text-black"}
+						
 													}`}
 											>
-												<item.icon className="w-4 h-4" />
+											
 												<span className="font-semibold text-sm">
 													{item.label}
 												</span>
-												{isActive(item.href) && (
-													<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-[#FF068D] rounded-full animate-pulse shadow-lg shadow-[#FF068D]/50" />
-												)}
+												
 											</Button>
 										</Link>
 									)
 								)}
 							</div>
 						)}
+						</Link>
+
+						
 
 						{/* Enhanced Right Side Actions */}
 						<div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
@@ -503,7 +497,7 @@ export function TopNavigation() {
 										<DropdownMenuTrigger asChild>
 											<Button
 												variant="ghost"
-												className="flex items-center outine-none space-x-1 md:space-x-2 border-none  text-white  rounded-md transition-all duration-300 px-2 md:px-3 py-2 bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10"
+												className="flex bg-[#AE16A7] shadow-innerpurple items-center outine-none space-x-1 md:space-x-2 border-none  text-white  rounded-md transition-all duration-300 px-2 md:px-3 py-2 "
 											>
 											
 												<span className="hidden sm:inline font-semibold text-sm">
@@ -557,7 +551,7 @@ export function TopNavigation() {
 
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
-											<Button className="bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10 outline-none  flex items-center space-x-1 md:space-x-2  rounded-md border-none transition-all duration-300 px-2 md:px-3 py-2">
+											<Button className="bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10 shadow-innerpurple outline-none border-none  flex items-center space-x-1 md:space-x-2  rounded-md  px-2 md:px-3 py-2">
 												
 												<span className="hidden sm:inline font-semibold text-sm">
 													Get Started
@@ -661,12 +655,12 @@ export function TopNavigation() {
 								>
 									<Button
 										variant="ghost"
-										className={`w-full justify-start transition-all duration-300 py-4 rounded-xl border ${isActive(item.href)
-												? "bg-gradient-to-r from-[#AE16A7]/30 to-[#FF068D]/30 text-white border-[#AE16A7]/50 shadow-lg"
-												: "text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border-transparent hover:border-[#AE16A7]/30"
+										className={`w-full justify-start transition-all duration-300 py-4 rounded-md ${isActive(item.href)
+												? " text-white"
+												: "text-white "
 											}`}
 									>
-										<item.icon className="w-5 h-5 mr-4" />
+										{/* <item.icon className="w-5 h-5 mr-4" /> */}
 										<span className="font-semibold">{item.label}</span>
 										{item.badge && (
 											<Badge className="ml-auto bg-gradient-to-r from-[#FF068D] to-[#FA5F04] text-white text-xs px-2 py-1 font-bold shadow-lg">
