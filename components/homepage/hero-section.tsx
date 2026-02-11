@@ -13,7 +13,7 @@ export default function HeroSection() {
 				{/* Left Content */}
 				<motion.div
 					initial={{ opacity: 0, y: 40 }}
-					animate={{ opacity: 1, y: 0 }}
+					animate={{ opacity: 1, y: 0 }} 
 					transition={{ duration: 0.8, ease: "easeOut" }}
 					className="flex flex-col gap-4 w-full h-full text-center justify-center items-center"
 				>
