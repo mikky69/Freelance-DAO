@@ -1,11 +1,13 @@
 "use client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import WaveBackground from "../ui/WaveBackground";
+import { BadgeCheck } from 'lucide-react'
 
 export default function HeroSection() {
   return (
 		<section className="relative min-h-screen flex items-center justify-center bg-white text-white overflow-hidden">
-			 
+			<WaveBackground />
 
 			<div className="w-full h-screen flex flex-col justify-center  items-center relative z-10">
 				{/* Left Content */}
@@ -15,6 +17,11 @@ export default function HeroSection() {
 					transition={{ duration: 0.8, ease: "easeOut" }}
 					className="flex flex-col gap-4 w-full h-full text-center justify-center items-center"
 				>
+					<div className="flex gap-6 ">
+						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={12}/></span>500+ freelancers waiting to launch</p>
+						<p className="text-[12px] text-black flex justify-center items-center gap-1" ><span><BadgeCheck size={12}/></span>300+ active community members</p>
+					
+					</div>
 					<h1 className="text-5xl md:text-5xl text-black font-bold">
 						Work Smarter. Pay Less. Earn More.
 					</h1>

@@ -497,7 +497,7 @@ export function TopNavigation() {
 										<DropdownMenuTrigger asChild>
 											<Button
 												variant="ghost"
-												className="flex bg-[#AE16A7] shadow-innerpurple items-center outine-none space-x-1 md:space-x-2 border-none  text-white  rounded-md transition-all duration-300 px-2 md:px-3 py-2 "
+												className="flex bg-gray-100 shadow-inner items-center outine-none space-x-1 md:space-x-2 border-none  text-black  rounded-md transition-all duration-300 px-2 md:px-3 py-2 "
 											>
 											
 												<span className="hidden sm:inline font-semibold text-sm">
