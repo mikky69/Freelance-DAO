@@ -40,6 +40,21 @@ export default function HeroSection() {
 						</Button>
 					</div>
 				</motion.div>
+
+				<div className="w-full flex justify-between items-center text-black px-8 mb-12">
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold ">25K +</h1>
+					<p className="text-[12px] text-gray-500">more than 25,000 projects has been completed on our platform.</p>
+					</div>
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold  ">4.9/5</h1>
+					<p className="text-[12px] text-gray-500">We have an avergae rating of 4.9/5. we have a high average rating.</p>
+					</div>
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold ">50K +</h1>
+					<p className="text-[12px] text-gray-500">more than 50,000 freelance completely onboarded on our platform</p>
+					</div>
+				</div>
 			</div>
 		</section>
 	);
