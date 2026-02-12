@@ -174,17 +174,9 @@ export function About() {
 
 						{/* Description */}
 						<p className="text-lg md:text-xl text-gray-300 leading-relaxed max-w-lg mx-auto lg:mx-0">
-							Tired of endless searching? At{" "}
-							<span className="font-bold text-white">FreeLanceDAO</span>, you
-							can connect with trusted talent across the globe using{" "}
-							<span style={{ color: "#FA5F04" }} className="font-semibold">
-								AI-powered matching
-							</span>{" "}
-							and{" "}
-							<span style={{ color: "#AE16A7" }} className="font-semibold">
-								blockchain security
-							</span>
-							.
+							Tired of endless searching? At FreeLanceDAO, you can connect with
+							trusted talent across the globe using AI-powered matching and
+							blockchain security.
 						</p>
 
 						{/* Features */}

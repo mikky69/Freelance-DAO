@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
+import { IconifyIcon } from "@/components/iconify-icon";
 
 export function FinalCtaSection() {
 	return (
@@ -31,7 +32,7 @@ export function FinalCtaSection() {
 							className="text-lg px-10 py-6 w-full sm:w-auto shadow-2xl transition-all duration-300 hover:scale-105 font-semibold"
 							style={{ backgroundColor: "#FA5F04", color: "white" }}
 						>
-							🚀 Get Started
+							<IconifyIcon icon="mdi:rocket-launch" className="w-5 h-5 mr-1 inline-block" /> Get Started
 							<ArrowRight className="w-5 h-5 ml-2" />
 						</Button>
 					</Link>

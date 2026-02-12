@@ -7,6 +7,7 @@ import { CheckCircle, ArrowRight, Star, Briefcase, Users, Zap, Gift, Trophy, Tar
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { IconifyIcon } from "@/components/iconify-icon"
 
 export default function OnboardingCompletePage() {
   const router = useRouter()
@@ -73,7 +74,7 @@ export default function OnboardingCompletePage() {
             <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">🎉 Welcome to FreeLanceDAO!</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4 flex items-center justify-center gap-3"><IconifyIcon icon="mdi:party-popper" className="w-10 h-10 text-[#FA5F04]" /> Welcome to FreeLanceDAO!</h1>
             <p className="text-xl text-slate-600 mb-6 max-w-2xl mx-auto">
               Congratulations! Your account is set up and ready.
               {profileData?.firstName && ` Welcome aboard, ${profileData.firstName}!`}

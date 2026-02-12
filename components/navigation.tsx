@@ -45,20 +45,27 @@ import {
 	Shield,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { toast } from "sonner";
-import { MultiWalletConnect } from "./multi-wallet-connect";
 import { SidebarNavigation } from "./sidebar-navigation";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Copy } from "lucide-react";
 import { walletManager } from "@/lib/hedera-wallet";
-import { CustomHederaConnectButton } from "./CustomHederaConnectButton";
-import { useAccount } from "wagmi";
+import { PrivyHederaConnectButton } from "./PrivyHederaConnectButton";
+import { useWallets } from "@privy-io/react-auth";
+import { RoleSelectionModal } from "@/components/auth/role-selection-modal";
+import { IconifyIcon } from "@/components/iconify-icon";
+import { toast } from "sonner";
+
+/** Format wallet address for display: 0x1234...5678 (6 chars start, 4 end) */
+function formatWalletAddress(addr: string): string {
+	if (!addr) return "";
+	// Hedera native (0.0.xxxx)
+	if (addr.startsWith("0.0.")) {
+		return addr.length > 14 ? `${addr.slice(0, 8)}...${addr.slice(-6)}` : addr;
+	}
+	// EVM (0x...): always 6 chars at start (0x + 4 hex), 4 at end
+	if (addr.startsWith("0x")) {
+		return addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+	}
+	return addr.length > 14 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+}
 
 type NavigationItem = {
 	href: string;
@@ -74,21 +81,27 @@ type NavigationItem = {
 
 export function TopNavigation() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const [showWalletConnect, setShowWalletConnect] = useState(false);
-	const [showWalletDialog, setShowWalletDialog] = useState(false);
+	const [showRoleSelection, setShowRoleSelection] = useState(false);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [walletBalance, setWalletBalance] = useState<string | null>(null);
 	const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+	const [addressCopied, setAddressCopied] = useState(false);
 	const pathname = usePathname();
-	const { user, isAuthenticated, signOut, disconnectWallet } = useAuth();
-	const { isConnected, address } = useAccount();
+	const { user, isAuthenticated, signOut, openPrivyLogin, setUserRole } = useAuth();
+	const { wallets } = useWallets();
 
-	const maskAddress = (address: string) => {
-		if (!address) return "";
-		if (address.length <= 11) return address;
-		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	// Wallet address: from Privy first, then auth user
+	const address = wallets.length > 0 ? wallets[0].address : user?.walletAddress;
+	const isConnected = !!address;
+
+	const copyAddressToClipboard = async () => {
+		if (!address) return;
+		await navigator.clipboard.writeText(address);
+		setAddressCopied(true);
+		toast.success("Address copied to clipboard");
+		setTimeout(() => setAddressCopied(false), 2000);
 	};
 
 	const getHederaBalance = async () => {
@@ -97,6 +110,13 @@ export function TopNavigation() {
 	};
 
 	const isActive = (path: string) => pathname === path;
+	
+	// Handle role selection and login
+	const handleRoleSelect = (role: "freelancer" | "client") => {
+		setUserRole(role);
+		setShowRoleSelection(false);
+		openPrivyLogin();
+	};
 
 	// Navigation items for unauthenticated users
 	const publicNavigationItems: NavigationItem[] = [
@@ -234,8 +254,6 @@ export function TopNavigation() {
 			<nav
 				className="sticky top-0 z-50 bg-white relative"
 			>
-				
-
 				<div className="w-full sm:px-4 lg:px-8 relative z-10">
 					<div className="flex items-center justify-between gap-8 h-16 md:h-20">
 						{/* Enhanced Logo */}
@@ -365,11 +383,11 @@ export function TopNavigation() {
 							)}
 
 							{/* Enhanced Wallet Connection */}
-							<div className="hidden sm:block">
+							{/* <div className="hidden sm:block">
 								<div className="relative">
-									<CustomHederaConnectButton />
+									<PrivyHederaConnectButton />
 								</div>
-							</div>
+							</div> */}
 
 							{/* Enhanced User Menu */}
 							{isAuthenticated ? (
@@ -410,34 +428,68 @@ export function TopNavigation() {
 										style={{ backgroundColor: "#1D0225" }}
 									>
 										<DropdownMenuLabel className="flex items-center space-x-3 p-3">
-											<Avatar className="w-10 h-10">
-												<AvatarFallback className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 font-semibold">
+											<Avatar className="w-10 h-10 flex-shrink-0">
+												<AvatarFallback className="bg-gradient-to-r from-[#AE16A7] to-[#FF068D] text-white font-semibold">
 													{user?.name
 														?.split(" ")
 														.map((n) => n[0])
 														.join("") || "U"}
 												</AvatarFallback>
 											</Avatar>
-											<div>
-												<div className="font-medium">{user?.name}</div>
-												<div className="text-xs text-slate-500">
-													{user?.email}
-												</div>
-												<div className="flex items-center space-x-3 text-xs text-slate-600 mt-1">
-													<div className="flex items-center space-x-1">
-														<TrendingUp className="w-3 h-3 text-green-500" />
-														<span>{user?.profile?.rating || 0} Rating</span>
-													</div>
-													<div className="flex items-center space-x-1">
-														<Award className="w-3 h-3 text-blue-500" />
-														<span>
-															{user?.role === "freelancer"
-																? `${user?.profile?.completedJobs || 0} Jobs`
-																: `${user?.profile?.projectsPosted || 0
-																} Projects`}
+											<div className="flex-1 min-w-0">
+												<div className="flex items-center gap-2 flex-wrap">
+													<span className="font-medium text-white truncate">{user?.name}</span>
+													{user?.role && (
+														<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#AE16A7]/20 text-[#FF068D] capitalize border border-[#AE16A7]/30 flex-shrink-0">
+															{user.role}
 														</span>
-													</div>
+													)}
 												</div>
+												{user?.email && (
+													<div className="text-xs text-[#AE16A7]/70 truncate">{user.email}</div>
+												)}
+												{address && (
+													<button
+														type="button"
+														onClick={(e) => {
+															e.preventDefault();
+															copyAddressToClipboard();
+														}}
+														className="mt-1.5 flex items-center gap-2 w-full text-left rounded-md py-1 pr-2 -ml-1 hover:bg-white/5 transition-colors cursor-pointer group"
+														title={`Copy: ${address}`}
+													>
+														<span className="font-mono text-xs text-white/90 group-hover:text-[#FA5F04]">
+															{formatWalletAddress(address)}
+														</span>
+														{addressCopied ? (
+															<IconifyIcon icon="mdi:check" className="w-3.5 h-3.5 text-green-500 flex-shrink-0" aria-hidden />
+														) : (
+															<IconifyIcon icon="mdi:content-copy" className="w-3.5 h-3.5 text-white/50 group-hover:text-[#FA5F04] flex-shrink-0" aria-hidden />
+														)}
+													</button>
+												)}
+												{((user?.profile?.rating ?? 0) > 0 || (user?.role === "freelancer" && (user?.profile?.completedJobs ?? 0) > 0) || (user?.role !== "freelancer" && (user?.profile?.projectsPosted ?? 0) > 0)) && (
+													<div className="flex items-center gap-4 text-xs text-white/60 mt-1">
+														{(user?.profile?.rating ?? 0) > 0 && (
+															<span className="flex items-center gap-1">
+																<TrendingUp className="w-3 h-3 text-green-500" />
+																{user?.profile?.rating} Rating
+															</span>
+														)}
+														{user?.role === "freelancer" && (user?.profile?.completedJobs ?? 0) > 0 && (
+															<span className="flex items-center gap-1">
+																<Award className="w-3 h-3 text-[#FA5F04]" />
+																{user?.profile?.completedJobs} Jobs
+															</span>
+														)}
+														{user?.role !== "freelancer" && (user?.profile?.projectsPosted ?? 0) > 0 && (
+															<span className="flex items-center gap-1">
+																<Award className="w-3 h-3 text-[#FA5F04]" />
+																{user?.profile?.projectsPosted} Projects
+															</span>
+														)}
+													</div>
+												)}
 											</div>
 										</DropdownMenuLabel>
 										<DropdownMenuSeparator />
@@ -604,6 +656,17 @@ export function TopNavigation() {
 								</div>
 							)}
 
+							{/* Role Selection Modal */}
+							<RoleSelectionModal 
+								isOpen={showRoleSelection}
+								onClose={() => setShowRoleSelection(false)}
+								onSelectRole={handleRoleSelect}
+								onLoginClick={() => {
+									setShowRoleSelection(false);
+									openPrivyLogin();
+								}}
+							/>
+
 							{/* Enhanced Mobile Menu Button */}
 							<Button
 								variant="ghost"
@@ -674,62 +737,31 @@ export function TopNavigation() {
 							{/* Enhanced Auth Sections */}
 							<div className="border-t border-[#AE16A7]/30 pt-6 mt-6 space-y-4">
 								<div className="text-base font-bold text-[#AE16A7] mb-4 flex items-center">
-									<User className="w-5 h-5 mr-2" />
-									Sign In
-								</div>
-								<Link
-									href="/auth/signin/freelancer"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<Button
-										variant="ghost"
-										className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
-									>
-										<Search className="w-4 h-4 mr-3 text-[#FA5F04]" />
-										Sign In as Freelancer
-									</Button>
-								</Link>
-								<Link
-									href="/auth/signin/client"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<Button
-										variant="ghost"
-										className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
-									>
-										<Briefcase className="w-4 h-4 mr-3 text-[#FA5F04]" />
-										Sign In as Client
-									</Button>
-								</Link>
-
-								<div className="text-base font-bold text-[#AE16A7] mb-4 mt-6 flex items-center">
-									<Plus className="w-5 h-5 mr-2" />
+									<Sparkles className="w-5 h-5 mr-2" />
 									Get Started
 								</div>
-								<Link
-									href="/auth/signup/freelancer"
-									onClick={() => setIsMobileMenuOpen(false)}
+								<Button
+									variant="ghost"
+									onClick={() => {
+										setIsMobileMenuOpen(false);
+										openPrivyLogin();
+									}}
+									className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
 								>
-									<Button
-										variant="ghost"
-										className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
-									>
-										<Plus className="w-4 h-4 mr-3 text-[#FA5F04]" />
-										Join as Freelancer
-									</Button>
-								</Link>
-								<Link
-									href="/auth/signup/client"
-									onClick={() => setIsMobileMenuOpen(false)}
+									<IconifyIcon icon="mdi:login" className="w-4 h-4 mr-3 text-[#FA5F04]" />
+									Log In
+								</Button>
+								<Button
+									variant="ghost"
+									onClick={() => {
+										setIsMobileMenuOpen(false);
+										setShowRoleSelection(true);
+									}}
+									className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
 								>
-									<Button
-										variant="ghost"
-										className="w-full justify-start text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 border border-[#AE16A7]/30 rounded-xl py-3"
-									>
-										<Plus className="w-4 h-4 mr-3 text-[#FA5F04]" />
-										Join as Client
-									</Button>
-								</Link>
+									<IconifyIcon icon="mdi:account-plus" className="w-4 h-4 mr-3 text-[#FA5F04]" />
+									Sign Up
+								</Button>
 							</div>
 						</div>
 					</div>

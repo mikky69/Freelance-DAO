@@ -21,6 +21,7 @@ import {
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { IconifyIcon } from "@/components/iconify-icon"
 
 export default function HederaSetupPage() {
   const router = useRouter()
@@ -34,7 +35,7 @@ export default function HederaSetupPage() {
       id: "hashpack",
       name: "HashPack",
       description: "The most popular Hedera wallet with great security",
-      icon: "🔐",
+      iconName: "mdi:lock",
       recommended: true,
       features: ["Browser Extension", "Mobile App", "Hardware Wallet Support"],
     },
@@ -42,7 +43,7 @@ export default function HederaSetupPage() {
       id: "blade",
       name: "Blade Wallet",
       description: "User-friendly wallet with built-in DeFi features",
-      icon: "⚡",
+      iconName: "mdi:flash",
       recommended: false,
       features: ["Browser Extension", "DeFi Integration", "NFT Support"],
     },
@@ -50,7 +51,7 @@ export default function HederaSetupPage() {
       id: "kabila",
       name: "Kabila Wallet",
       description: "Secure wallet with advanced features",
-      icon: "🛡️",
+      iconName: "mdi:shield-check",
       recommended: false,
       features: ["Multi-signature", "Advanced Security", "Enterprise Features"],
     },
@@ -164,7 +165,9 @@ export default function HederaSetupPage() {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="text-3xl">{wallet.icon}</div>
+                          <div className="w-10 h-10 bg-gradient-to-r from-[#AE16A7] to-[#FF068D] rounded-xl flex items-center justify-center">
+                            <IconifyIcon icon={wallet.iconName} className="w-6 h-6 text-white" />
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
                               <h3 className="font-semibold text-slate-800">{wallet.name}</h3>
