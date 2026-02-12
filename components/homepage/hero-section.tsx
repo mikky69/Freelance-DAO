@@ -8,9 +8,7 @@ export default function HeroSection() {
   return (
 		<section className="relative min-h-screen flex items-center justify-center bg-white text-white overflow-hidden">
 			<WaveBackground />
-
 			<div className="w-full h-screen flex flex-col justify-center  items-center relative z-10">
-				{/* Left Content */}
 				<motion.div
 					initial={{ opacity: 0, y: 40 }}
 					animate={{ opacity: 1, y: 0 }} 
@@ -42,37 +40,7 @@ export default function HeroSection() {
 						</Button>
 					</div>
 				</motion.div>
-
-				{/* Right Illustration */}
-				{/* <motion.div
-					initial={{ opacity: 0, x: 60 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 1, ease: "easeOut" }}
-					className="flex-1 mt-12 lg:mt-0 flex justify-center lg:justify-end"
-				>
-					<div className="relative w-[350px] h-[350px] md:w-[450px] md:h-[450px]">
-						<Image
-							src="/images/freelance-hero-image.png"
-							alt="FreelanceDAO illustration"
-							fill
-							priority
-							className="object-contain"
-						/>
-					</div>
-				</motion.div> */}
 			</div>
-
-			{/* Animated Floating Accent Shapes */}
-			{/* <motion.div
-				className="absolute top-10 left-10 w-24 h-24 bg-[#FF068D] rounded-full opacity-20"
-				animate={{ y: [0, 20, 0] }}
-				transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-			/>
-			<motion.div
-				className="absolute bottom-16 right-16 w-32 h-32 bg-[#FA5F04] rounded-full opacity-20"
-				animate={{ y: [0, -25, 0] }}
-				transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-			/> */}
 		</section>
 	);
 }
