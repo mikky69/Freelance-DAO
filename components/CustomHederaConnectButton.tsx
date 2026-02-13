@@ -70,7 +70,7 @@ export const CustomHederaConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <Button variant={'outline'} onClick={openConnectModal} type="button" className='space-x-1 md:space-x-2 border border-[#AE16A7]/50 hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 hover:border-[#AE16A7] rounded-xl transition-all duration-300 px-2 md:px-3 py-2 bg-gradient-to-r from-[#AE16A7]/10 to-[#FF068D]/10'>
+                  <Button variant={'outline'} onClick={openConnectModal} type="button" className='text-black shadow-inner md:space-x-2 bg-gray-100 rounded-md transition-all duration-300 px-2 md:px-3 py-2 '>
                     Connect Wallet
                   </Button>
                 );
