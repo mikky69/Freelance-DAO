@@ -252,26 +252,26 @@ export function TopNavigation() {
 			)}
 
 			<nav
-				className="sticky top-0 z-50 bg-white relative"
+				className="sticky top-0 z-50 bg-white"
 			>
 				<div className="w-full sm:px-4 lg:px-8 relative z-10">
-					<div className="flex items-center justify-between gap-8 h-16 md:h-20">
+					<div className="flex items-center justify-between gap-4 h-16 md:h-20">
 						{/* Enhanced Logo */}
 						<Link
 							href="/"
-							className="flex items-center gap-4 md:space-x-3 group relative flex-shrink-0"
+							className="flex items-center gap-2 md:space-x-3 group relative flex-shrink-0"
 						>
-							<div className="relative flex gap-2">
+							<div className="relative flex items-center">
 								<Image
-									src="/images/freelancedao-logo.png"
+									src="/Freelance_DAO.png"
 									alt="FreeLanceDAO"
-									width={36}
-									height={36}
-									className="md:w-10 md:h-10 rounded-xl shadow-2xl group-hover:scale-110 transition-transform duration-300 relative z-10 border border-[#AE16A7]/20"
+									width={50}
+									height={50}
+									className="md:w-15 md:h-15 transition-transform duration-300 relative z-10 "
 								/>
 								<div className="hidden sm:block">
 								<span
-									className="text-lg md:text-xl font-bold group-hover:scale-105 transition-all duration-300 bg-gradient-to-r bg-clip-text text-transparent drop-shadow-lg"
+									className="text-lg md:text-xl font-bold  duration-300 bg-gradient-to-r bg-clip-text text-transparent"
 									style={{
 										backgroundImage:
 											"linear-gradient(45deg, #FF068D, #AE16A7, #FA5F04)",
@@ -281,9 +281,7 @@ export function TopNavigation() {
 								>
 									FreeLanceDAO
 								</span>
-								<div className="text-xs text-[#AE16A7]/70 font-medium tracking-wider">
-									Decentralized Freelancing
-								</div>
+								
 							</div>
 							
 							</div>

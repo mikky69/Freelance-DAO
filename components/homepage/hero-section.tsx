@@ -16,8 +16,8 @@ export default function HeroSection() {
 					className="flex flex-col gap-4 w-full h-full text-center justify-center items-center"
 				>
 					<div className="flex gap-6 ">
-						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={12}/></span>500+ freelancers waiting to launch</p>
-						<p className="text-[12px] text-black flex justify-center items-center gap-1" ><span><BadgeCheck size={12}/></span>300+ active community members</p>
+						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>500+ freelancers waiting to launch</p>
+						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>300+ active community members</p>
 					
 					</div>
 					<h1 className="text-5xl md:text-5xl text-black font-bold">
