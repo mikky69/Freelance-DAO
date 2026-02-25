@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: privyUser, 
     login: privyLogin, 
     logout: privyLogout,
-    connectWallet: privyConnectWallet 
+    connectWallet: privyConnectWallet,
+    getAccessToken
   } = usePrivy()
   const { wallets } = useWallets()
 
@@ -86,50 +87,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return fetch(url, { ...options, headers })
   }, [])
 
-  // Sync Privy user with local user state
+  // Sync Privy user with local user state and backend
   useEffect(() => {
-    if (privyReady && privyAuthenticated && privyUser) {
-      // Get email from Privy user
-      const privyEmail = privyUser.email?.address || privyUser.google?.email || privyUser.apple?.email
-      
-      // Get wallet address from Privy
-      const privyWalletAddress = wallets.length > 0 ? wallets[0].address : undefined
+    const syncUser = async () => {
+      if (privyReady && privyAuthenticated && privyUser) {
+        try {
+          // 1. Get Access Token from Privy
+          const accessToken = await getAccessToken();
+          if (!accessToken) return;
 
-      // Get stored role from localStorage or use pending role
-      const storedRole = localStorage.getItem("freelancedao_role") as "freelancer" | "client" | "admin" | null
-      const role = pendingRole || storedRole || "freelancer"
+          // 2. Determine Role
+          const storedRole = localStorage.getItem("freelancedao_role") as "freelancer" | "client" | "admin" | null;
+          const role = pendingRole || storedRole || "freelancer";
 
-      // Create or update user from Privy data
-      const privyBasedUser: User = {
-        id: privyUser.id,
-        email: privyEmail,
-        walletAddress: privyWalletAddress,
-        name: privyEmail?.split("@")[0] || privyWalletAddress?.slice(0, 8) || "User",
-        isVerified: !!privyUser.email?.address,
-        accountType: role,
-        role: role,
+          // 3. Sync with backend
+          const res = await fetch(`${API_URL}/api/auth/privy/sync`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accessToken, role }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              setToken(data.token);
+              setUser(data.user);
+              localStorage.setItem("freelancedao_user", JSON.stringify(data.user));
+              localStorage.setItem("freelancedao_role", data.user.role);
+            }
+          } else {
+            // Fallback for failed sync - minimal user object
+            const privyEmail = privyUser.email?.address || privyUser.google?.email || privyUser.apple?.email;
+            const privyWalletAddress = wallets.length > 0 ? wallets[0].address : undefined;
+            
+            const fallbackUser: User = {
+              id: privyUser.id,
+              email: privyEmail,
+              walletAddress: privyWalletAddress,
+              name: privyEmail?.split("@")[0] || privyWalletAddress?.slice(0, 8) || "User",
+              isVerified: !!privyUser.email?.address,
+              accountType: role,
+              role: role,
+            };
+            setUser(fallbackUser);
+          }
+        } catch (error) {
+          console.error("Privy sync error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (privyReady && !privyAuthenticated) {
+        // Not authenticated with Privy, check for legacy session
+        checkExistingSession();
       }
+    };
 
-      // Check if we have an existing user in localStorage that we should merge
-      const savedUser = localStorage.getItem("freelancedao_user")
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser)
-        // Merge existing user data with Privy data
-        privyBasedUser.name = parsedUser.name || privyBasedUser.name
-        privyBasedUser.avatar = parsedUser.avatar
-        privyBasedUser.profile = parsedUser.profile
-        privyBasedUser.role = parsedUser.role || role
-        privyBasedUser.accountType = parsedUser.accountType || role
-      }
-
-      setUser(privyBasedUser)
-      localStorage.setItem("freelancedao_user", JSON.stringify(privyBasedUser))
-      setIsLoading(false)
-    } else if (privyReady && !privyAuthenticated) {
-      // Not authenticated with Privy, check for legacy session
-      checkExistingSession()
-    }
-  }, [privyReady, privyAuthenticated, privyUser, wallets, pendingRole])
+    syncUser();
+  }, [privyReady, privyAuthenticated, privyUser, wallets, pendingRole, getAccessToken])
 
   // Update wallet address when wallets change
   useEffect(() => {
