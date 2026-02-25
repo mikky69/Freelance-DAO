@@ -1,89 +1,61 @@
 "use client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import WaveBackground from "../ui/WaveBackground";
+import { BadgeCheck } from 'lucide-react'
 
 export default function HeroSection() {
   return (
-		<section className="relative min-h-screen flex items-center justify-center bg-[#1D0225] text-white overflow-hidden">
-			 {/* Background pattern - commented out per PR layout tweaks */}
-      {/* <div className="absolute inset-0 -z-10 opacity-70">
-        <svg
-          className="h-full w-full"
-          xmlns="http://www.w3.org/2000/svg"
-          width="100%"
-          height="100%"
-          viewBox="0 0 1000 1000"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div> */}
-
-			<div className="container mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center relative z-10">
-				{/* Left Content */}
+		<section className="relative min-h-screen flex items-center justify-center bg-white text-white overflow-hidden">
+			<WaveBackground />
+			<div className="w-full h-screen flex flex-col justify-center  items-center relative z-10">
 				<motion.div
 					initial={{ opacity: 0, y: 40 }}
-					animate={{ opacity: 1, y: 0 }}
+					animate={{ opacity: 1, y: 0 }} 
 					transition={{ duration: 0.8, ease: "easeOut" }}
-					className="flex-1 text-center lg:text-left"
+					className="flex flex-col gap-4 w-full h-full text-center justify-center items-center"
 				>
-					<h1 className="text-4xl md:text-6xl font-bold leading-tight">
-						The First Hybrid<span className="text-[#AE16A7]"> Freelancing</span>{" "}
-						<span className="text-[#FA5F04]">Marketplace</span>
+					<div className="flex gap-6 ">
+						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>500+ freelancers waiting to launch</p>
+						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>300+ active community members</p>
+					
+					</div>
+					<h1 className="text-5xl md:text-5xl text-black font-bold">
+						Work Smarter. Pay Less. Earn More.
 					</h1>
-					<p className="mt-6 text-lg md:text-xl text-gray-300 max-w-lg mx-auto lg:mx-0">
-						Human talent + AI Agents working together to deliver faster, smarter, and more cost-effective results for your project or business.
+					<p className=" text-base  text-black text-center w-[50%] mx-auto lg:mx-0">
+						The first freelance marketplace where humans and AI work together—delivering projects 40% faster at 30% lower cost.
+
 					</p>
 
 					<div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-						<Button className="px-8 py-4 rounded-2xl text-lg font-semibold bg-[#AE16A7] hover:bg-[#FF068D] transition">
-							Get Started
+						<Button className="px-3 py-1 rounded-md text-base shadow-innerpurple bg-[#AE16A7]">
+							Join the waitlist
 						</Button>
 						<Button
 							variant="outline"
-							className="px-8 py-4 rounded-2xl text-lg font-semibold border-2 border-[#FA5F04] text-[#FA5F04] hover:bg-[#FA5F04] hover:text-white transition"
+							className="px-3 py-1 shadow-innerLG rounded-md text-base bg-gray-100  text-black"
 						>
-							Learn More
+							How it works
 						</Button>
 					</div>
 				</motion.div>
 
-				{/* Right Illustration */}
-				<motion.div
-					initial={{ opacity: 0, x: 60 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 1, ease: "easeOut" }}
-					className="flex-1 mt-12 lg:mt-0 flex justify-center lg:justify-end"
-				>
-					<div className="relative w-[350px] h-[350px] md:w-[450px] md:h-[450px]">
-						<Image
-							src="/images/freelance-hero-image.png"
-							alt="FreelanceDAO illustration"
-							fill
-							priority
-							className="object-contain"
-						/>
+				<div className="w-full flex justify-between items-center text-black px-8 mb-12">
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold ">25K +</h1>
+					<p className="text-[12px] text-gray-500">more than 25,000 projects has been completed on our platform.</p>
 					</div>
-				</motion.div>
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold  ">4.9/5</h1>
+					<p className="text-[12px] text-gray-500">We have an avergae rating of 4.9/5. we have a high average rating.</p>
+					</div>
+					<div className="text-center flex flex-col gap-4 w-[25%]">
+						<h1 className="text-6xl font-bold ">50K +</h1>
+					<p className="text-[12px] text-gray-500">more than 50,000 freelance completely onboarded on our platform</p>
+					</div>
+				</div>
 			</div>
-
-			{/* Animated Floating Accent Shapes */}
-			<motion.div
-				className="absolute top-10 left-10 w-24 h-24 bg-[#FF068D] rounded-full opacity-20"
-				animate={{ y: [0, 20, 0] }}
-				transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-			/>
-			<motion.div
-				className="absolute bottom-16 right-16 w-32 h-32 bg-[#FA5F04] rounded-full opacity-20"
-				animate={{ y: [0, -25, 0] }}
-				transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-			/>
 		</section>
 	);
 }
