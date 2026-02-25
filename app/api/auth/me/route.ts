@@ -18,7 +18,17 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { id?: string; userId?: string; email: string; role?: string };
+    if (!token || token === "undefined" || token === "null") {
+      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      console.error("JWT Verification error in auth/me:", err.message);
+      return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
+    }
     
     const userId = decoded.userId || decoded.id;
     

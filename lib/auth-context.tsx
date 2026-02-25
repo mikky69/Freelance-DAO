@@ -71,10 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // token helpers
   const setToken = (token: string | null) => {
-    if (token) localStorage.setItem("freelancedao_token", token)
-    else localStorage.removeItem("freelancedao_token")
+    if (token && token !== "undefined" && token !== "null") {
+      localStorage.setItem("freelancedao_token", token)
+    } else {
+      localStorage.removeItem("freelancedao_token")
+    }
   }
-  const getToken = () => localStorage.getItem("freelancedao_token")
+  const getToken = () => {
+    const token = localStorage.getItem("freelancedao_token")
+    if (!token || token === "undefined" || token === "null") return null
+    return token
+  }
 
   // fetch wrapper - will attach Authorization header automatically
   const authFetch = useCallback((url: string, options: RequestInit = {}) => {
@@ -94,17 +101,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           // 1. Get Access Token from Privy
           const accessToken = await getAccessToken();
+          console.log("Syncing with Privy token:", accessToken?.substring(0, 10) + "...");
           if (!accessToken) return;
 
-          // 2. Determine Role
+          // 2. Determine Role and Email
           const storedRole = localStorage.getItem("freelancedao_role") as "freelancer" | "client" | "admin" | null;
           const role = pendingRole || storedRole || "freelancer";
+          const email = privyUser.email?.address || privyUser.google?.email || privyUser.apple?.email;
 
           // 3. Sync with backend
           const res = await fetch(`${API_URL}/api/auth/privy/sync`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken, role }),
+            body: JSON.stringify({ accessToken, role, email }),
           });
 
           if (res.ok) {
