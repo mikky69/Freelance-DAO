@@ -9,8 +9,7 @@ import PrivyHederaProvider from "@/PrivyHederaProvider"
 import { ConditionalBottomNavigation, ConditionalFooter, ConditionalNavigation } from "./LayoutComponent"
 import { FeedbackWidget } from "@/components/feedback-widget"
 import type { Metadata } from "next"
-
-// const inter = Inter({ subsets: ["latin"] })
+import { Nunito, Italianno } from "next/font/google"
 const inter = localFont({
   src: [
     {
@@ -38,6 +37,19 @@ const inter = localFont({
   display: "swap",
 })
 
+  const nunito = Nunito({
+    subsets: ["latin"],
+    variable: "--font-nunito",
+    weight: ["700"],
+    display: "swap",
+
+  })
+  const italianno = Italianno({
+    subsets: ["latin"],
+    variable: "--font-italianno",
+    weight: ["400"],
+    display: "swap",
+  })
 export const metadata: Metadata = {
   title: "FreeLanceDAO - Decentralized Freelancing Platform",
   description:
@@ -51,7 +63,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${nunito.variable} ${italianno.variable}`}>
         <PrivyHederaProvider>
           <AuthProvider>
             <ConditionalNavigation />
