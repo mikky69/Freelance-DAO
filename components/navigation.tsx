@@ -566,35 +566,31 @@ export function TopNavigation() {
 												Choose Your Role
 											</DropdownMenuLabel>
 											<DropdownMenuSeparator className="border-[#AE16A7]/30" />
-											<DropdownMenuItem asChild className="relative z-10">
-												<Link
-													href="/auth/signin/freelancer"
-													className="flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
-												>
-													<Search className="w-4 h-4 mr-3 text-[#FA5F04]" />
-													<div>
-														<div className="font-medium">
-															Sign In as Freelancer
-														</div>
-														<div className="text-xs text-[#AE16A7]/70">
-															Find work and build your career
-														</div>
+											<DropdownMenuItem
+												className="relative z-10 cursor-pointer flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
+												onClick={() => handleRoleSelect("freelancer")}
+											>
+												<Search className="w-4 h-4 mr-3 text-[#FA5F04]" />
+												<div>
+													<div className="font-medium">
+														Sign In as Freelancer
 													</div>
-												</Link>
+													<div className="text-xs text-[#AE16A7]/70">
+														Find work and build your career
+													</div>
+												</div>
 											</DropdownMenuItem>
-											<DropdownMenuItem asChild className="relative z-10">
-												<Link
-													href="/auth/signin/client"
-													className="flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
-												>
-													<Briefcase className="w-4 h-4 mr-3 text-[#FA5F04]" />
-													<div>
-														<div className="font-medium">Sign In as Client</div>
-														<div className="text-xs text-[#AE16A7]/70">
-															Hire talent for your projects
-														</div>
+											<DropdownMenuItem
+												className="relative z-10 cursor-pointer flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
+												onClick={() => handleRoleSelect("client")}
+											>
+												<Briefcase className="w-4 h-4 mr-3 text-[#FA5F04]" />
+												<div>
+													<div className="font-medium">Sign In as Client</div>
+													<div className="text-xs text-[#AE16A7]/70">
+														Hire talent for your projects
 													</div>
-												</Link>
+												</div>
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -619,35 +615,31 @@ export function TopNavigation() {
 												Join FreeLanceDAO
 											</DropdownMenuLabel>
 											<DropdownMenuSeparator className="border-[#AE16A7]/30" />
-											<DropdownMenuItem asChild className="relative z-10">
-												<Link
-													href="/auth/signup/freelancer"
-													className="flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
-												>
-													<Search className="w-4 h-4 mr-3 text-[#FA5F04]" />
-													<div>
-														<div className="font-medium">
-															Join as Freelancer
-														</div>
-														<div className="text-xs text-[#AE16A7]/70">
-															Offer your skills to clients
-														</div>
+											<DropdownMenuItem
+												className="relative z-10 cursor-pointer flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
+												onClick={() => handleRoleSelect("freelancer")}
+											>
+												<Search className="w-4 h-4 mr-3 text-[#FA5F04]" />
+												<div>
+													<div className="font-medium">
+														Join as Freelancer
 													</div>
-												</Link>
+													<div className="text-xs text-[#AE16A7]/70">
+														Offer your skills to clients
+													</div>
+												</div>
 											</DropdownMenuItem>
-											<DropdownMenuItem asChild className="relative z-10">
-												<Link
-													href="/auth/signup/client"
-													className="flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
-												>
-													<Briefcase className="w-4 h-4 mr-3 text-[#FA5F04]" />
-													<div>
-														<div className="font-medium">Join as Client</div>
-														<div className="text-xs text-[#AE16A7]/70">
-															Find and hire top talent
-														</div>
+											<DropdownMenuItem
+												className="relative z-10 cursor-pointer flex items-center hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 text-white"
+												onClick={() => handleRoleSelect("client")}
+											>
+												<Briefcase className="w-4 h-4 mr-3 text-[#FA5F04]" />
+												<div>
+													<div className="font-medium">Join as Client</div>
+													<div className="text-xs text-[#AE16A7]/70">
+														Find and hire top talent
 													</div>
-												</Link>
+												</div>
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -818,12 +810,10 @@ export function BottomNavigation() {
 			<div className="absolute inset-0 bg-gradient-to-t from-[#1D0225] via-[#AE16A7]/5 to-transparent"></div>
 
 			<div className="grid grid-cols-5 h-20 relative z-10">
-				{bottomNavItems.slice(0, 5).map((item) => (
-					<Link
-						key={item.href}
-						href={item.href}
-						className="flex flex-col items-center justify-center"
-					>
+				{bottomNavItems.slice(0, 5).map((item) => {
+					const isSignIn = item.label === "Sign In";
+					
+					const content = (
 						<Button
 							variant="ghost"
 							size="sm"
@@ -831,6 +821,10 @@ export function BottomNavigation() {
 									? "bg-gradient-to-b from-[#AE16A7]/30 to-transparent text-white border-t-[#FF068D] scale-105 shadow-lg"
 									: "text-[#AE16A7] hover:text-white hover:bg-gradient-to-b hover:from-[#AE16A7]/20 hover:to-transparent border-t-transparent"
 								}`}
+							onClick={isSignIn ? (e) => {
+								e.preventDefault();
+								openPrivyLogin();
+							} : undefined}
 						>
 							<item.icon
 								className={`w-6 h-6 ${isActive(item.href) ? "text-[#FF068D]" : ""
@@ -846,8 +840,26 @@ export function BottomNavigation() {
 								<div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-[#FF068D] to-[#FA5F04] rounded-b-full shadow-lg" />
 							)}
 						</Button>
-					</Link>
-				))}
+					);
+
+					if (isSignIn) {
+						return (
+							<div key={item.href} className="flex flex-col items-center justify-center">
+								{content}
+							</div>
+						);
+					}
+
+					return (
+						<Link
+							key={item.href}
+							href={item.href}
+							className="flex flex-col items-center justify-center"
+						>
+							{content}
+						</Link>
+					);
+				})}
 			</div>
 		</nav>
 	);
