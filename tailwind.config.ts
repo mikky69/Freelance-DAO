@@ -92,7 +92,14 @@ const config: Config = {
 		boxShadow: {
 			innerLG: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)',
 			innerpurple: 'inset 0 2px 4px rgba(255, 255, 255, 0.5)',
-		}
+		},
+		fontFamily: {
+        nunito: ["var(--font-nunito)"], 
+		inter: ["var(--font-inter)"],
+		italianno: ["var(--font-italianno)"],
+		bilbo: ["var(--font-bilbo)"],
+		
+      },
   	}
   },
   plugins: [require("tailwindcss-animate")],

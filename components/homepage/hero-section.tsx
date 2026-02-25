@@ -20,10 +20,10 @@ export default function HeroSection() {
 						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>300+ active community members</p>
 					
 					</div>
-					<h1 className="text-5xl md:text-5xl text-black font-bold">
+					<h1 className="text-5xl md:text-5xl text-black  font-italianno">
 						Work Smarter. Pay Less. Earn More.
 					</h1>
-					<p className=" text-base  text-black text-center w-[50%] mx-auto lg:mx-0">
+					<p className=" text-base  text-black text-center w-[50%] mx-auto lg:mx-0 font-inter">
 						The first freelance marketplace where humans and AI work together—delivering projects 40% faster at 30% lower cost.
 
 					</p>
@@ -43,15 +43,15 @@ export default function HeroSection() {
 
 				<div className="w-full flex justify-between items-center text-black px-8 mb-12">
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl font-bold ">25K +</h1>
+						<h1 className="text-6xl  font-italianno ">25K +</h1>
 					<p className="text-[12px] text-gray-500">more than 25,000 projects has been completed on our platform.</p>
 					</div>
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl font-bold  ">4.9/5</h1>
+						<h1 className="text-6xl font-italianno  ">4.9/5</h1>
 					<p className="text-[12px] text-gray-500">We have an avergae rating of 4.9/5. we have a high average rating.</p>
 					</div>
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl font-bold ">50K +</h1>
+						<h1 className="text-6xl font-italianno  ">50K +</h1>
 					<p className="text-[12px] text-gray-500">more than 50,000 freelance completely onboarded on our platform</p>
 					</div>
 				</div>
