@@ -9,7 +9,16 @@ const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
-const privy = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
+let privy: PrivyClient | null = null;
+
+function getPrivyClient() {
+  if (privy) return privy;
+  if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
+    throw new Error('Privy environment variables (NEXT_PUBLIC_PRIVY_APP_ID or PRIVY_APP_SECRET) are missing');
+  }
+  privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
+  return privy;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +30,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access token required' }, { status: 400 });
     }
 
+    const privyClient = getPrivyClient();
+
     // Verify Privy access token
-    const verifiedClaims = await privy.verifyAccessToken(accessToken);
+    const verifiedClaims = await privyClient.verifyAccessToken(accessToken);
     const privyUserId = verifiedClaims.userId;
 
     // Get user details from Privy
-    const privyUser = await privy.getUser(privyUserId);
+    const privyUser = await privyClient.getUser(privyUserId);
     const email = privyUser.email?.address || privyUser.google?.email || privyUser.apple?.email;
 
     if (!email) {
