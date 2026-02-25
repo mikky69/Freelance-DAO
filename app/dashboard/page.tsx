@@ -152,45 +152,57 @@ function DashboardContent() {
       setError(null);
       
       try {
-        // Fix: Use the correct token key that matches auth-context
+        // Get token from localStorage
         const token = localStorage.getItem('freelancedao_token');
+        
+        // If no token but we have a user, it might be a Privy session
+        // For now, we still need a token for the backend API
         if (!token) {
-          throw new Error('No authentication token found');
+          console.warn('No authentication token found in localStorage');
+          // Don't throw yet, let the fetch fail with 401 if needed, 
+          // or handle Privy token if implemented
         }
         
         const headers = {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         };
         
         // Fetch stats
         const statsResponse = await fetch('/api/dashboard/stats', { headers });
-        if (!statsResponse.ok) throw new Error('Failed to fetch stats');
+        if (!statsResponse.ok) {
+          const errorData = await statsResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || `Failed to fetch stats: ${statsResponse.status}`);
+        }
         const statsData = await statsResponse.json();
-        setStats(statsData.stats);
+        setStats(statsData.stats || null);
         
         // Fetch active jobs
         const jobsResponse = await fetch('/api/dashboard/jobs?status=in_progress', { headers });
-        if (!jobsResponse.ok) throw new Error('Failed to fetch jobs');
+        if (!jobsResponse.ok) {
+          const errorData = await jobsResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || `Failed to fetch jobs: ${jobsResponse.status}`);
+        }
         const jobsData = await jobsResponse.json();
-        setJobs(jobsData.jobs);
+        setJobs(jobsData.jobs || []);
         
-        // Fetch completed jobs (jobs with 100% progress awaiting approval)
+        // Fetch completed jobs
         const completedJobsResponse = await fetch('/api/dashboard/jobs?status=completed&progress=100', { headers });
         if (completedJobsResponse.ok) {
           const completedJobsData = await completedJobsResponse.json();
           setCompletedJobs(completedJobsData.jobs || []);
         }
         
-        // Fetch proposals (for both freelancers and clients)
+        // Fetch proposals
         if (user?.role === 'freelancer' || user?.role === 'client') {
           const proposalsResponse = await fetch('/api/proposals', { headers });
-          if (!proposalsResponse.ok) throw new Error('Failed to fetch proposals');
-          const proposalsData = await proposalsResponse.json();
-          setProposals(proposalsData.proposals);
+          if (proposalsResponse.ok) {
+            const proposalsData = await proposalsResponse.json();
+            setProposals(proposalsData.proposals || []);
+          }
         }
-      } catch (err) {
-        setError('Failed to load dashboard data. Please try again.');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard data. Please try again.');
         console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);

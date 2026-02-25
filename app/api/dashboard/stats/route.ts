@@ -21,7 +21,14 @@ export async function GET(request: NextRequest) {
     }
     
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     // Check if user is freelancer or client
     const freelancer = await Freelancer.findById(userId);

@@ -22,7 +22,14 @@ export async function POST(request: NextRequest) {
     }
     
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     // Verify user is a freelancer
     const freelancer = await Freelancer.findById(userId);
@@ -160,7 +167,14 @@ export async function GET(request: NextRequest) {
     }
     
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('jobId');
