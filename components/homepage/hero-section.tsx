@@ -15,15 +15,15 @@ export default function HeroSection() {
 					transition={{ duration: 0.8, ease: "easeOut" }}
 					className="flex flex-col gap-4 w-full h-full text-center justify-center items-center"
 				>
-					<div className="flex gap-6 ">
-						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>500+ freelancers waiting to launch</p>
+					<div className=" gap-2  hidden md:flex">
+						<p className="text-[11px] text-nowrap text-black flex justify-center items-center gap-1" ><span><BadgeCheck size={14}/></span>500+ freelancers waiting to launch</p>
 						<p className="text-[12px] text-black flex justify-center items-center gap-2" ><span><BadgeCheck size={14}/></span>300+ active community members</p>
 					
 					</div>
-					<h1 className="text-5xl md:text-5xl text-black  font-italianno">
+					<h1 className="md:text-[3.125rem] lg:text-[4.125rem] xl:text-[5.125rem] text-[2.5rem] text-black  font-italianno">
 						Work Smarter. Pay Less. Earn More.
 					</h1>
-					<p className=" text-base  text-black text-center w-[50%] mx-auto lg:mx-0 font-inter">
+					<p className=" text-[0.8rem]  text-black text-center px-4 md:w-[50%] font-inter">
 						The first freelance marketplace where humans and AI work together—delivering projects 40% faster at 30% lower cost.
 
 					</p>
@@ -41,17 +41,17 @@ export default function HeroSection() {
 					</div>
 				</motion.div>
 
-				<div className="w-full flex justify-between items-center text-black px-8 mb-12">
+				<div className="w-full  justify-between items-center text-black px-8 mb-12 hidden md:flex">
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl  font-italianno ">25K +</h1>
+						<h1 className="md:text-[3.125rem] lg:text-[4.125rem] xl:text-[5.125rem] text-[1.7rem]  font-italianno ">25K +</h1>
 					<p className="text-[12px] text-gray-500">more than 25,000 projects has been completed on our platform.</p>
 					</div>
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl font-italianno  ">4.9/5</h1>
+						<h1 className="md:text-[3.125rem] lg:text-[4.125rem] xl:text-[5.125rem] text-[1.7rem] font-italianno  ">4.9/5</h1>
 					<p className="text-[12px] text-gray-500">We have an avergae rating of 4.9/5. we have a high average rating.</p>
 					</div>
 					<div className="text-center flex flex-col gap-4 w-[25%]">
-						<h1 className="text-6xl font-italianno  ">50K +</h1>
+						<h1 className="md:text-[3.125rem] lg:text-[4.125rem] xl:text-[5.125rem] text-[1.7rem] font-italianno  ">50K +</h1>
 					<p className="text-[12px] text-gray-500">more than 50,000 freelance completely onboarded on our platform</p>
 					</div>
 				</div>

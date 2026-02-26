@@ -271,7 +271,7 @@ export function TopNavigation() {
 								/>
 								<div className="hidden sm:block">
 								<span
-									className="text-lg md:text-xl font-bold  duration-300 bg-gradient-to-r bg-clip-text text-transparent"
+									className="text-lg md:text-xl font-bold font-nunito duration-300 bg-gradient-to-r bg-clip-text text-transparent"
 									style={{
 										backgroundImage:
 											"linear-gradient(45deg, #FF068D, #AE16A7, #FA5F04)",
