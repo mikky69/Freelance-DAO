@@ -288,8 +288,8 @@ freelance-dao/
 ### Install
 
 ```bash
-git clone <your-repo-url>
-cd freelance-dao
+git clone https://github.com/mikky69/Freelance-DAO.git
+cd Freelance-DAO
 npm install
 ```
 
