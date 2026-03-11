@@ -215,9 +215,9 @@ All fees accumulate in `totalDaoFeesCollected` on the Escrow contract and are se
 ## Project Structure
 
 ```
-freelance-dao/
+base-smart-contracts/
 │
-├── base-smart-contracts/
+├──contracts/
 │   ├── interfaces/
 │   │   ├── IEscrow.sol               ← Dispute → Escrow callbacks
 │   │   ├── IDisputeResolution.sol    ← Escrow queries dispute outcomes
