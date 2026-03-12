@@ -1,0 +1,10 @@
+{
+  "remappings": [
+    "@openzeppelin=node_modules/@openzeppelin",
+    "@chainlink=node_modules/@chainlink"
+  ],
+  "optimizer": {
+    "enabled": true,
+    "runs": 200
+  }
+}
