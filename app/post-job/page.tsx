@@ -1,314 +1,89 @@
 'use client'
 
-import { useEffect, useState } from "react"
-import { ProtectedRoute } from "@/components/protected-route"
-import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, useReadContract } from "wagmi"
-import escrowContractABI from "@/hedera-frontend-abi/FreeLanceDAOEscrowPayment.json";
-import escrowContractDeployment from "@/hedera-deployments/hedera-escrow-testnet.json";
-import { usePostJobForm } from "./hooks/usePostJobForm"
-import { JobDetailsForm } from "./components/JobDetailsForm"
-import { JobConfigurationForm } from "./components/JobConfigurationForm"
-import { PostJobActions } from "./components/PostJobActions"
-import { PaymentModal } from "./components/PaymentModal"
+import { ProtectedRoute } from "@/components/protected-route"
+import { CreditCard, Shield, ArrowRight, Zap, Lock } from "lucide-react"
 
-const HEDERA_TESTNET_CHAIN_ID = 296;
-
-export default function PostJobPage() {
-  const { user } = useAuth()
+export default function PostJobChoicePage() {
   const router = useRouter()
-
-  const {
-    formData,
-    skills,
-    newSkill,
-    setNewSkill,
-    handleInputChange,
-    addSkill,
-    removeSkill,
-    validateForm
-  } = usePostJobForm();
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDraft, setIsDraft] = useState(false)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
-  const [paystackReady, setPaystackReady] = useState(false)
-  const [paymentId, setPaymentId] = useState<string | null>(null)
-
-  //web3 part
-  const { isConnected } = useAccount()
-  const contractAddress = escrowContractDeployment.FreeLanceDAOEscrow.evmAddress;
-  const contractAbi = escrowContractABI.abi;
-
-  const { writeContract, data: txData, error: writeError, reset } = useWriteContract();
-  const txHash = typeof txData === 'object' && txData !== null && 'hash' in txData ? (txData as any).hash : undefined;
-  const { } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
-
-
-  useEffect(() => {
-    if (writeError) {
-      toast.error(writeError.message || "error creating job");
-      console.error("error:", writeError);
-    }
-  }, [writeError])
-
-  useWatchContractEvent({
-    address: contractAddress as `0x${string}`,
-    abi: contractAbi,
-    eventName: "JobCreated",
-    chainId: HEDERA_TESTNET_CHAIN_ID,
-    onLogs: (logs: any[]) => {
-      if (logs && logs.length > 0) {
-        toast.success("Job posted successfully!");
-        console.log("job posted", logs)
-        reset();
-        setIsSubmitting(false);
-      }
-    },
-  });
-
-  useEffect(() => {
-    const id = 'paystack-inline'
-    if (typeof window === 'undefined') return
-    if (document.getElementById(id)) { setPaystackReady(true); return }
-    const s = document.createElement('script')
-    s.id = id
-    s.src = 'https://js.paystack.co/v1/inline.js'
-    s.onload = () => setPaystackReady(true)
-    s.onerror = () => setPaystackReady(false)
-    document.body.appendChild(s)
-  }, [])
-
-
-  useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: contractAbi,
-    functionName: "daoFeePct",
-    chainId: HEDERA_TESTNET_CHAIN_ID,
-    query: {
-      enabled: typeof window !== 'undefined' && !!contractAddress
-    }
-  });
-
-  const handlePostWeb3Job = async () => {
-    if (!isConnected) {
-      toast.error("Please connect your wallet.");
-      console.warn("Wallet not connected");
-      return;
-    }
-    if (formData.currency !== 'HBAR') {
-      toast.error('Set budget currency to HBAR for crypto payment')
-      return
-    }
-    try {
-      const params = {
-        jobTitle: formData.title,
-        jobCategory: formData.category,
-        projectDescription: formData.description,
-        requiredSkills: skills,
-        projectDuration: formData.duration,
-        minimumBudget: BigInt(Math.floor(parseFloat(formData.budgetMin) * 1e18)),
-        maximumBudget: BigInt(Math.floor(parseFloat(formData.budgetMax) * 1e18))
-      };
-      
-      writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: contractAbi,
-        functionName: "createFixedJob",
-        value: BigInt(Number(formData.budgetMax) * 1e18),
-        args: [params],
-      });
-
-    } catch (err: any) {
-      toast.error(err?.message || "Error posting job.");
-      console.error("Job posting error:", err);
-    }
-  }
-
-  const submitJob = async (asDraft = false) => {
-    setIsSubmitting(true);
-    if (!user || !user.id) {
-      toast.error('Please log in to post a job')
-      router.push('/auth/signin/client')
-      setIsSubmitting(false);
-      return
-    }
-
-    if (!asDraft) {
-      const errors = validateForm()
-      if (errors.length > 0) {
-        toast.error(errors[0])
-        setIsSubmitting(false);
-        return
-      }
-      setShowPaymentModal(true)
-      setIsSubmitting(false);
-      return
-    }
-    await processJobSubmission(true);
-  }
-
-  const handlePaymentAndSubmit = async () => {
-    if (!selectedPaymentMethod) {
-      toast.error('Please select a payment method')
-      return
-    }
-
-    setShowPaymentModal(false)
-    if (selectedPaymentMethod === 'fiat') {
-      if (!paystackReady) { toast.error('Paystack failed to load'); return }
-      const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-      if (!key) { toast.error('Paystack public key not configured'); return }
-      const email = user?.email || 'user@example.com'
-      
-      // Calculate total amount (Base fee $1 + Featured fee $20 if applicable)
-      const baseFee = 1;
-      const featuredFee = formData.featured ? 5 : 0;
-      const totalAmountUsd = baseFee + featuredFee;
-
-      try {
-        const rate = Number(process.env.NEXT_PUBLIC_USD_NGN_RATE || 1600)
-        const ngnKobo = Math.round(Math.max(rate, 1) * totalAmountUsd * 100) // USD -> NGN -> kobo
-        
-        const handler = (window as any).PaystackPop.setup({
-          key,
-          email,
-          amount: ngnKobo,
-          currency: 'NGN',
-          metadata: { usd_equivalent: totalAmountUsd, featured_upgrade: formData.featured },
-          callback: function (_response: any) {
-            (async () => {
-              let verifiedPaymentId: string | undefined;
-              try {
-                const token = localStorage.getItem('freelancedao_token')
-                const verifyRes = await fetch('/api/payments/verify', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                  body: JSON.stringify({ 
-                    reference: _response?.reference, 
-                    purpose: formData.featured ? 'job_post_fee_featured' : 'job_post_fee', 
-                    amountUsd: totalAmountUsd, 
-                    amountNgn: ngnKobo / 100 
-                  })
-                })
-                const v = await verifyRes.json()
-                if (verifyRes.ok) {
-                  verifiedPaymentId = v.payment.id;
-                  setPaymentId(verifiedPaymentId || null)
-                  toast.success('Payment successful')
-                } else {
-                  toast.error(v.message || 'Failed to verify payment')
-                }
-              } catch (err: any) {
-                console.error('Verify payment error:', err)
-                toast.error('Verification error')
-              } finally {
-                processJobSubmission(false, verifiedPaymentId)
-              }
-            })()
-          },
-          onClose: function () {
-            toast.error('Payment canceled')
-          }
-        })
-        handler.openIframe()
-      } catch (e: any) {
-        toast.error(e?.message || 'Failed to initialize Paystack')
-      }
-    } else {
-      await handlePostWeb3Job()
-      await processJobSubmission(false)
-    }
-  }
-
-  const processJobSubmission = async (asDraft = false, overridePaymentId?: string) => {
-    setIsSubmitting(true)
-    setIsDraft(asDraft)
-    try {
-      const token = localStorage.getItem('freelancedao_token')
-      if (!token) {
-        toast.error('Please log in to post a job')
-        router.push('/auth/signin/client')
-        return
-      }
-
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          skills,
-          budgetMin: parseFloat(formData.budgetMin),
-          budgetMax: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
-          currency: formData.currency,
-          paymentId: overridePaymentId || paymentId || undefined
-        })
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success(asDraft ? 'Job saved as draft' : 'Job posted successfully!')
-        router.push('/dashboard')
-      } else {
-        toast.error(data.message || 'Failed to post job')
-      }
-    } catch (error) {
-      console.error('Error posting job:', error)
-      toast.error('An error occurred while posting the job')
-    } finally {
-      setIsSubmitting(false)
-      setIsDraft(false)
-    }
-  }
 
   return (
     <ProtectedRoute requireAuth={true} requiredRole="client" requireCompleteProfile={true}>
       <div className="min-h-screen bg-slate-50">
+        {/* Header */}
         <div className="bg-white border-b border-slate-200">
           <div className="container mx-auto px-4 py-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-3xl mx-auto">
               <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Post a Job</h1>
-              <p className="text-slate-600">Find the perfect freelancer for your project</p>
+              <p className="text-slate-600">Choose how you want to hire and pay your freelancer</p>
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); submitJob(false); }}>
-              <JobDetailsForm
-                formData={formData}
-                skills={skills}
-                newSkill={newSkill}
-                setNewSkill={setNewSkill}
-                handleInputChange={handleInputChange}
-                addSkill={addSkill}
-                removeSkill={removeSkill}
-              />
-              <JobConfigurationForm formData={formData} handleInputChange={handleInputChange} />
-              <PostJobActions submitJob={submitJob} isSubmitting={isSubmitting} isDraft={isDraft} />
-            </form>
+        {/* Choice Cards */}
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Web2 / Paystack */}
+            <button
+              onClick={() => router.push('/post-job/web2-post-job')}
+              className="group text-left bg-white border border-slate-200 rounded-2xl p-8 hover:border-blue-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-5 group-hover:bg-blue-500 transition-colors duration-200">
+                <CreditCard className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors duration-200" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Standard Payment</h2>
+              <p className="text-slate-500 text-sm mb-5 leading-relaxed">
+                Post your job and pay freelancers using traditional payment methods via Paystack.
+              </p>
+              <ul className="space-y-2 mb-6">
+                {["Pay in USD via card or bank transfer", "Managed via FreelanceDAO platform", "$1 job posting fee"].map(item => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-slate-600">
+                    <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center text-blue-500 font-medium text-sm group-hover:gap-2 transition-all">
+                Get started <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </button>
+
+            {/* Base Escrow */}
+            <button
+              onClick={() => router.push('/post-job/base-post-job')}
+              className="group text-left bg-white border border-slate-200 rounded-2xl p-8 hover:border-emerald-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-5 group-hover:bg-emerald-500 transition-colors duration-200">
+                <Shield className="w-6 h-6 text-emerald-500 group-hover:text-white transition-colors duration-200" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Escrow Smart Contract</h2>
+              <p className="text-slate-500 text-sm mb-5 leading-relaxed">
+                Lock funds in a trustless smart contract on Base. Freelancer gets paid automatically on completion.
+              </p>
+              <ul className="space-y-2 mb-6">
+                {["Pay in ETH via your connected wallet", "Funds locked on-chain until confirmed", "Dispute resolution via DAO"].map(item => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-slate-600">
+                    <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center text-emerald-500 font-medium text-sm">
+                Get started <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </button>
+
           </div>
+
+          <p className="text-center text-xs text-slate-400 mt-8">
+            Not sure which to choose?{" "}
+            <a href="/docs/payment-methods" className="text-blue-500 hover:underline">
+              Learn about the differences
+            </a>
+          </p>
         </div>
       </div>
-
-      <PaymentModal
-        showPaymentModal={showPaymentModal}
-        setShowPaymentModal={setShowPaymentModal}
-        selectedPaymentMethod={selectedPaymentMethod}
-        setSelectedPaymentMethod={setSelectedPaymentMethod}
-        handlePaymentAndSubmit={handlePaymentAndSubmit}
-        isSubmitting={isSubmitting}
-      />
     </ProtectedRoute>
   )
 }

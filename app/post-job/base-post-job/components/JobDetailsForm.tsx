@@ -14,7 +14,7 @@ export const JobDetailsForm = ({ formData, skills, newSkill, setNewSkill, handle
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <FileText className="w-5 h-5 mr-2 text-blue-500" />
+          <FileText className="w-5 h-5 mr-2 text-emerald-500" />
           Job Details
         </CardTitle>
         <CardDescription>Provide clear information about your project</CardDescription>
@@ -30,9 +30,7 @@ export const JobDetailsForm = ({ formData, skills, newSkill, setNewSkill, handle
             className="text-base"
             required
           />
-          <p className="text-sm text-slate-500">
-            Write a clear, descriptive title that explains what you need done
-          </p>
+          <p className="text-sm text-slate-500">Write a clear, descriptive title that explains what you need done</p>
         </div>
 
         <div className="space-y-2">
@@ -65,10 +63,8 @@ export const JobDetailsForm = ({ formData, skills, newSkill, setNewSkill, handle
             required
           />
           <p className="text-sm text-slate-500">
-            Minimum 100 characters. Be specific about your requirements.
-            <span className="font-medium">
-              ({formData.description.length}/100)
-            </span>
+            Minimum 100 characters.{" "}
+            <span className="font-medium">({formData.description.length}/100)</span>
           </p>
         </div>
 
@@ -88,7 +84,7 @@ export const JobDetailsForm = ({ formData, skills, newSkill, setNewSkill, handle
           </div>
           {skills.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill: any, index: number) => (
+              {skills.map((skill: string, index: number) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {skill}
                   <button type="button" onClick={() => removeSkill(skill)} className="ml-1 hover:text-red-500">

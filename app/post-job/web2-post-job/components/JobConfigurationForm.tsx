@@ -11,6 +11,7 @@ import { DollarSign, Users, Shield } from "lucide-react"
 export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
   return (
     <>
+      {/* Budget & Timeline */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -20,9 +21,14 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
           <CardDescription>Set your budget and project timeline</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Budget Type */}
           <div className="space-y-4">
             <Label>Budget Type *</Label>
-            <RadioGroup value={formData.budgetType} onValueChange={(value) => handleInputChange('budgetType', value)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <RadioGroup
+              value={formData.budgetType}
+              onValueChange={(value) => handleInputChange('budgetType', value)}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
               <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
                 <RadioGroupItem value="fixed" id="fixed" />
                 <Label htmlFor="fixed" className="flex-1 cursor-pointer">
@@ -40,57 +46,46 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
             </RadioGroup>
           </div>
 
-          <div className="space-y-4">
-            <Label>Budget Currency *</Label>
-            <RadioGroup value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
-                <RadioGroupItem value="HBAR" id="cur-hbar" />
-                <Label htmlFor="cur-hbar" className="flex-1 cursor-pointer">
-                  <div className="font-medium">HBAR</div>
-                  <div className="text-sm text-slate-500">Crypto via wallet</div>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
-                <RadioGroupItem value="USD" id="cur-usd" />
-                <Label htmlFor="cur-usd" className="flex-1 cursor-pointer">
-                  <div className="font-medium">USD</div>
-                  <div className="text-sm text-slate-500">Fiat via Paystack</div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
+          {/* Budget Range — USD only */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="budget-min">{`Minimum ${formData.budgetType === 'fixed' ? 'Budget' : 'Rate'} (${formData.currency}${formData.budgetType === 'hourly' ? '/hour' : ''}) *`}</Label>
+              <Label htmlFor="budget-min">
+                {`Minimum ${formData.budgetType === 'fixed' ? 'Budget' : 'Rate'} (USD${formData.budgetType === 'hourly' ? '/hour' : ''}) *`}
+              </Label>
               <Input
                 id="budget-min"
                 type="number"
                 value={formData.budgetMin}
                 onChange={(e) => handleInputChange('budgetMin', e.target.value)}
-                placeholder={formData.currency === 'USD' ? (formData.budgetType === 'fixed' ? '1000' : '50') : (formData.budgetType === 'fixed' ? '5000' : '100')}
+                placeholder={formData.budgetType === 'fixed' ? '1000' : '50'}
                 className="text-base"
                 required
                 min="1"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="budget-max">{`${formData.budgetType === 'fixed' ? 'Maximum Budget' : 'Maximum Rate'} (${formData.currency}${formData.budgetType === 'hourly' ? '/hour' : ''})`}</Label>
+              <Label htmlFor="budget-max">
+                {`${formData.budgetType === 'fixed' ? 'Maximum Budget' : 'Maximum Rate'} (USD${formData.budgetType === 'hourly' ? '/hour' : ''})`}
+              </Label>
               <Input
                 id="budget-max"
                 type="number"
                 value={formData.budgetMax}
                 onChange={(e) => handleInputChange('budgetMax', e.target.value)}
-                placeholder={formData.currency === 'USD' ? (formData.budgetType === 'fixed' ? '5000' : '150') : (formData.budgetType === 'fixed' ? '15000' : '200')}
+                placeholder={formData.budgetType === 'fixed' ? '5000' : '150'}
                 className="text-base"
                 min="1"
               />
             </div>
           </div>
 
+          {/* Duration */}
           <div className="space-y-2">
             <Label htmlFor="timeline">Project Duration *</Label>
-            <Select value={formData.duration} onValueChange={(value) => handleInputChange('duration', value)}>
+            <Select
+              value={formData.duration}
+              onValueChange={(value) => handleInputChange('duration', value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select project duration" />
               </SelectTrigger>
@@ -106,6 +101,8 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Experience Level */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -115,7 +112,11 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
           <CardDescription>What level of experience do you need?</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={formData.experienceLevel} onValueChange={(value) => handleInputChange('experienceLevel', value)} className="space-y-4">
+          <RadioGroup
+            value={formData.experienceLevel}
+            onValueChange={(value) => handleInputChange('experienceLevel', value)}
+            className="space-y-4"
+          >
             <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-lg">
               <RadioGroupItem value="entry" id="entry" />
               <Label htmlFor="entry" className="flex-1 cursor-pointer">
@@ -140,6 +141,8 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
           </RadioGroup>
         </CardContent>
       </Card>
+
+      {/* Additional Options — no escrow checkbox */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -157,10 +160,9 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
             />
             <Label htmlFor="featured" className="flex-1">
               <div className="font-medium">Make this job featured</div>
-              <div className="text-sm text-slate-500">Get more visibility for +$20</div>
+              <div className="text-sm text-slate-500">Get more visibility for +$5</div>
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id="urgent"
@@ -170,18 +172,6 @@ export const JobConfigurationForm = ({ formData, handleInputChange }: any) => {
             <Label htmlFor="urgent" className="flex-1">
               <div className="font-medium">Mark as urgent</div>
               <div className="text-sm text-slate-500">Show urgency to attract faster responses</div>
-            </Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="escrow"
-              checked={formData.useEscrow}
-              onCheckedChange={(checked) => handleInputChange('useEscrow', checked)}
-            />
-            <Label htmlFor="escrow" className="flex-1">
-              <div className="font-medium">Use smart contract escrow</div>
-              <div className="text-sm text-slate-500">Secure payments with blockchain technology</div>
             </Label>
           </div>
         </CardContent>

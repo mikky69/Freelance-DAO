@@ -1,4 +1,5 @@
 "use client"
+
 import { useState } from "react"
 
 export const usePostJobForm = () => {
@@ -7,14 +8,13 @@ export const usePostJobForm = () => {
     description: "",
     category: "",
     budgetType: "fixed",
-    currency: "HBAR",
+    currency: "USD",       // USD only — Paystack flow
     budgetMin: "",
     budgetMax: "",
     duration: "",
     experienceLevel: "intermediate",
     featured: false,
     urgent: false,
-    useEscrow: true
   })
 
   const [skills, setSkills] = useState<string[]>([])
@@ -37,7 +37,6 @@ export const usePostJobForm = () => {
 
   const validateForm = () => {
     const errors: string[] = []
-
     if (!formData.title.trim()) errors.push("Job title is required")
     if (!formData.description.trim()) errors.push("Job description is required")
     if (formData.description.trim().length < 100) errors.push("Description must be at least 100 characters")
@@ -48,7 +47,6 @@ export const usePostJobForm = () => {
       errors.push("Maximum budget must be greater than minimum budget")
     }
     if (!formData.duration) errors.push("Project duration is required")
-
     return errors
   }
 
@@ -60,6 +58,6 @@ export const usePostJobForm = () => {
     handleInputChange,
     addSkill,
     removeSkill,
-    validateForm
+    validateForm,
   }
 }
