@@ -1,20 +1,21 @@
 "use client"
 
-import * as React from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { WagmiProvider } from "wagmi"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { wagmiConfig } from "@/lib/wagmi"
 import { AuthProvider } from "@/lib/auth-context"
-import { WalletProvider } from "@/lib/wallet-context"
+import { Toaster } from "@/components/ui/sonner"
+import { useState } from "react"
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(() => new QueryClient())
+  const [queryClient] = useState(() => new QueryClient())
 
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <WalletProvider>{children}</WalletProvider>
+          {children}
+          <Toaster />
         </AuthProvider>
       </QueryClientProvider>
     </WagmiProvider>
