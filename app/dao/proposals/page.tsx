@@ -3,10 +3,9 @@
 import React, { useState, useEffect } from "react"
 import { useAccount, usePublicClient } from "wagmi"
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useWatchContractEvent } from "wagmi"
-import proposalContractDeployment from "../../../hedera-deployments/hedera-proposal-testnet.json"
-import proposalContractABI from "../../../hedera-frontend-abi/FreeLanceDAOProposalContract.json"
-import stakingContractDeployment from "../../../hedera-deployments/hedera-staking-testnet.json"
-import stakingContractABI from "../../../hedera-frontend-abi/FreeLanceDAOStaking.json"
+import { parseEther } from "viem"
+import ProposalsDeployment from "@/base-smart-contracts/deployments/baseSepolia/FreelanceDAOProposals.json"
+import StakingDeployment   from "@/base-smart-contracts/deployments/baseSepolia/FreelanceDAOStaking.json"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,15 +14,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { Plus } from "lucide-react"
 
+const contractAddress = ProposalsDeployment.address as `0x${string}`
+const contractAbi     = ProposalsDeployment.abi
+const stakingAddress  = StakingDeployment.address as `0x${string}`
+const stakingAbi      = StakingDeployment.abi
+const BASE_SEPOLIA_CHAIN_ID = 84532
+
+// MINOR proposal fee = 0.001 ETH, MAJOR = 0.005 ETH (adjust to match your contract)
+const MINOR_FEE = parseEther("0.001")
+const MAJOR_FEE = parseEther("0.005")
+
 function formatDeadline(deadline: number) {
-  // deadline is seconds since epoch
   const now = Math.floor(Date.now() / 1000)
   let diff = deadline - now
   if (diff <= 0) return "Finalized"
-  const days = Math.floor(diff / (60 * 60 * 24))
-  diff -= days * 60 * 60 * 24
-  const hours = Math.floor(diff / (60 * 60))
-  diff -= hours * 60 * 60
+  const days = Math.floor(diff / 86400); diff -= days * 86400
+  const hours = Math.floor(diff / 3600); diff -= hours * 3600
   const minutes = Math.floor(diff / 60)
   return `${days}d ${hours}h ${minutes}m left`
 }
@@ -41,12 +47,6 @@ export default function ProposalsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVoting, setIsVoting] = useState<number | null>(null)
 
-  // Mock user eligibility and will be replaced later
-  const userEligibility = {
-    stakedHbar: 1500,
-    canCreateProposal: true,
-    voteWeight: 15,
-  }
   const categories = [
     { value: "all", label: "All Categories" },
     { value: "Tokenomics", label: "Tokenomics" },
@@ -56,61 +56,38 @@ export default function ProposalsPage() {
     { value: "Security", label: "Security" },
   ]
 
-  // Contract details
-  const contractAddress = proposalContractDeployment.FreeLanceDAOProposal.evmAddress
-  const contractAbi = proposalContractABI.abi
-
-  // Staking contract details
-  const stakingAddress = stakingContractDeployment.FreeLanceDAOStaking.evmAddress
-  const stakingAbi = stakingContractABI.abi
-
-  // wagmi hooks
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
+  const publicClient = usePublicClient()
   const { writeContract, data: txData, error: writeError, isPending: isWritePending, reset } = useWriteContract()
   const txHash = typeof txData === 'object' && txData !== null && 'hash' in txData ? (txData as any).hash : undefined
-  const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash: txHash })
+  const { isLoading: isTxLoading } = useWaitForTransactionReceipt({ hash: txHash })
 
   useEffect(() => {
-    if (writeError) {
-      toast.error(writeError.message || "Contract write error")
-    }
+    if (writeError) toast.error(writeError.message || "Contract write error")
   }, [writeError])
 
-  // Read proposals from contract
   const { data: proposalsData, isLoading: isProposalsLoading, refetch: refetchProposals } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: contractAddress,
     abi: contractAbi,
     functionName: "getAllProposals",
-    chainId: 296,
-    query: {
-      enabled: typeof window !== 'undefined' && !!contractAddress
-    }
+    chainId: BASE_SEPOLIA_CHAIN_ID,
+    query: { enabled: typeof window !== 'undefined' && !!contractAddress },
   })
 
-  // Only log on client side to avoid build errors
-  if (typeof window !== 'undefined') {
-    console.log("Proposals data from contract:", proposalsData)
-  }
-
   useWatchContractEvent({
-    address: contractAddress as `0x${string}`,
+    address: contractAddress,
     abi: contractAbi,
     eventName: "ProposalCreated",
-    chainId: 296,
+    chainId: BASE_SEPOLIA_CHAIN_ID,
     onLogs: () => {
       toast.success("Proposal created successfully!")
       setIsCreateModalOpen(false)
-      setTitle("")
-      setProposalType("")
-      setCategory("")
-      setDescription("")
-      setTags([])
+      setTitle(""); setProposalType("light"); setCategory(""); setDescription(""); setTags([])
       reset()
       refetchProposals()
     },
   })
 
-  // Transform proposalsData into array of proposal objects
   const proposals: any[] = React.useMemo(() => {
     if (!proposalsData || !Array.isArray(proposalsData) || proposalsData.length === 0) return []
     return proposalsData.map((p: any) => ({
@@ -120,13 +97,13 @@ export default function ProposalsPage() {
       proposalType: p.proposalType,
       category: p.category,
       description: p.description,
-      yesVotes: Number(p.yesVotes), //will be fixed when contract is updated. currently not in contract
-      noVotes: Number(p.noVotes), //will be fixed when contract is updated. currently not in contract
+      yesVotes: Number(p.yesVotes ?? 0),
+      noVotes: Number(p.noVotes ?? 0),
       tags: p.tags,
       deadline: p.deadline,
       finalized: p.finalized,
-      feePaid: Number(p.feePaid) / 1e8,
-      participation: Number(p.participation) / 1e8,
+      feePaid: Number(p.feePaid ?? 0) / 1e18,
+      participation: Number(p.participation ?? 0),
     }))
   }, [proposalsData])
 
@@ -144,88 +121,58 @@ export default function ProposalsPage() {
     return matchesSearch && matchesTab && matchesCategory
   })
 
-  // Voting logic
-  const { address } = useAccount()
+  // Check user's stake
   const { data: userStakeData, refetch: refetchStake } = useReadContract({
-    address: stakingAddress as `0x${string}`,
+    address: stakingAddress,
     abi: stakingAbi,
-    functionName: "stakes",
-    args: [address],
-    chainId: 296,
-    // enabled: !!address,
+    functionName: "getStakedAmount",
+    args: address ? [address] : undefined,
+    chainId: BASE_SEPOLIA_CHAIN_ID,
+    query: { enabled: !!address },
   })
-  const publicClient = usePublicClient()
+
   const handleVote = async (proposalId: number, support: boolean) => {
-    if (!isConnected) {
-      toast.error("Please connect your wallet to vote.")
-      return
-    }
-    // Check user's stake before voting
-    await refetchStake();
-    const stakeAmount = (userStakeData as [number] | undefined)?.[0] ?? 0
-    if (!stakeAmount || Number(stakeAmount) === 0) {
+    if (!isConnected) { toast.error("Please connect your wallet to vote."); return }
+    await refetchStake()
+    const stakeAmount = userStakeData ? Number(userStakeData) : 0
+    if (!stakeAmount || stakeAmount === 0) {
       toast.error("You must stake tokens before you can vote on proposals.")
       return
     }
 
-    // Check if user has already voted
     let hasVoted = false
     try {
-      if (!publicClient) {
-        toast.error("RPC client not available. Try again later.")
-        return
-      }
-      if (!address) {
-        toast.error("Please connect your wallet")
-        return
-      }
-      const hv = (await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
+      if (!publicClient || !address) { toast.error("Wallet not available."); return }
+      const hv = await publicClient.readContract({
+        address: contractAddress,
         abi: contractAbi,
         functionName: "hasVoted",
         args: [proposalId, address],
-      })) as any
+      }) as any
       hasVoted = !!hv
-    } catch (e) {
-      console.error("hasVoted read error", e)
-    }
-    if (hasVoted) {
-      toast.error("You have already voted on this proposal.")
-      return
-    }
+    } catch (e) { console.error("hasVoted read error", e) }
 
-    // Check if voting period has ended
+    if (hasVoted) { toast.error("You have already voted on this proposal."); return }
+
     let proposalDeadline = 0
     try {
-      if (!publicClient) {
-        toast.error("RPC client not available. Try again later.")
-        return
-      }
-      const p = (await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
+      if (!publicClient) return
+      const p = await publicClient.readContract({
+        address: contractAddress,
         abi: contractAbi,
         functionName: "getProposal",
         args: [proposalId],
-      })) as any
+      }) as any
+      proposalDeadline = Number(p?.deadline ?? p?.[8] ?? 0)
+    } catch (e) { console.error("getProposal read error", e) }
 
-      proposalDeadline = (p && ((p.deadline ?? p[8]) as any)) ?? 0
-    } catch (e) {
-      console.error("getProposal read error", e)
-    }
-    const nowSec = Math.floor(Date.now() / 1000);
-    if (proposalDeadline && nowSec > Number(proposalDeadline)) {
-      toast.error("Voting period has ended for this proposal.");
-      return;
+    if (proposalDeadline && Math.floor(Date.now() / 1000) > proposalDeadline) {
+      toast.error("Voting period has ended for this proposal."); return
     }
 
     setIsVoting(proposalId)
     try {
-      writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: contractAbi,
-        functionName: "vote",
-        args: [proposalId, support],
-      })
+      writeContract({ address: contractAddress, abi: contractAbi, functionName: "vote", args: [proposalId, support] })
       toast.info("Vote submitted. Awaiting confirmation...")
     } catch (err: any) {
       toast.error(err?.message || "Error submitting vote.")
@@ -236,23 +183,17 @@ export default function ProposalsPage() {
   }
 
   const handleCreateProposal = async () => {
-    if (!isConnected) {
-      toast.error("Please connect your wallet.")
-      return
-    }
-    if (!title || !proposalType || !category || !description) {
-      toast.error("Please fill in all fields.")
-      return
-    }
+    if (!isConnected) { toast.error("Please connect your wallet."); return }
+    if (!title || !proposalType || !category || !description) { toast.error("Please fill in all fields."); return }
     setIsSubmitting(true)
     try {
-      const value = proposalType === "light" ? 5 * 1e18 : 10 * 1e18 // HBAR
+      const fee = proposalType === "light" ? MINOR_FEE : MAJOR_FEE
       writeContract({
-        address: contractAddress as `0x${string}`,
+        address: contractAddress,
         abi: contractAbi,
         functionName: "createProposal",
         args: [title, proposalType, category, description, tags],
-        value: BigInt(value),
+        value: fee,
       })
     } catch (err: any) {
       toast.error(err?.message || "Error submitting proposal.")
@@ -271,16 +212,9 @@ export default function ProposalsPage() {
               <h1 className="text-4xl font-bold mb-2">DAO Proposals</h1>
               <p className="text-blue-100 mb-4">Participate in governance and shape the future of FreeLanceDAO</p>
               <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center">
-                  {/* Replace with actual vote weight from contract if needed */}
-                  Your Vote Weight: {userEligibility.voteWeight}
-                </div>
-                <div className="flex items-center">
-                  Staked: {userEligibility.stakedHbar} $HBAR
-                </div>
+                <div>On Base Sepolia · {proposals.length} proposal{proposals.length !== 1 ? "s" : ""}</div>
               </div>
             </div>
-            {/* Create Proposal Modal Trigger */}
             <Button
               size="lg"
               className="bg-white text-blue-600 hover:bg-blue-50"
@@ -310,8 +244,8 @@ export default function ProposalsPage() {
             onChange={e => setSelectedCategory(e.target.value)}
             className="w-full lg:w-48 border rounded px-2 py-1"
           >
-            {categories.map(category => (
-              <option key={category.value} value={category.value}>{category.label}</option>
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
             ))}
           </select>
         </div>
@@ -319,28 +253,22 @@ export default function ProposalsPage() {
         {/* Tabs */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all">All Proposals ({proposals.length})</TabsTrigger>
-            <TabsTrigger value="active">Active ({proposals.filter((p) => !p.finalized).length})</TabsTrigger>
-            <TabsTrigger value="passed">Passed ({proposals.filter((p) => p.finalized && p.participation > 0).length})</TabsTrigger>
-            <TabsTrigger value="failed">Failed ({proposals.filter((p) => p.finalized && p.participation === 0).length})</TabsTrigger>
+            <TabsTrigger value="all">All ({proposals.length})</TabsTrigger>
+            <TabsTrigger value="active">Active ({proposals.filter(p => !p.finalized).length})</TabsTrigger>
+            <TabsTrigger value="passed">Passed ({proposals.filter(p => p.finalized && p.participation > 0).length})</TabsTrigger>
+            <TabsTrigger value="failed">Failed ({proposals.filter(p => p.finalized && p.participation === 0).length})</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {/* Wallet Connection Warning */}
         {!isConnected && (
           <Card className="mb-8 bg-orange-50 border-orange-200">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-1">
                   <h3 className="font-semibold text-orange-900">Connect Your Wallet</h3>
-                  <p className="text-orange-700">
-                    Connect your wallet to vote on proposals and create new ones.
-                    Voting requires a small gas fee to prevent bot activity.
-                  </p>
+                  <p className="text-orange-700">Connect your wallet to vote on proposals and create new ones.</p>
                 </div>
-                <Button className="bg-orange-600 hover:bg-orange-700">
-                  Connect Wallet
-                </Button>
+                <Button className="bg-orange-600 hover:bg-orange-700">Connect Wallet</Button>
               </div>
             </CardContent>
           </Card>
@@ -374,68 +302,43 @@ export default function ProposalsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <CardTitle className="text-xl capitalize">{proposal.title}</CardTitle>
-                        <Badge variant="outline" className={proposal.proposalType === "Major" ? "border-purple-300 text-purple-700 bg-purple-50" : "border-blue-300 text-blue-700 bg-blue-50"}>
+                        <Badge variant="outline" className={proposal.proposalType === "major" ? "border-purple-300 text-purple-700 bg-purple-50" : "border-blue-300 text-blue-700 bg-blue-50"}>
                           {proposal.proposalType}
                         </Badge>
-                        <Badge className={proposal.finalized ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-green-100 text-green-800 border-green-300"}>
+                        <Badge className={proposal.finalized ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
                           {proposal.finalized ? "Finalized" : "Active"}
                         </Badge>
                       </div>
                       <div className="text-base mb-3">{proposal.description}</div>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {proposal.tags && proposal.tags.map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
+                        {proposal.tags?.map((tag: string) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                         ))}
                       </div>
                     </div>
-                    <div className="text-right ml-4">
-                      <div className="text-sm text-slate-600 space-y-1">
-                        <div>Fee: {proposal.feePaid} HBAR</div>
-                        <div>Category: {proposal.category}</div>
-                        <div>{proposal.finalized ? "Completed" : formatDeadline(Number(proposal.deadline))} </div>
-                      </div>
+                    <div className="text-right ml-4 text-sm text-slate-600 space-y-1">
+                      <div>Fee: {proposal.feePaid.toFixed(4)} ETH</div>
+                      <div>Category: {proposal.category}</div>
+                      <div>{proposal.finalized ? "Completed" : formatDeadline(Number(proposal.deadline))}</div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Voting Progress */}
-                    <div>
-                      <div className="flex justify-between text-sm text-slate-600 mb-2">
-                        <span>
-                          Vote weight: {proposal.participation}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Proposal Meta */}
                     <div className="flex items-center justify-between text-sm text-slate-600 border-t pt-3">
-                      <div className="flex items-center space-x-4">
-                        <span>By: {proposal.proposer}</span>
-                      </div>
+                      <span>By: {typeof proposal.proposer === 'string' && proposal.proposer.length > 10
+                        ? `${proposal.proposer.slice(0, 6)}...${proposal.proposer.slice(-4)}`
+                        : proposal.proposer}
+                      </span>
                     </div>
-                    {/* Action Buttons */}
                     <div className="flex gap-3">
-                      {/* View Details button placeholder */}
-                      <Button variant="outline" className=" bg-transparent max-w-sm w-full">
-                        View Details
-                      </Button>
+                      <Button variant="outline" className="bg-transparent max-w-sm w-full">View Details</Button>
                       {!proposal.finalized && (
                         <>
-                          <Button
-                            onClick={() => handleVote(proposal.id, true)}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            disabled={!isConnected || isVoting === proposal.id}
-                          >
+                          <Button onClick={() => handleVote(proposal.id, true)} className="flex-1 bg-green-600 hover:bg-green-700" disabled={!isConnected || isVoting === proposal.id}>
                             Vote Yes
                           </Button>
-                          <Button
-                            onClick={() => handleVote(proposal.id, false)}
-                            variant="outline"
-                            className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-                            disabled={!isConnected || isVoting === proposal.id}
-                          >
+                          <Button onClick={() => handleVote(proposal.id, false)} variant="outline" className="flex-1 border-red-300 text-red-600 hover:bg-red-50" disabled={!isConnected || isVoting === proposal.id}>
                             Vote No
                           </Button>
                         </>
@@ -448,51 +351,35 @@ export default function ProposalsPage() {
           )}
         </div>
 
-        {/* Modal for creating proposal */}
+        {/* Create Proposal Modal */}
         {isCreateModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 w-full max-w-3xl">
+            <div className="bg-white rounded-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">Create Proposal</h2>
-              {/* Eligibility Check */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-3">Eligibility Status</h4>
-                {userEligibility.canCreateProposal ? (
-                  <div className="mt-3 flex items-center text-green-700">
-                    <span className="mr-2">✔</span>
-                    You are eligible to create proposals
-                  </div>
-                ) : (
-                  <div className="mt-3 flex items-center text-red-700">
-                    <span className="mr-2">✖</span>
-                    You need to stake HBAR to create proposals
-                  </div>
-                )}
-              </div>
-              {/* Proposal Type Selection (Radio) */}
+
+              {/* Proposal Type */}
               <div className="mb-4">
                 <label className="text-base font-semibold mb-2 block">Proposal Type</label>
                 <div className="flex gap-4 mt-2">
                   <label className={`flex items-center space-x-2 p-4 border rounded-lg flex-1 cursor-pointer ${proposalType === "light" ? "bg-blue-50 border-blue-300" : ""}`}>
                     <input type="radio" name="proposalType" value="light" checked={proposalType === "light"} onChange={() => setProposalType("light")} className="accent-blue-600" />
                     <div className="flex-1">
-                      <div className="font-medium">Light Proposal</div>
-                      <div className="text-sm text-slate-600">Minor upgrades, bug fixes, small features</div>
-                      <div className="text-xs text-slate-500 mt-1">Simpler form • Lower fee • Faster processing</div>
-                      <span className="mt-2 block font-bold">5-10 HBAR</span>
+                      <div className="font-medium">Minor Proposal</div>
+                      <div className="text-sm text-slate-600">Bug fixes, small features</div>
+                      <span className="mt-2 block font-bold">0.001 ETH</span>
                     </div>
                   </label>
                   <label className={`flex items-center space-x-2 p-4 border rounded-lg flex-1 cursor-pointer ${proposalType === "major" ? "bg-purple-50 border-purple-300" : ""}`}>
                     <input type="radio" name="proposalType" value="major" checked={proposalType === "major"} onChange={() => setProposalType("major")} className="accent-purple-600" />
                     <div className="flex-1">
                       <div className="font-medium">Major Proposal</div>
-                      <div className="text-sm text-slate-600">Significant changes, tokenomics, partnerships</div>
-                      <div className="text-xs text-slate-500 mt-1">Detailed form • Higher fee • Extended review</div>
-                      <span className="mt-2 block font-bold">10 HBAR</span>
+                      <div className="text-sm text-slate-600">Significant changes, tokenomics</div>
+                      <span className="mt-2 block font-bold">0.005 ETH</span>
                     </div>
                   </label>
                 </div>
               </div>
-              {/* Proposal Form */}
+
               <Input className="w-full mb-2" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
               <div className="mb-2">
                 <label className="text-sm font-semibold mb-1 block">Category</label>
@@ -504,28 +391,21 @@ export default function ProposalsPage() {
                 </select>
               </div>
               <textarea className="w-full mb-2 p-2 border rounded" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
-              <div className="mb-2">
+              <div className="mb-4">
                 <label className="text-sm font-semibold mb-1 block">Tags (comma separated)</label>
-                <Input className="w-full" placeholder="e.g., AI, Revenue, Smart Contracts" value={tags.join(", ")} onChange={e => setTags(e.target.value.split(",").map(t => t.trim()))} />
+                <Input className="w-full" placeholder="e.g., Governance, Security" value={tags.join(", ")} onChange={e => setTags(e.target.value.split(",").map(t => t.trim()))} />
               </div>
-              {/* Fee Display */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Proposal Submission Fee</span>
-                  <span className="text-xl font-bold text-yellow-800">
-                    {proposalType === "light" ? "5 HBAR" : "10 HBAR"}
-                  </span>
-                </div>
-                <div className="text-sm text-slate-600 space-y-1">
-                  <p>• Fee helps prevent spam and ensures quality proposals</p>
-                  <p>• Payment goes directly to DAO treasury</p>
-                  <p>• Transaction will be processed on Hedera blockchain</p>
-                  <p>• You will be prompted to authorize payment in your wallet</p>
-                </div>
+
+              {/* Fee info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-slate-600 space-y-1">
+                <p className="font-medium text-blue-900">Submission fee: {proposalType === "light" ? "0.001" : "0.005"} ETH</p>
+                <p>• Fee prevents spam and goes to the DAO treasury</p>
+                <p>• Transaction is processed on Base blockchain</p>
               </div>
+
               <div className="flex gap-3">
-                <Button className="flex-1 bg-gray-300 px-4 py-2 rounded" onClick={() => setIsCreateModalOpen(false)} disabled={isSubmitting}>Cancel</Button>
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" onClick={handleCreateProposal} disabled={isSubmitting || !userEligibility.canCreateProposal}>
+                <Button className="flex-1" variant="outline" onClick={() => setIsCreateModalOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={handleCreateProposal} disabled={isSubmitting || !isConnected}>
                   {isSubmitting ? "Creating..." : "Create Proposal"}
                 </Button>
               </div>
