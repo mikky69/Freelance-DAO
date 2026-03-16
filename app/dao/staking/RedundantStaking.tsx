@@ -39,6 +39,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
+import { IconifyIcon } from "@/components/iconify-icon"
 
 interface StakingData {
   totalStaked: number
@@ -254,7 +255,7 @@ export default function StakingPage() {
 
       toast.success(
         <div className="flex flex-col space-y-2">
-          <div className="font-semibold">Staking Successful! 🎉</div>
+          <div className="font-semibold flex items-center gap-1">Staking Successful! <IconifyIcon icon="mdi:party-popper" className="w-4 h-4" /></div>
           <div className="text-sm">
             Successfully staked {amount} {asset}
           </div>
@@ -395,7 +396,7 @@ export default function StakingPage() {
 
       toast.success(
         <div className="flex flex-col space-y-2">
-          <div className="font-semibold">Points Exchanged! ✨</div>
+          <div className="font-semibold flex items-center gap-1">Points Exchanged! <IconifyIcon icon="mdi:sparkles" className="w-4 h-4" /></div>
           <div className="text-sm">
             Exchanged {pointsToExchange} points for {fldaoTokens} $FLDAO
           </div>

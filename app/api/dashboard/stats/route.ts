@@ -16,15 +16,29 @@ export async function GET(request: NextRequest) {
     
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    if (!token || token === "undefined" || token === "null") {
       return NextResponse.json(
         { message: 'Authorization token required' },
         { status: 401 }
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      console.error("JWT Verification error in dashboard/stats:", err.message);
+      return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     // Check if user is freelancer or client
     const freelancer = await Freelancer.findById(userId);

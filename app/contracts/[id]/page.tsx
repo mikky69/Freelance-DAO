@@ -39,6 +39,7 @@ import {
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
+import { IconifyIcon } from "@/components/iconify-icon"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { PaymentModal } from "@/components/payment-modal"
 
@@ -166,7 +167,7 @@ function ContractContent() {
     }
 
     checkPayment()
-  }, [searchParams, verifyingPayment])
+  }, [searchParams])
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -677,8 +678,8 @@ function ContractContent() {
                             </span>
                           </div>
                           {!isValid && (
-                            <p className="mt-3 text-sm text-red-700 font-medium">
-                              ⚠️ Milestone amounts must sum to the total budget.
+                            <p className="mt-3 text-sm text-red-700 font-medium flex items-center">
+                              <IconifyIcon icon="mdi:alert" className="w-4 h-4 mr-1 inline-block flex-shrink-0" /> Milestone amounts must sum to the total budget.
                               {milestonesTotal > contract.budget.amount
                                 ? `Please reduce by ${milestonesTotal - contract.budget.amount} ${contract.budget.currency}.`
                                 : `Please add ${contract.budget.amount - milestonesTotal} ${contract.budget.currency} more.`
@@ -1000,8 +1001,9 @@ function ContractContent() {
                       </DialogHeader>
                       <div className="space-y-6">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <p className="text-sm text-green-800">
-                            ✅ The client has already signed and escrowed the funds. Signing this contract will make it active and you can start working.
+                          <p className="text-sm text-green-800 flex items-start">
+                            <IconifyIcon icon="mdi:check-circle" className="w-4 h-4 mr-1.5 mt-0.5 flex-shrink-0 text-green-600" />
+                            <span>The client has already signed and escrowed the funds. Signing this contract will make it active and you can start working.</span>
                           </p>
                         </div>
 

@@ -25,7 +25,8 @@ import { EditProfileModal } from "@/components/edit-profile-modal"
 
 interface ProfileData {
   user: {
-    _id: string
+    id: string // Changed from _id to id to match API
+    _id?: string // Kept as optional for compatibility
     fullname: string
     email: string
     title?: string
@@ -35,14 +36,14 @@ interface ProfileData {
     location?: string
     skills: string[]
     hourlyRate?: number
-    rating?: number // Make this optional
-    reviewCount?: number // Make this optional
-    completedJobs?: number // Make this optional
-    successRate?: number // Make this optional
+    rating?: number
+    reviewCount?: number
+    completedJobs?: number
+    successRate?: number
     responseTime?: string
-    verified?: boolean // Make this optional
-    topRated?: boolean // Make this optional
-    languages?: string[] // Make this optional
+    verified?: boolean
+    topRated?: boolean
+    languages?: string[]
     portfolio?: {
       title: string
       description?: string
@@ -109,24 +110,25 @@ function ProfileContent() {
       try {
         const token = localStorage.getItem("freelancedao_token")
         if (!token) {
-          throw new Error("No authentication token found")
+          console.warn("No authentication token found in localStorage")
         }
 
         const response = await fetch("/api/profile", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: token ? `Bearer ${token}` : "",
             "Content-Type": "application/json",
           },
         })
 
         if (!response.ok) {
-          throw new Error("Failed to fetch profile data")
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || errorData.message || `Failed to fetch profile data: ${response.status}`)
         }
 
         const data = await response.json()
         setProfileData(data)
-      } catch (err) {
-        setError("Failed to load profile data. Please try again.")
+      } catch (err: any) {
+        setError(err.message || "Failed to load profile data. Please try again.")
         console.error("Error fetching profile:", err)
       } finally {
         setLoading(false)

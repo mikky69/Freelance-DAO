@@ -18,7 +18,17 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    if (!token || token === "undefined" || token === "null") {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, JWT_SECRET)
+    } catch (err) {
+      console.error("JWT Verification error in completion check:", err.message)
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    }
 
     // Handle different JWT field names
     const userId = decoded.userId || decoded.id

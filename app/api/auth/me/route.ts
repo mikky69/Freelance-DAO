@@ -18,11 +18,30 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role?: string };
+    if (!token || token === "undefined" || token === "null") {
+      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      console.error("JWT Verification error in auth/me:", err.message);
+      return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     // Check if role is specified in token
     if (decoded.role === 'admin') {
-      const admin = await Admin.findById(decoded.id).select('-password');
+      const admin = await Admin.findById(userId).select('-password');
       if (!admin) {
         return NextResponse.json(
           { message: 'Admin not found' },
@@ -42,11 +61,11 @@ export async function GET(request: NextRequest) {
     }
     
     // Try to find user in both collections
-    let user = await Freelancer.findById(decoded.id).select('-password');
+    let user = await Freelancer.findById(userId).select('-password');
     let userType = 'freelancer';
     
     if (!user) {
-      user = await Client.findById(decoded.id).select('-password');
+      user = await Client.findById(userId).select('-password');
       userType = 'client';
     }
     
