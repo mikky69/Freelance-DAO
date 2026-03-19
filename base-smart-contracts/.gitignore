@@ -1,0 +1,36 @@
+# ── Dependencies ──────────────────────────────────────────
+node_modules/
+
+# ── Build artifacts ───────────────────────────────────────
+artifacts/
+cache/
+dist/
+typechain-types/
+
+# ── Environment — NEVER commit secrets ───────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Deployment records (commit these for mainnet, not testnet) ──
+# deployments/   # uncomment to ignore deployment records
+
+# ── Coverage & reports ────────────────────────────────────
+coverage/
+coverage.json
+gas-report.txt
+reports/
+
+# ── Hardhat ───────────────────────────────────────────────
+.hardhat/
+
+# ── OS / Editor ───────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Mythril ───────────────────────────────────────────────
+.mythril/

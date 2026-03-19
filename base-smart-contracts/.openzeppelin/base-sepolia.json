@@ -1,0 +1,1408 @@
+{
+  "manifestVersion": "3.2",
+  "proxies": [
+    {
+      "address": "0xe7c60A4b49d73149e8E1D382bBAe53A42d1a76C8",
+      "txHash": "0x8ee9de4196c9e0c2b8aec45e3bc4c4892d92b814dd4749e86896187085a0d915",
+      "kind": "uups"
+    },
+    {
+      "address": "0xc8b7AAeE6cca3C6415F401cC470b828afDc5bD07",
+      "txHash": "0x55f8b6273e888553af0cec473e1bcca54c5e17766f3c4e84f32434ef9ab0b08e",
+      "kind": "uups"
+    },
+    {
+      "address": "0xAC206F273ffAC873E96cb9e082255E4Ec1bBfcaE",
+      "txHash": "0xe3676d238787be512b78eb8f24609720e371c1a230ddf526beec7a3e7e6359b2",
+      "kind": "uups"
+    },
+    {
+      "address": "0xF8A18FB333340b4ee44d7828933367Fa7f404a0b",
+      "txHash": "0x75e18c573a3ae80bcb202a315f843d86ff9a6efb51c0870491e55e1857c368af",
+      "kind": "uups"
+    },
+    {
+      "address": "0x38804C23C6A9Eff9A713F42Cbd6387431f3Eb3F5",
+      "txHash": "0x1725ca12b53d01420971047c0f1f7221d12bc423504aaef10f8c2781458d4f32",
+      "kind": "uups"
+    },
+    {
+      "address": "0x9154922704E58E243dC053EEAc1989E67282456E",
+      "txHash": "0x05f4da82292ef211135ca1f67e66bb00e80170b957c3d5052fc22db54fdbc302",
+      "kind": "uups"
+    }
+  ],
+  "impls": {
+    "99a1a458473fa6924935adfaf88842c8423fdc6cfcb894dcea8079584d0d95d9": {
+      "address": "0x94F33943F8f5614784a177Eb72c51416Cc53047f",
+      "txHash": "0xe3058ce9f16f65951ec8dc8148b1349c3de1bd59adb7c48f8a44fefdb37d6852",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "priceFeed",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(AggregatorV3Interface)45",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:69"
+          },
+          {
+            "label": "proposalsContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:74"
+          },
+          {
+            "label": "daoTreasury",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:76"
+          },
+          {
+            "label": "totalStaked",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:78"
+          },
+          {
+            "label": "_stakes",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_address,t_struct(Stake)7184_storage)",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:80"
+          },
+          {
+            "label": "_metadata",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_address,t_struct(StakingMetadata)7194_storage)",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:80"
+          },
+          {
+            "label": "_stakersList",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:82"
+          },
+          {
+            "label": "_isStaker",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:82"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "FreelanceDAOStaking",
+            "src": "contracts\\FreeLanceDAOStaking.sol:83"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)119_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)59_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)267_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_string_storage)dyn_storage": {
+            "label": "string[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_contract(AggregatorV3Interface)45": {
+            "label": "contract AggregatorV3Interface",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Stake)7184_storage)": {
+            "label": "mapping(address => struct FreelanceDAOStaking.Stake)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(StakingMetadata)7194_storage)": {
+            "label": "mapping(address => struct FreelanceDAOStaking.StakingMetadata)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Stake)7184_storage": {
+            "label": "struct FreelanceDAOStaking.Stake",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(StakingMetadata)7194_storage": {
+            "label": "struct FreelanceDAOStaking.StakingMetadata",
+            "members": [
+              {
+                "label": "stakerType",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "tags",
+                "type": "t_array(t_string_storage)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "feePaid",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin\\contracts-upgradeable\\utils\\ReentrancyGuardUpgradeable.sol:40",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "515aaeb4bffda4e81b4e35db0faa7487445f6216f2ad288c18e6ac57a3a7bd3d": {
+      "address": "0xdFE91ae67A07a07174a859043337df10c48A11D6",
+      "txHash": "0xa530567f2d1c9a4d3b3aa7dabff7e7b2f030dcdd3c25d6aeb1b8fd80f11b7c35",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "daoTreasury",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:100"
+          },
+          {
+            "label": "disputeContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:101"
+          },
+          {
+            "label": "totalDaoFeesCollected",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:101"
+          },
+          {
+            "label": "nextJobId",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:102"
+          },
+          {
+            "label": "_jobs",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_struct(Job)3023_storage)",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:105"
+          },
+          {
+            "label": "_milestones",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_uint256,t_array(t_struct(Milestone)2977_storage)dyn_storage)",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:107"
+          },
+          {
+            "label": "requested",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_bool))",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:109"
+          },
+          {
+            "label": "freelancerEarnings",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:111"
+          },
+          {
+            "label": "_freelancerJobIds",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:111"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "FreelanceDAOEscrowV2",
+            "src": "contracts\\FreeLanceDAOEscrowV2.sol:113"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)119_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)59_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)267_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_string_storage)dyn_storage": {
+            "label": "string[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(Milestone)2977_storage)dyn_storage": {
+            "label": "struct FreelanceDAOEscrowV2.Milestone[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_enum(JobType)2958": {
+            "label": "enum FreelanceDAOEscrowV2.JobType",
+            "members": [
+              "FIXED",
+              "MILESTONE"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(Status)2966": {
+            "label": "enum FreelanceDAOEscrowV2.Status",
+            "members": [
+              "OPEN",
+              "PENDING",
+              "DELIVERY",
+              "CONFIRMED",
+              "DISPUTED",
+              "REFUNDED",
+              "CANCELLED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_bool))": {
+            "label": "mapping(address => mapping(uint256 => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_struct(Milestone)2977_storage)dyn_storage)": {
+            "label": "mapping(uint256 => struct FreelanceDAOEscrowV2.Milestone[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Job)3023_storage)": {
+            "label": "mapping(uint256 => struct FreelanceDAOEscrowV2.Job)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Job)3023_storage": {
+            "label": "struct FreelanceDAOEscrowV2.Job",
+            "members": [
+              {
+                "label": "jobId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "jobType",
+                "type": "t_enum(JobType)2958",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "client",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "1"
+              },
+              {
+                "label": "freelancer",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "totalAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "minimumBudget",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "maximumBudget",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "confirmedAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "withdrawnAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "status",
+                "type": "t_enum(Status)2966",
+                "offset": 0,
+                "slot": "10"
+              },
+              {
+                "label": "funded",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "10"
+              },
+              {
+                "label": "lateDeliveryPenalty",
+                "type": "t_bool",
+                "offset": 2,
+                "slot": "10"
+              },
+              {
+                "label": "isLate",
+                "type": "t_bool",
+                "offset": 3,
+                "slot": "10"
+              },
+              {
+                "label": "jobTitle",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "11"
+              },
+              {
+                "label": "jobCategory",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "12"
+              },
+              {
+                "label": "projectDescription",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "13"
+              },
+              {
+                "label": "requiredSkills",
+                "type": "t_array(t_string_storage)dyn_storage",
+                "offset": 0,
+                "slot": "14"
+              },
+              {
+                "label": "projectDuration",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "15"
+              },
+              {
+                "label": "exists",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "16"
+              }
+            ],
+            "numberOfBytes": "544"
+          },
+          "t_struct(Milestone)2977_storage": {
+            "label": "struct FreelanceDAOEscrowV2.Milestone",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "confirmed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "delivered",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "1"
+              },
+              {
+                "label": "withdrawn",
+                "type": "t_bool",
+                "offset": 2,
+                "slot": "1"
+              },
+              {
+                "label": "withdrawnAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin\\contracts-upgradeable\\utils\\ReentrancyGuardUpgradeable.sol:40",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "5b07b166e4e81ce7278e5cdb35cf9306779ac5805efbcba17347686217d2d7e7": {
+      "address": "0xFb4e3454dc6DEd93c9bEdb5F361f2D9C0bb32b2E",
+      "txHash": "0xc85ca3e044dfab4545df34e89b68359c799635bd28871b2d0d03244131cca647",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "priceFeed",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(AggregatorV3Interface)45",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:75"
+          },
+          {
+            "label": "escrowContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:76"
+          },
+          {
+            "label": "daoTreasury",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:77"
+          },
+          {
+            "label": "nextDisputeId",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:79"
+          },
+          {
+            "label": "quorum",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:79"
+          },
+          {
+            "label": "daoMembers",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:81"
+          },
+          {
+            "label": "_disputes",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_uint256,t_struct(Dispute)1608_storage)",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:82"
+          },
+          {
+            "label": "disputeVotes",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_bool))",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:84"
+          },
+          {
+            "label": "_userDisputeIds",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:87"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "FreelanceDAODisputeV2",
+            "src": "contracts\\FreeLanceDAODisputeV2.sol:89"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)119_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)59_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)267_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(AggregatorV3Interface)45": {
+            "label": "contract AggregatorV3Interface",
+            "numberOfBytes": "20"
+          },
+          "t_enum(DisputeReason)8094": {
+            "label": "enum DataTypes.DisputeReason",
+            "members": [
+              "LATE_DELIVERY",
+              "REFUND_REQUEST",
+              "QUALITY_ISSUE",
+              "OTHER"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(DisputeStatus)8100": {
+            "label": "enum DataTypes.DisputeStatus",
+            "members": [
+              "OPEN",
+              "RESOLVED",
+              "REJECTED",
+              "EXECUTED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_bool))": {
+            "label": "mapping(uint256 => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Dispute)1608_storage)": {
+            "label": "mapping(uint256 => struct FreelanceDAODisputeV2.Dispute)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Dispute)1608_storage": {
+            "label": "struct FreelanceDAODisputeV2.Dispute",
+            "members": [
+              {
+                "label": "disputeId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "jobId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "client",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "freelancer",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "title",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "category",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "reason",
+                "type": "t_enum(DisputeReason)8094",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "votesForClient",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "votesForFreelancer",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "10"
+              },
+              {
+                "label": "status",
+                "type": "t_enum(DisputeStatus)8100",
+                "offset": 0,
+                "slot": "11"
+              },
+              {
+                "label": "winner",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "11"
+              },
+              {
+                "label": "exists",
+                "type": "t_bool",
+                "offset": 21,
+                "slot": "11"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "12"
+              }
+            ],
+            "numberOfBytes": "416"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin\\contracts-upgradeable\\utils\\ReentrancyGuardUpgradeable.sol:40",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "af235fd616505b3258a0d8802afd09883210cb65bac6a46aec6eda2dcde64381": {
+      "address": "0x650f7e7828a31DaCD9AE8D3954bAaEEC973107ea",
+      "txHash": "0x652a953b7a37ab83a97eb834777f32e5dccc4ae147f6673337b705cfe2b954ed",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "priceFeed",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(AggregatorV3Interface)45",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:97"
+          },
+          {
+            "label": "stakingContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IStaking)8085",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:98"
+          },
+          {
+            "label": "stakingContractAddress",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:100"
+          },
+          {
+            "label": "daoTreasury",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:102"
+          },
+          {
+            "label": "proposalCount",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:102"
+          },
+          {
+            "label": "votingPeriod",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:104"
+          },
+          {
+            "label": "quorumThresholdWei",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_uint256",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:107"
+          },
+          {
+            "label": "_proposals",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)5842_storage)",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:110"
+          },
+          {
+            "label": "hasVoted",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_bool))",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:113"
+          },
+          {
+            "label": "votingPowerSnapshot",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:113"
+          },
+          {
+            "label": "_userProposals",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:114"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "FreelanceDAOProposals",
+            "src": "contracts\\FreeLanceDAOProposals.sol:115"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)119_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)59_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)267_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_string_storage)dyn_storage": {
+            "label": "string[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(AggregatorV3Interface)45": {
+            "label": "contract AggregatorV3Interface",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IStaking)8085": {
+            "label": "contract IStaking",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalTier)8104": {
+            "label": "enum DataTypes.ProposalTier",
+            "members": [
+              "MINOR",
+              "MAJOR"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_bool))": {
+            "label": "mapping(uint256 => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)5842_storage)": {
+            "label": "mapping(uint256 => struct FreelanceDAOProposals.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)5842_storage": {
+            "label": "struct FreelanceDAOProposals.Proposal",
+            "members": [
+              {
+                "label": "id",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "proposer",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "tier",
+                "type": "t_enum(ProposalTier)8104",
+                "offset": 20,
+                "slot": "1"
+              },
+              {
+                "label": "title",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "category",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "tags",
+                "type": "t_array(t_string_storage)dyn_storage",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "yesVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "noVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "finalized",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "approved",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "feePaid",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "10"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "11"
+              }
+            ],
+            "numberOfBytes": "384"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin\\contracts-upgradeable\\utils\\ReentrancyGuardUpgradeable.sol:40",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

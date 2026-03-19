@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Admin access required' }, { status: 403 })
     }
 
-    const admin = await Admin.findById(decoded.id)
+    const admin = await (Admin as any).findOne({ _id: decoded.id })
     if (!admin) {
       return NextResponse.json({ message: 'Admin not found' }, { status: 404 })
     }
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
-    const payments = await Payment.find({})
+    const payments = await (Payment as any).find({})
       .populate('payer', 'fullname email')
       .populate('job', 'title')
       .sort({ createdAt: -1 })
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .lean()
 
-    const total = await Payment.countDocuments({})
+    const total = await (Payment as any).countDocuments({})
 
     const items = payments.map((p: any) => ({
       id: p._id,
@@ -62,4 +62,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'Server error' }, { status: 500 })
   }
 }
-

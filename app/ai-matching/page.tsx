@@ -130,6 +130,7 @@ const mockSkillInsights: SkillInsight[] = [
 ]
 
 export default function AIMatchingPage() {
+  /*
   const [matches, setMatches] = useState<JobMatch[]>([])
   const [skillInsights, setSkillInsights] = useState<SkillInsight[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(true)
@@ -188,12 +189,46 @@ export default function AIMatchingPage() {
       </div>
     )
   }
+  */
 
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#1D0225] p-4 text-center">
+      <div className="max-w-2xl mx-auto space-y-8">
+        <div className="relative">
+          <div className="absolute inset-0 bg-[#AE16A7] blur-3xl opacity-20 rounded-full"></div>
+          <Brain className="w-24 h-24 text-[#AE16A7] mx-auto relative z-10" />
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+          Coming <span className="text-[#FA5F04]">Soon</span>
+        </h1>
+
+        <p className="text-xl md:text-2xl text-gray-300 max-w-lg mx-auto leading-relaxed">
+          We are building a revolutionary <span className="text-[#FF066D] font-semibold">AI Job Matching</span> platform.
+          Get ready to find your perfect job match instantly.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+          <div className="px-6 py-3 rounded-full border border-[#AE16A7]/30 bg-[#AE16A7]/10 text-[#AE16A7] font-medium">
+            Job Matching
+          </div>
+          <div className="px-6 py-3 rounded-full border border-[#FA5F04]/30 bg-[#FA5F04]/10 text-[#FA5F04] font-medium">
+            Skill Analysis
+          </div>
+          <div className="px-6 py-3 rounded-full border border-[#FF066D]/30 bg-[#FF066D]/10 text-[#FF066D] font-medium">
+            Career Growth
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  /*
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {/* Header * /}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Brain className="w-8 h-8 text-purple-600" />
@@ -204,7 +239,7 @@ export default function AIMatchingPage() {
             </p>
           </div>
 
-          {/* Stats */}
+          {/* Stats * /}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card>
               <CardContent className="p-4 text-center">
@@ -256,7 +291,7 @@ export default function AIMatchingPage() {
                           </div>
                           <p className="text-slate-600 text-sm mb-3 line-clamp-2">{match.description}</p>
 
-                          {/* Skills */}
+                          {/* Skills * /}
                           <div className="flex flex-wrap gap-1 mb-3">
                             {match.skills.map((skill, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
@@ -265,7 +300,7 @@ export default function AIMatchingPage() {
                             ))}
                           </div>
 
-                          {/* Match Reasons */}
+                          {/* Match Reasons * /}
                           <div className="space-y-1 mb-4">
                             <p className="text-xs font-medium text-slate-700">Why this matches:</p>
                             {match.matchReasons.map((reason, index) => (
@@ -276,7 +311,7 @@ export default function AIMatchingPage() {
                             ))}
                           </div>
 
-                          {/* Job Details */}
+                          {/* Job Details * /}
                           <div className="flex items-center justify-between text-sm text-slate-600">
                             <div className="flex items-center space-x-4">
                               <span>{match.budget}</span>
@@ -289,7 +324,7 @@ export default function AIMatchingPage() {
                         </div>
                       </div>
 
-                      {/* Client Info */}
+                      {/* Client Info * /}
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <div className="flex items-center space-x-3">
                           <Avatar className="w-8 h-8">
@@ -412,4 +447,5 @@ export default function AIMatchingPage() {
       </div>
     </div>
   )
+  */
 }
