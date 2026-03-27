@@ -370,6 +370,18 @@ function DashboardContent() {
     setShowViewProposal(true);
   };
 
+  const getMessageHrefForJob = (job: Job) => {
+    const recipient = user?.role === "client" ? job.freelancer : job.client
+    const recipientRole = user?.role === "client" ? "freelancer" : "client"
+    
+    if (!recipient?._id) return "/messages"
+    
+    const recipientName = encodeURIComponent(recipient.fullname || "")
+    const project = encodeURIComponent(job.title || "")
+    
+    return `/messages?recipientId=${recipient._id}&recipientRole=${recipientRole}&jobId=${job._id}&recipientName=${recipientName}&project=${project}`
+  }
+
   const handleProposalAction = async (proposalId: string, action: 'accepted' | 'rejected') => {
     try {
       const token = localStorage.getItem('freelancedao_token');
@@ -829,7 +841,7 @@ function DashboardContent() {
                             Due: {job.deadline ? new Date(job.deadline).toLocaleDateString() : 'No deadline'}
                           </div>
                           <div className="flex gap-2">
-                            <Link href="/messages">
+                            <Link href={getMessageHrefForJob(job)}>
                               <Button variant="outline" size="sm">
                                 <MessageSquare className="w-4 h-4 mr-1" />
                                 Message

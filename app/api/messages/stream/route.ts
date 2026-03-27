@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any
-    const userId = decoded?.id
+    const userId = decoded?.userId || decoded?.id
     if (!userId) {
       return new Response('Invalid token payload', { status: 401 })
     }

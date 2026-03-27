@@ -36,10 +36,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Authorization token required' }, { status: 401 });
     }
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role?: string };
+    if (!token || token === 'undefined' || token === 'null') {
+      return NextResponse.json({ message: 'Authorization token required' }, { status: 401 });
+    }
+    
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err: any) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+    
+    const authUserId = decoded?.userId || decoded?.id;
+    if (!authUserId) {
+      return NextResponse.json({ message: 'Invalid token structure' }, { status: 401 });
+    }
 
-    const freelancer = await Freelancer.findById(decoded.id).select('_id fullname');
-    const client = freelancer ? null : await Client.findById(decoded.id).select('_id fullname');
+    const freelancer = await Freelancer.findById(authUserId).select('_id fullname');
+    const client = freelancer ? null : await Client.findById(authUserId).select('_id fullname');
 
     if (!freelancer && !client) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
@@ -98,10 +112,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Authorization token required' }, { status: 401 });
     }
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role?: string };
+    if (!token || token === 'undefined' || token === 'null') {
+      return NextResponse.json({ message: 'Authorization token required' }, { status: 401 });
+    }
+    
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err: any) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+    
+    const authUserId = decoded?.userId || decoded?.id;
+    if (!authUserId) {
+      return NextResponse.json({ message: 'Invalid token structure' }, { status: 401 });
+    }
 
-    const freelancer = await Freelancer.findById(decoded.id).select('_id fullname');
-    const client = freelancer ? null : await Client.findById(decoded.id).select('_id fullname');
+    const freelancer = await Freelancer.findById(authUserId).select('_id fullname');
+    const client = freelancer ? null : await Client.findById(authUserId).select('_id fullname');
 
     if (!freelancer && !client) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
