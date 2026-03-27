@@ -4,25 +4,41 @@ import { Proposal } from '@/models/Proposal';
 import { Job } from '@/models/Job';
 import { Client, Freelancer } from '@/models/User';
 import { NotificationService } from '@/lib/notification-service';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    if (!token || token === 'undefined' || token === 'null') {
       return NextResponse.json(
         { message: 'Authorization token required' },
         { status: 401 }
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err: any) {
+      return NextResponse.json(
+        { message: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
     
     // Verify user is a client
     const client = await Client.findById(userId);
@@ -34,7 +50,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     
     const { action } = await request.json();
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
+    
+    // Validate proposal ID
+    if (!mongoose.Types.ObjectId.isValid(proposalId)) {
+      return NextResponse.json(
+        { message: 'Invalid proposal ID' },
+        { status: 400 }
+      );
+    }
     
     // Validate action
     if (!['accepted', 'rejected'].includes(action)) {
@@ -162,36 +186,61 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    if (!token || token === 'undefined' || token === 'null') {
       return NextResponse.json(
         { message: 'Authorization token required' },
         { status: 401 }
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err: any) {
+      return NextResponse.json(
+        { message: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
     
-    const proposalId = params.id;
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return NextResponse.json(
+        { message: 'Invalid token structure' },
+        { status: 401 }
+      );
+    }
+    
+    const { id: proposalId } = await params;
+    
+    // Validate proposal ID
+    if (!mongoose.Types.ObjectId.isValid(proposalId)) {
+      return NextResponse.json(
+        { message: 'Invalid proposal ID' },
+        { status: 400 }
+      );
+    }
     
     // Find the proposal with populated data
-    const proposal = await Proposal.findById(proposalId)
+    const proposalResult = await Proposal.findById(proposalId)
       .populate('job', 'title budget duration category client')
       .populate('freelancer', 'fullname avatar rating reviewCount')
       .lean();
     
-    if (!proposal) {
+    if (!proposalResult || Array.isArray(proposalResult)) {
       return NextResponse.json(
         { message: 'Proposal not found' },
         { status: 404 }
       );
     }
+    
+    const proposal = proposalResult;
     
     // Check if user has permission to view this proposal
     const isFreelancer = proposal.freelancer._id.toString() === userId;
