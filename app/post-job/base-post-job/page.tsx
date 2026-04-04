@@ -4,7 +4,6 @@ import { useEffect } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { parseEther } from "viem"
 import EscrowDeployment from "@/base-smart-contracts/deployments/baseSepolia/FreelanceDAOEscrowV2.json"
@@ -12,6 +11,7 @@ import { useBasePostJobForm } from "./hooks/useBasePostJobForm"
 import { JobDetailsForm } from "./components/JobDetailsForm"
 import { JobConfigurationForm } from "./components/JobConfigurationForm"
 import { PostJobActions } from "./components/PostJobActions"
+import { txSubmittedToast, txSuccessToast, txErrorToast } from "@/components/tx-toast"
 import { ArrowLeft, Shield, AlertCircle } from "lucide-react"
 
 const ESCROW_ADDRESS = EscrowDeployment.address as `0x${string}`
@@ -23,69 +23,64 @@ export default function BasePostJobPage() {
   const { address, isConnected } = useAccount()
 
   const {
-    formData,
-    skills,
-    newSkill,
-    setNewSkill,
-    handleInputChange,
-    addSkill,
-    removeSkill,
-    validateForm,
-    getDeadlineTimestamp,
-    getProjectDuration,
-    resetForm,
+    formData, skills, newSkill, setNewSkill,
+    handleInputChange, addSkill, removeSkill,
+    jobType, setJobType,
+    milestones, addMilestone, removeMilestone, updateMilestone, milestoneTotalEth,
+    validateForm, getDeadlineTimestamp, getProjectDuration, resetForm,
   } = useBasePostJobForm()
 
   const {
-    writeContract,
-    data: txHash,
-    isPending,
-    error: writeError,
-    reset: resetTx,
+    writeContract, data: txHash, isPending,
+    error: writeError, reset: resetTx,
   } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-  })
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: txHash })
 
+  // Show submitted toast as soon as we have a hash
+  useEffect(() => {
+    if (txHash) txSubmittedToast(txHash, "Job posting")
+  }, [txHash])
+
+  // Write error
   useEffect(() => {
     if (writeError) {
-      toast.error(writeError.message?.slice(0, 120) || "Transaction failed")
-      console.error("Contract write error:", writeError)
+      txErrorToast(writeError.message?.slice(0, 120) || "Transaction failed")
       resetTx()
     }
   }, [writeError])
 
+  // Confirmed on-chain
   useEffect(() => {
     if (isSuccess && txHash) {
+      txSuccessToast(txHash, "Job posted")
       ;(async () => {
         try {
           const token = localStorage.getItem('freelancedao_token')
           await fetch('/api/jobs', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               title: formData.title,
               description: formData.description,
               category: formData.category,
               skills,
-              budgetEth: formData.budgetEth,
+              budgetEth: jobType === "milestone"
+                ? milestoneTotalEth.toString()
+                : formData.budgetEth,
               deadlineDays: formData.deadlineDays,
               experienceLevel: formData.experienceLevel,
               currency: 'ETH',
-              paymentMethod: 'escrow',
+              paymentMethod: jobType === "milestone" ? 'milestone_escrow' : 'escrow',
+              jobType,
+              milestones: jobType === "milestone" ? milestones : undefined,
               txHash,
               walletAddress: address,
             }),
           })
         } catch (err) {
-          // Non-fatal — job is already on-chain
-          console.warn("Failed to save job metadata to backend:", err)
+          console.warn("Failed to save job metadata:", err)
         } finally {
-          toast.success("Job posted on-chain successfully!")
           resetForm()
           router.push('/dashboard')
         }
@@ -94,49 +89,60 @@ export default function BasePostJobPage() {
   }, [isSuccess, txHash])
 
   const handleSubmit = () => {
-    if (!user || !user.id) {
-      toast.error('Please log in to post a job')
-      router.push('/auth/signin/client')
-      return
-    }
-
-    if (!isConnected || !address) {
-      toast.error('Please connect your wallet to post an escrow job')
-      return
-    }
+    if (!user?.id) { router.push('/auth/signin/client'); return }
+    if (!isConnected || !address) { txErrorToast("Please connect your wallet first"); return }
 
     const errors = validateForm()
-    if (errors.length > 0) {
-      toast.error(errors[0])
-      return
-    }
+    if (errors.length > 0) { txErrorToast(errors[0]); return }
 
     try {
-      const budgetWei  = parseEther(formData.budgetEth)
-      const deadline   = getDeadlineTimestamp()
-      const duration   = getProjectDuration() // e.g. "14 days"
+      const deadline = getDeadlineTimestamp()
+      const duration = getProjectDuration()
 
-      writeContract({
-        address: ESCROW_ADDRESS,
-        abi: ESCROW_ABI,
-        functionName: "createFixedJob",
-        value: budgetWei,
-        args: [
-          {
+      if (jobType === "fixed") {
+        const budgetWei = parseEther(formData.budgetEth)
+        writeContract({
+          address: ESCROW_ADDRESS,
+          abi: ESCROW_ABI,
+          functionName: "createFixedJob",
+          value: budgetWei,
+          args: [{
             jobTitle:           formData.title,
             jobCategory:        formData.category,
             projectDescription: formData.description,
-            requiredSkills:     skills,           // string[]
-            projectDuration:    duration,          // string e.g. "14 days"
-            minimumBudget:      budgetWei,         // uint256 in Wei
-            maximumBudget:      budgetWei,         // same — fixed price job
-            deadline,                              // uint256 unix timestamp
-          },
-        ],
-      })
+            requiredSkills:     skills,
+            projectDuration:    duration,
+            minimumBudget:      budgetWei,
+            maximumBudget:      budgetWei,
+            deadline,
+          }],
+        })
+      } else {
+        // Milestone job — total ETH is sum of all milestone amounts
+        const totalWei = parseEther(milestoneTotalEth.toFixed(18))
+        const milestoneAmounts = milestones.map(m => parseEther(m.amount || "0"))
+        const milestoneNames   = milestones.map(m => m.name)
+        const milestoneDescs   = milestones.map(m => m.description)
+
+        writeContract({
+          address: ESCROW_ADDRESS,
+          abi: ESCROW_ABI,
+          functionName: "createMilestoneJob",
+          value: totalWei,
+          args: [{
+            jobTitle:           formData.title,
+            jobCategory:        formData.category,
+            projectDescription: formData.description,
+            requiredSkills:     skills,
+            projectDuration:    duration,
+            minimumBudget:      totalWei,
+            maximumBudget:      totalWei,
+            deadline,
+          }, milestoneAmounts, milestoneNames, milestoneDescs],
+        })
+      }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to submit transaction")
-      console.error("Submit error:", err)
+      txErrorToast(err?.message || "Failed to submit transaction")
     }
   }
 
@@ -158,7 +164,9 @@ export default function BasePostJobPage() {
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Post a Job — Escrow</h1>
               </div>
-              <p className="text-slate-600">Funds are locked on Base blockchain and released when you confirm delivery</p>
+              <p className="text-slate-600">
+                Funds are locked on Base blockchain and released when you confirm delivery
+              </p>
             </div>
           </div>
         </div>
@@ -171,7 +179,7 @@ export default function BasePostJobPage() {
                 <div>
                   <p className="text-sm font-medium text-amber-800">Wallet not connected</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    You need a connected wallet to post an escrow job. Connect via the wallet button in the header.
+                    Connect via the wallet button in the header to post an escrow job.
                   </p>
                 </div>
               </div>
@@ -181,10 +189,7 @@ export default function BasePostJobPage() {
 
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <form
-              className="space-y-8"
-              onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
-            >
+            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
               <JobDetailsForm
                 formData={formData}
                 skills={skills}
@@ -194,13 +199,25 @@ export default function BasePostJobPage() {
                 addSkill={addSkill}
                 removeSkill={removeSkill}
               />
-              <JobConfigurationForm formData={formData} handleInputChange={handleInputChange} />
+              <JobConfigurationForm
+                formData={formData}
+                handleInputChange={handleInputChange}
+                jobType={jobType}
+                setJobType={setJobType}
+                milestones={milestones}
+                addMilestone={addMilestone}
+                removeMilestone={removeMilestone}
+                updateMilestone={updateMilestone}
+                milestoneTotalEth={milestoneTotalEth}
+              />
               <PostJobActions
                 onSubmit={handleSubmit}
                 isSubmitting={false}
                 isPending={isPending}
                 isConfirming={isConfirming}
                 budgetEth={formData.budgetEth}
+                jobType={jobType}
+                milestoneTotalEth={milestoneTotalEth}
               />
             </form>
           </div>

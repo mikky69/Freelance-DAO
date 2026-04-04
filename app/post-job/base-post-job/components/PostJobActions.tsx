@@ -1,7 +1,8 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import { Loader2, Shield } from "lucide-react"
+import { Loader2, Shield, Layers } from "lucide-react"
+import type { JobType } from "../hooks/useBasePostJobForm"
 
 export const PostJobActions = ({
   onSubmit,
@@ -9,40 +10,34 @@ export const PostJobActions = ({
   isPending,
   isConfirming,
   budgetEth,
+  jobType,
+  milestoneTotalEth,
 }: {
   onSubmit: () => void
   isSubmitting: boolean
-  isPending: boolean       // wallet signing in progress
-  isConfirming: boolean    // tx broadcast, waiting for block
+  isPending: boolean
+  isConfirming: boolean
   budgetEth: string
+  jobType?: JobType
+  milestoneTotalEth?: number
 }) => {
   const busy = isSubmitting || isPending || isConfirming
 
+  const displayAmount = jobType === "milestone"
+    ? milestoneTotalEth && milestoneTotalEth > 0
+      ? `${milestoneTotalEth.toFixed(6)} ETH`
+      : "ETH"
+    : budgetEth
+      ? `${budgetEth} ETH`
+      : "ETH"
+
+  const Icon = jobType === "milestone" ? Layers : Shield
+
   const label = () => {
-    if (isPending) return (
-      <>
-        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Waiting for signature…
-      </>
-    )
-    if (isConfirming) return (
-      <>
-        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Confirming on-chain…
-      </>
-    )
-    if (isSubmitting) return (
-      <>
-        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Posting Job…
-      </>
-    )
-    return (
-      <>
-        <Shield className="w-4 h-4 mr-2" />
-        Lock {budgetEth ? `${budgetEth} ETH` : 'ETH'} & Post Job
-      </>
-    )
+    if (isPending) return <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Waiting for signature...</>
+    if (isConfirming) return <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Confirming on-chain...</>
+    if (isSubmitting) return <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Posting Job...</>
+    return <><Icon className="w-4 h-4 mr-2" />Lock {displayAmount} & Post Job</>
   }
 
   return (
