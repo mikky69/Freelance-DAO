@@ -1,51 +1,36 @@
 "use client"
 
 import { useState } from "react"
-import { PrivyProvider } from "@privy-io/react-auth"
-import { WagmiProvider } from "@privy-io/wagmi"
-import { createConfig, http } from "wagmi"
+import { RainbowKitProvider, getDefaultConfig, darkTheme } from "@rainbow-me/rainbowkit"
+import { WagmiProvider } from "wagmi"
 import { baseSepolia } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import "@rainbow-me/rainbowkit/styles.css"
 
-const wagmiConfig = createConfig({
+const config = getDefaultConfig({
+  appName: "FreeLanceDAO",
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "b1a34d3fce3a5e0f1234567890abcdef",
   chains: [baseSepolia],
-  transports: {
-    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org"),
-  },
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
 
   return (
-    <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""}
-      config={{
-        defaultChain: baseSepolia,
-        supportedChains: [baseSepolia],
-        appearance: {
-          theme: "dark",
-          accentColor: "#AE16A7",
-          logo: "/images/freelancedao-logo.png",
-          showWalletLoginFirst: false,
-        },
-        loginMethods: ["email", "wallet"],
-        embeddedWallets: {
-          ethereum: {
-            createOnLogin: "users-without-wallets",
-          },
-          showWalletUIs: true,
-        },
-        externalWallets: {
-          coinbaseWallet: {},
-        },
-      }}
-    >
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
+        <RainbowKitProvider
+          theme={darkTheme({
+            accentColor: "#AE16A7",
+            accentColorForeground: "white",
+            borderRadius: "large",
+            fontStack: "system",
+          })}
+          initialChain={baseSepolia}
+        >
           {children}
-        </WagmiProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
-    </PrivyProvider>
+    </WagmiProvider>
   )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { WalletButton } from "@/components/WalletButton"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,7 +25,6 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 import { SidebarNavigation } from "./sidebar-navigation"
-import { useAccount, useConnect, useDisconnect } from "wagmi"
 
 type NavigationItem = {
   href: string
@@ -36,36 +36,6 @@ type NavigationItem = {
     href: string
     icon: React.ComponentType<{ className?: string }>
   }[]
-}
-
-function WagmiWalletButton() {
-  const { isConnected, address } = useAccount()
-  const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect()
-
-  if (isConnected && address) {
-    return (
-      <Button
-        variant="ghost"
-        className="flex items-center space-x-2 border border-[#AE16A7]/50 text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 rounded-xl px-3 py-2 text-xs"
-        onClick={() => disconnect()}
-      >
-        <Wallet className="w-4 h-4 text-[#FA5F04]" />
-        <span className="font-mono">{address.slice(0, 6)}…{address.slice(-4)}</span>
-      </Button>
-    )
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      className="flex items-center space-x-2 border border-[#AE16A7]/50 text-white hover:bg-gradient-to-r hover:from-[#AE16A7]/20 hover:to-[#FF068D]/20 rounded-xl px-3 py-2"
-      onClick={() => connectors[0] && connect({ connector: connectors[0] })}
-    >
-      <Wallet className="w-4 h-4" />
-      <span className="text-xs font-semibold">Connect</span>
-    </Button>
-  )
 }
 
 export function TopNavigation() {
@@ -284,7 +254,7 @@ export function TopNavigation() {
 
               {/* Wallet connect button */}
               <div className="hidden sm:block">
-                <WagmiWalletButton />
+                <WalletButton />
               </div>
 
               {/* User menu (authenticated) OR Sign In / Get Started (logged out) */}

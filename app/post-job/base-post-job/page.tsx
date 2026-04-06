@@ -37,12 +37,10 @@ export default function BasePostJobPage() {
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: txHash })
 
-  // Show submitted toast as soon as we have a hash
   useEffect(() => {
     if (txHash) txSubmittedToast(txHash, "Job posting")
   }, [txHash])
 
-  // Write error
   useEffect(() => {
     if (writeError) {
       txErrorToast(writeError.message?.slice(0, 120) || "Transaction failed")
@@ -50,7 +48,6 @@ export default function BasePostJobPage() {
     }
   }, [writeError])
 
-  // Confirmed on-chain
   useEffect(() => {
     if (isSuccess && txHash) {
       txSuccessToast(txHash, "Job posted")
@@ -118,27 +115,28 @@ export default function BasePostJobPage() {
           }],
         })
       } else {
-        // Milestone job — total ETH is sum of all milestone amounts
+        // milestoneAmounts is FIRST, JobParams struct is SECOND (per ABI)
         const totalWei = parseEther(milestoneTotalEth.toFixed(18))
         const milestoneAmounts = milestones.map(m => parseEther(m.amount || "0"))
-        const milestoneNames   = milestones.map(m => m.name)
-        const milestoneDescs   = milestones.map(m => m.description)
 
         writeContract({
           address: ESCROW_ADDRESS,
           abi: ESCROW_ABI,
           functionName: "createMilestoneJob",
           value: totalWei,
-          args: [{
-            jobTitle:           formData.title,
-            jobCategory:        formData.category,
-            projectDescription: formData.description,
-            requiredSkills:     skills,
-            projectDuration:    duration,
-            minimumBudget:      totalWei,
-            maximumBudget:      totalWei,
-            deadline,
-          }, milestoneAmounts, milestoneNames, milestoneDescs],
+          args: [
+            milestoneAmounts,   // uint256[] — first
+            {                   // JobParams struct — second
+              jobTitle:           formData.title,
+              jobCategory:        formData.category,
+              projectDescription: formData.description,
+              requiredSkills:     skills,
+              projectDuration:    duration,
+              minimumBudget:      totalWei,
+              maximumBudget:      totalWei,
+              deadline,
+            },
+          ],
         })
       }
     } catch (err: any) {
