@@ -1,4 +1,4 @@
-{ NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job } from '@/models/Job';
 import { Client } from '@/models/User';
