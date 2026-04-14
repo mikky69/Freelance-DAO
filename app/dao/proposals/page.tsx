@@ -65,7 +65,7 @@ export default function ProposalsPage() {
   useEffect(() => { if (isTxSuccess && txHash) txSuccessToast(txHash, "Transaction") }, [isTxSuccess, txHash])
   useEffect(() => {
     if (writeError) txErrorToast(writeError.message?.slice(0, 120) || "Contract write error", txHash)
-  }, [writeError])
+  }, [writeError, txHash])
 
   const { data: proposalsData, isLoading: isProposalsLoading, refetch: refetchProposals } = useReadContract({
     address: contractAddress,

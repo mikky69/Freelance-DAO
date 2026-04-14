@@ -131,7 +131,7 @@ export default function MessagesPage() {
       }
     }
     fetchConversations()
-  }, [])
+  }, [recipientIdParam, recipientNameParam, recipientRoleParam, jobIdParam, projectParam])
 
   // Subscribe to SSE for live message updates on the selected conversation
   useEffect(() => {
@@ -168,7 +168,7 @@ export default function MessagesPage() {
       es.removeEventListener("ready", onReady)
       es.close()
     }
-  }, [selectedChat, conversations[selectedChat]?.id])
+  }, [selectedChat, conversations])
 
   const fetchMessages = async (conversationId: string) => {
     setLoadingMessages(true)
@@ -269,6 +269,37 @@ export default function MessagesPage() {
     const conv = conversations[index]
     if (conv && !conv.isPlaceholder) fetchMessages(conv.id)
   }
+
+  // Handle user search effect moved to parent level
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        setSearchResults([])
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        const token = localStorage.getItem('freelancedao_token')
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setSearchResults(data.users)
+        }
+      } catch (error) {
+        console.error("Error searching users:", error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
 
   const ConversationsList = () => (
     <div className="h-full flex flex-col bg-white">
@@ -405,70 +436,9 @@ export default function MessagesPage() {
 
   const ChatArea = () => {
     const conversation = conversations[selectedChat]
+
     if (!conversation) {
-      // Handle user search
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (!searchQuery || searchQuery.length < 2) {
-        setSearchResults([])
-        return
-      }
-
-      setIsSearching(true)
-      try {
-        const token = localStorage.getItem('freelancedao_token')
-        const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          setSearchResults(data.users)
-        }
-      } catch (error) {
-        console.error("Error searching users:", error)
-      } finally {
-        setIsSearching(false)
-      }
-    }, 500)
-
-    return () => clearTimeout(delayDebounceFn)
-  }, [searchQuery])
-
-  const startConversation = (user: { id: string; name: string; avatar: string; role: string }) => {
-    // Check if conversation already exists
-    const existingConv = conversations.find(c => c.otherParty._id === user.id)
-    
-    if (existingConv) {
-      setSelectedConversation(existingConv)
-      setSearchQuery("") // Clear search
-    } else {
-      // Create a temporary conversation object
-      const newConv: Conversation = {
-        _id: `temp-${Date.now()}`,
-        otherParty: {
-          _id: user.id,
-          fullname: user.name,
-          avatar: user.avatar,
-          role: user.role
-        },
-        lastMessage: {
-          content: "Start a conversation",
-          createdAt: new Date().toISOString(),
-          read: true
-        },
-        unreadCount: 0
-      }
-      
-      setConversations([newConv, ...conversations])
-      setSelectedConversation(newConv)
-      setSearchQuery("") // Clear search
-    }
-  }
-
-  return (
+      return (
         <div className="flex-1 flex items-center justify-center bg-white">
           <div className="text-slate-500 text-sm">Select a conversation to start chatting</div>
         </div>

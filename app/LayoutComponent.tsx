@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { TopNavigation, BottomNavigation } from "@/components/navigation"
 import { Twitter, BookText } from "lucide-react";
 import Image from "next/image";
@@ -73,28 +74,28 @@ export function Footer() {
             <h4 className="font-semibold mb-4 text-lg">Platform</h4>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a
+                <Link
                   href="/jobs"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Find Work
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/freelancers"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Find Talent
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/post-job"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Post Job
-                </a>
+                </Link>
               </li>
               
               {/* add download link for whitepaper */}
@@ -139,28 +140,28 @@ export function Footer() {
             <h4 className="font-semibold mb-4 text-lg">Governance</h4>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a
+                <Link
                   href="/dao"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Join DAO
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/proposals"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Proposals
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/governance"
                   className="hover:text-[#FA5F04] transition-colors duration-200"
                 >
                   Governance
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

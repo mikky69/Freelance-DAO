@@ -82,9 +82,6 @@ export default function EscrowPage() {
 
   const currentEscrow = useMemo(() => escrowContracts[selectedEscrow], [escrowContracts, selectedEscrow])
 
-  // Silence build-time provider warnings
-  if (!mounted) return null;
-
   const handleRelease = useCallback(async (jobId: number, idx: number) => {
     if (!isConnected) { toast.error("Connect your wallet to proceed"); return }
     writeContract(
@@ -98,6 +95,9 @@ export default function EscrowPage() {
       }
     )
   }, [isConnected, writeContract, loadJobs])
+
+  // Silence build-time provider warnings - MUST be after hooks
+  if (!mounted) return null;
 
   if (loading && escrowContracts.length === 0) {
     return (

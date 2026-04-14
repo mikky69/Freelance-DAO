@@ -46,8 +46,8 @@ export default function DisputesPage() {
   useEffect(() => { if (txHash) txSubmittedToast(txHash, "Dispute submission") }, [txHash])
   useEffect(() => { if (isTxSuccess && txHash) txSuccessToast(txHash, "Dispute submitted") }, [isTxSuccess, txHash])
   useEffect(() => {
-    if (writeError) txErrorToast(writeError.message?.slice(0, 120) || "Error creating dispute", txHash)
-  }, [writeError])
+    if (writeError) txErrorToast(writeError.message?.slice(0, 120) || "Error creating dispute", txHash || undefined)
+  }, [writeError, txHash])
 
   useWatchContractEvent({
     address: contractAddress,
@@ -72,7 +72,7 @@ export default function DisputesPage() {
     query: { enabled: typeof window !== 'undefined' && !!contractAddress },
   })
 
-  const disputes: any[] = Array.isArray(disputesData) ? disputesData : []
+  const disputes = React.useMemo(() => Array.isArray(disputesData) ? disputesData : [], [disputesData])
 
   const disputeStats = React.useMemo(() => {
     let pending = 0, resolved = 0, escalated = 0, totalValue = 0

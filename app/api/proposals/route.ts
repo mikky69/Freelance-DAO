@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       description: description.trim(),
       budget: {
         amount: parseFloat(budget.amount),
-        currency: budget.currency || 'HBAR'
+        currency: budget.currency || 'ETH'
       },
       timeline: timeline.trim(),
       milestones: milestones || [],

@@ -46,7 +46,7 @@ export default function BasePostJobPage() {
       txErrorToast(writeError.message?.slice(0, 120) || "Transaction failed")
       resetTx()
     }
-  }, [writeError])
+  }, [writeError, resetTx])
 
   useEffect(() => {
     if (isSuccess && txHash) {
@@ -83,7 +83,7 @@ export default function BasePostJobPage() {
         }
       })()
     }
-  }, [isSuccess, txHash])
+  }, [isSuccess, txHash, address, formData.budgetEth, formData.category, formData.deadlineDays, formData.description, formData.experienceLevel, formData.title, jobType, milestoneTotalEth, milestones, resetForm, router, skills])
 
   const handleSubmit = () => {
     if (!user?.id) { router.push('/auth/signin/client'); return }

@@ -22,7 +22,7 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -91,12 +91,12 @@ export default function JobsPage() {
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [submittedProposals, setSubmittedProposals] = useState<Set<string>>(new Set())
 
-  const categories = ["all", "Web Development", "Design", "Writing", "Marketing", "Blockchain", "Mobile Development"]
-  const budgetTypes = ["all", "fixed", "hourly"]
-  const urgencyLevels = ["all", "low", "medium", "high"]
+  const categories = useMemo(() => ["all", "Web Development", "Design", "Writing", "Marketing", "Blockchain", "Mobile Development"], [])
+  const budgetTypes = useMemo(() => ["all", "fixed", "hourly"], [])
+  const urgencyLevels = useMemo(() => ["all", "low", "medium", "high"], [])
 
   // Fetch user's submitted proposals
-  const fetchUserProposals = async () => {
+  const fetchUserProposals = useCallback(async () => {
     if (!user || user.role !== 'freelancer') return
 
     try {
@@ -117,10 +117,10 @@ export default function JobsPage() {
     } catch (error) {
       console.error('Error fetching user proposals:', error)
     }
-  }
+  }, [user])
 
   // Fetch platform statistics
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setIsLoadingStats(true)
       const response = await fetch('/api/platform/stats')
@@ -141,10 +141,10 @@ export default function JobsPage() {
     } finally {
       setIsLoadingStats(false)
     }
-  }
+  }, [])
 
   // Fetch jobs from API
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setIsLoading(true)
       const params = new URLSearchParams({
@@ -199,23 +199,23 @@ export default function JobsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly, searchTerm])
 
   useEffect(() => {
     fetchJobs()
     fetchStats()
-  }, [pagination.page, selectedCategory, selectedBudgetType, selectedUrgency, showFeaturedOnly])
+  }, [fetchJobs, fetchStats])
 
   // Fetch stats and user proposals on component mount
   useEffect(() => {
     fetchStats()
     fetchUserProposals()
-  }, [])
+  }, [fetchStats, fetchUserProposals])
 
   // Fetch user proposals when user changes
   useEffect(() => {
     fetchUserProposals()
-  }, [user])
+  }, [fetchUserProposals])
 
   // Debounced search effect
   useEffect(() => {
@@ -228,17 +228,17 @@ export default function JobsPage() {
     }, 500)
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [searchTerm, fetchJobs, pagination.page])
 
-  useEffect(() => {
-    filterJobs()
-  }, [jobs])
-
-  const filterJobs = () => {
+  const filterJobs = useCallback(() => {
     // Since API handles most filtering, we just set the jobs directly
     // This function is kept for any additional client-side filtering if needed
     setFilteredJobs(jobs)
-  }
+  }, [jobs])
+
+  useEffect(() => {
+    filterJobs()
+  }, [filterJobs])
 
   const toggleSaveJob = (jobId: string) => {
     const newSavedJobs = new Set(savedJobs)
@@ -301,7 +301,7 @@ export default function JobsPage() {
                 <Skeleton className="h-8 w-20 mx-auto mb-2 bg-slate-700" />
               ) : (
                 <div className="text-2xl font-bold text-white">
-                  {stats.totalPaid.toLocaleString()} HBAR
+                  {stats.totalPaid.toLocaleString()} ETH
                 </div>
               )}
               <div className="text-sm text-slate-400">Total Paid</div>

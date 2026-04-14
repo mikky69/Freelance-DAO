@@ -71,7 +71,7 @@ export default function StakingPage() {
   useEffect(() => { if (isTxSuccess && txHash) txSuccessToast(txHash, "Staking transaction") }, [isTxSuccess, txHash])
   useEffect(() => {
     if (writeError) txErrorToast(writeError.message?.slice(0, 120) || "Transaction failed", txHash)
-  }, [writeError])
+  }, [writeError, txHash])
 
   useEffect(() => {
     if (isTxSuccess) setTimeout(() => { refetchTotalStaked() }, 1000)
@@ -85,9 +85,6 @@ export default function StakingPage() {
   const lastStakedTimestamp = Array.isArray(userStakes) && userStakes[1] ? Number(userStakes[1]) : 0
   const lockTimeMs          = lockTime ? Number(lockTime) * 1000 : 0
 
-  // Prevent hydration mismatch and build-time hook warnings
-  if (!mounted) return null;
-
   useWatchContractEvent({
     address: stakingAddress, abi: stakingAbi, eventName: "Staked",
     chainId: BASE_SEPOLIA_CHAIN_ID,
@@ -97,6 +94,9 @@ export default function StakingPage() {
       refetchStake(); refetchTotalStaked(); refetchUserStaked()
     },
   })
+
+  // Prevent hydration mismatch and build-time hook warnings - MUST be after hooks
+  if (!mounted) return null;
 
   const handleStake = async () => {
     if (!isConnected) { txErrorToast("Please connect your wallet first"); return }

@@ -157,7 +157,7 @@ export default function ClientSignUpPage() {
               <CardDescription>Create your client account and start hiring</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
@@ -188,6 +188,7 @@ export default function ClientSignUpPage() {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
+                      autoComplete="username"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       className="pl-10"
@@ -204,6 +205,7 @@ export default function ClientSignUpPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
+                      autoComplete="new-password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
                       className="pl-10 pr-10"
@@ -229,6 +231,7 @@ export default function ClientSignUpPage() {
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
+                      autoComplete="new-password"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                       className="pl-10 pr-10"

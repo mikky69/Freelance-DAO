@@ -133,7 +133,7 @@ export default function ClientSignInPage() {
               <CardDescription>Sign in to hire talent and manage your projects</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
@@ -148,6 +148,7 @@ export default function ClientSignInPage() {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
+                      autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -164,6 +165,7 @@ export default function ClientSignInPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10"

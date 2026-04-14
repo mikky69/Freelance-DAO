@@ -157,7 +157,7 @@ export default function FreelancerSignUpPage() {
               <CardDescription>Create your freelancer account and start earning</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
@@ -170,6 +170,7 @@ export default function FreelancerSignUpPage() {
                     <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       placeholder="Enter your full name"
                       value={formData.name}
@@ -186,6 +187,7 @@ export default function FreelancerSignUpPage() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
@@ -202,6 +204,7 @@ export default function FreelancerSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="password"
+                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
                       value={formData.password}
@@ -227,6 +230,7 @@ export default function FreelancerSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}

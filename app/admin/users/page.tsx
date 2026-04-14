@@ -79,7 +79,7 @@ export default function UsersManagement() {
     pages: 0
   })
 
-  const fetchUsers = async (page = 1, search = "", type = "all", status = "all") => {
+  const fetchUsers = useCallback(async (page = 1, search = "", type = "all", status = "all") => {
     try {
       setLoading(true)
       const token = localStorage.getItem('freelancedao_token')
@@ -111,7 +111,7 @@ export default function UsersManagement() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.limit])
 
   const handleUserAction = async (userId: string, userType: string, action: 'verify' | 'suspend' | 'activate') => {
     try {
@@ -224,7 +224,7 @@ export default function UsersManagement() {
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   return (
     <div className="container mx-auto px-4 py-8">

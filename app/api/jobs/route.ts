@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       category: mappedCategory,
       skills: skills.map((skill: string) => skill.trim()),
       budget: {
-        amount: budgetMax || budgetMin,
+        amount: Number(budgetMax || budgetMin),
         currency: currency === 'USD' ? 'USD' : 'ETH',
         type: budgetType
       },

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,14 +38,18 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated, isWalletConnected } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const [showContent, setShowContent] = useState(false)
   const [profileStatus, setProfileStatus] = useState<ProfileCompletionStatus | null>(null)
   const [checkingProfile, setCheckingProfile] = useState(false)
 
+  // Never protect auth pages themselves to avoid infinite loops/hangs
+  const isAuthPage = pathname?.includes('/auth/')
+
   // Check profile completion status
   useEffect(() => {
     const checkProfileCompletion = async () => {
-      if (!requireCompleteProfile || !isAuthenticated || !user) return
+      if (!requireCompleteProfile || !isAuthenticated || !user || isAuthPage) return
       
       setCheckingProfile(true)
       try {
@@ -67,10 +71,15 @@ export function ProtectedRoute({
     }
 
     checkProfileCompletion()
-  }, [requireCompleteProfile, isAuthenticated, user])
+  }, [requireCompleteProfile, isAuthenticated, user, isAuthPage])
 
   useEffect(() => {
     if (!isLoading) {
+      if (isAuthPage) {
+        setShowContent(true)
+        return
+      }
+
       if (requireAuth && !isAuthenticated) {
         router.push(redirectTo)
         return
@@ -107,6 +116,7 @@ export function ProtectedRoute({
     user?.role,
     router,
     redirectTo,
+    isAuthPage,
   ])
 
   // Loading state
@@ -152,7 +162,7 @@ export function ProtectedRoute({
   // Not authenticated
   if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -404,7 +414,7 @@ export function withAuth(Component: React.ComponentType, allowedRoles?: string[]
           }
         }
       }
-    }, [isLoading, isAuthenticated, router, user, allowedRoles])
+    }, [isLoading, isAuthenticated, router, user])
 
     return Component(props)
   }
