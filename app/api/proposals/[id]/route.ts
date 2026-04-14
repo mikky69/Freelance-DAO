@@ -50,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     
     const { action } = await request.json();
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
     
     // Validate action
     if (!['accepted', 'rejected'].includes(action)) {
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     
     // Verify the client owns the job
-    if (proposal.job.client.toString() !== userId) {
+    if (!proposal.job || proposal.job.client.toString() !== userId) {
       return NextResponse.json(
         { message: 'You can only manage proposals for your own jobs' },
         { status: 403 }
@@ -178,7 +178,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
-export async function GET(request: NextRequest, context: any) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     
@@ -191,10 +191,19 @@ export async function GET(request: NextRequest, context: any) {
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err: any) {
+      return NextResponse.json(
+        { message: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    const userId = decoded.userId || decoded.id;
     
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
     
     // Find the proposal with populated data
     const proposalResult = await Proposal.findById(proposalId)
@@ -213,7 +222,7 @@ export async function GET(request: NextRequest, context: any) {
     
     // Check if user has permission to view this proposal
     const isFreelancer = proposal.freelancer._id.toString() === userId;
-    const isClient = proposal.job.client.toString() === userId;
+    const isClient = proposal.job?.client?.toString() === userId;
     
     if (!isFreelancer && !isClient) {
       return NextResponse.json(
