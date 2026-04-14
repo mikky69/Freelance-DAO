@@ -298,7 +298,7 @@ function EditProjectForm({ project, onClose, onUpdate }: EditProjectFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="edit-budget-min">Minimum Budget (HBAR) *</Label>
+          <Label htmlFor="edit-budget-min">Minimum Budget (ETH) *</Label>
           <Input
             id="edit-budget-min"
             type="number"
@@ -310,7 +310,7 @@ function EditProjectForm({ project, onClose, onUpdate }: EditProjectFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="edit-budget-max">Maximum Budget (HBAR)</Label>
+          <Label htmlFor="edit-budget-max">Maximum Budget (ETH)</Label>
           <Input
             id="edit-budget-max"
             type="number"
@@ -329,7 +329,7 @@ function EditProjectForm({ project, onClose, onUpdate }: EditProjectFormProps) {
             checked={formData.featured}
             onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: !!checked }))}
           />
-          <Label htmlFor="edit-featured">Featured (+100 HBAR)</Label>
+          <Label htmlFor="edit-featured">Featured (+0.01 ETH)</Label>
         </div>
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -584,7 +584,7 @@ function ProjectsContent() {
                   <DollarSign className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{projectStats.totalBudget.toLocaleString()} HBAR</div>
+                  <div className="text-2xl font-bold text-green-600">{projectStats.totalBudget.toLocaleString()} ETH</div>
                 </CardContent>
               </Card>
             </>

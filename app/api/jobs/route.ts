@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+{ NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job } from '@/models/Job';
 import { Client } from '@/models/User';
@@ -19,8 +19,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return NextResponse.json({ message: 'Invalid token structure' }, { status: 401 });
+    }
     
     // Verify user is a client
     const client = await Client.findById(userId);
@@ -136,7 +145,7 @@ export async function POST(request: NextRequest) {
       skills: skills.map((skill: string) => skill.trim()),
       budget: {
         amount: budgetMax || budgetMin,
-        currency: currency === 'USD' ? 'USD' : 'HBAR',
+        currency: currency === 'USD' ? 'USD' : 'ETH',
         type: budgetType
       },
       duration,
@@ -261,8 +270,17 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return NextResponse.json({ message: 'Invalid token structure' }, { status: 401 });
+    }
     
     // Verify user is a client
     const client = await Client.findById(userId);
@@ -415,8 +433,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.id;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
+    }
+    
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return NextResponse.json({ message: 'Invalid token structure' }, { status: 401 });
+    }
     
     // Verify user is a client
     const client = await Client.findById(userId);

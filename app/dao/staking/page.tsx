@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAccount, useBalance } from "wagmi"
-import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useWatchContractEvent } from "wagmi"
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt, useWatchContractEvent, useConfig } from "wagmi"
 import { parseEther, formatEther } from "viem"
 import StakingDeployment from "@/base-smart-contracts/deployments/baseSepolia/FreelanceDAOStaking.json"
 import { Button } from "@/components/ui/button"
@@ -27,9 +27,12 @@ const BASE_SEPOLIA_CHAIN_ID = 84532
 
 export default function StakingPage() {
   const { isAuthenticated } = useAuth()
+  const [mounted, setMounted] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
   const [unstakeAmount, setUnstakeAmount] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const { address, isConnected } = useAccount()
   const { writeContract, data: txHash, error: writeError, isPending: isWritePending, reset } = useWriteContract()
@@ -57,11 +60,6 @@ export default function StakingPage() {
     query: { enabled: !!address },
   })
 
-  const { data: rewardRate } = useReadContract({
-    address: stakingAddress, abi: stakingAbi, functionName: "rewardRate",
-    chainId: BASE_SEPOLIA_CHAIN_ID,
-  })
-
   const { data: lockTime } = useReadContract({
     address: stakingAddress, abi: stakingAbi, functionName: "lockTime",
     chainId: BASE_SEPOLIA_CHAIN_ID,
@@ -81,11 +79,14 @@ export default function StakingPage() {
 
   const stakedAmount      = userStakeData ? Number(formatEther(userStakeData as bigint)) : 0
   const totalStakedAmount = totalStaked   ? Number(formatEther(totalStaked as bigint))   : 0
-  const dailyRewardRate   = rewardRate    ? Number(rewardRate) : 0
+  const displayApy        = "Governance" // V2 is governance-only per GUIDE.md
 
   const userTotalStake      = Array.isArray(userStakes) && userStakes[0] ? Number(formatEther(userStakes[0])) : 0
   const lastStakedTimestamp = Array.isArray(userStakes) && userStakes[1] ? Number(userStakes[1]) : 0
   const lockTimeMs          = lockTime ? Number(lockTime) * 1000 : 0
+
+  // Prevent hydration mismatch and build-time hook warnings
+  if (!mounted) return null;
 
   useWatchContractEvent({
     address: stakingAddress, abi: stakingAbi, eventName: "Staked",
@@ -166,7 +167,7 @@ export default function StakingPage() {
               {[
                 { label: "Total Staked", value: `${totalStakedAmount.toFixed(4)} ETH` },
                 { label: "Your Stake", value: `${stakedAmount.toFixed(4)} ETH` },
-                { label: "APY", value: `${dailyRewardRate}%` },
+                { label: "Weight", value: displayApy },
               ].map(s => (
                 <div key={s.label} className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
                   <p className="text-3xl font-bold">{s.value}</p>
@@ -205,7 +206,7 @@ export default function StakingPage() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-lg font-bold bg-white text-gray-800 px-3 py-1 rounded-full">{dailyRewardRate || 12.5}% APY</div>
+                <div className="text-lg font-bold bg-white text-gray-800 px-3 py-1 rounded-full">Governance</div>
                 <div className="text-xs text-white/80 mt-1">Risk: Low</div>
               </div>
             </div>
@@ -291,7 +292,7 @@ export default function StakingPage() {
                       ))}
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm space-y-1">
-                      <div className="flex justify-between"><span>APY:</span><span className="font-medium">{dailyRewardRate || 12.5}%</span></div>
+                      <div className="flex justify-between"><span>Type:</span><span className="font-medium">Governance Power</span></div>
                       <div className="flex justify-between"><span>Lock Period:</span><span className="font-medium">7 days</span></div>
                       <div className="flex justify-between"><span>Network:</span><span className="font-medium">Base Sepolia</span></div>
                     </div>

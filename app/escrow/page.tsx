@@ -28,6 +28,9 @@ export default function EscrowPage() {
   const [loading, setLoading] = useState(true)
   const { address, isConnected } = useAccount()
   const { writeContract, isPending: txPending } = useWriteContract()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const loadJobs = useCallback(async () => {
     try {
@@ -78,6 +81,9 @@ export default function EscrowPage() {
   useEffect(() => { loadJobs() }, [loadJobs])
 
   const currentEscrow = useMemo(() => escrowContracts[selectedEscrow], [escrowContracts, selectedEscrow])
+
+  // Silence build-time provider warnings
+  if (!mounted) return null;
 
   const handleRelease = useCallback(async (jobId: number, idx: number) => {
     if (!isConnected) { toast.error("Connect your wallet to proceed"); return }

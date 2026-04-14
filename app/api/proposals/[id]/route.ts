@@ -94,6 +94,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     
     // If accepting a proposal, reject all other pending proposals for the same job
     if (action === 'accepted') {
+      if (!proposal.job) {
+        return NextResponse.json(
+          { message: 'Associated job not found' },
+          { status: 404 }
+        );
+      }
+
       // Get all other pending proposals for notification
       const otherProposals = await Proposal.find({
         job: proposal.job._id,
