@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      console.error("JWT Verification error in proposals (POST):", err.message);
+    } catch (err: any) {
+      console.error("JWT Verification error in proposals (POST):", err?.message);
       return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
     }
     
@@ -176,8 +176,8 @@ export async function GET(request: NextRequest) {
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      console.error("JWT Verification error in proposals (GET):", err.message);
+    } catch (err: any) {
+      console.error("JWT Verification error in proposals (GET):", err?.message);
       return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
     }
     
