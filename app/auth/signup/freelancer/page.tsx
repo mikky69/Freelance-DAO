@@ -188,6 +188,7 @@ export default function FreelancerSignUpPage() {
                     <Input
                       id="email"
                       name="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
@@ -204,6 +205,7 @@ export default function FreelancerSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="password"
+                      name="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
@@ -230,6 +232,7 @@ export default function FreelancerSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"

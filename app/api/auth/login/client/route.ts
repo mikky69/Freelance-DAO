@@ -32,13 +32,14 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: client._id, userId: client._id, email: client.email },
+      { id: client._id, userId: client._id, email: client.email, role: 'client' },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
     return NextResponse.json({
       message: 'Client login successful',
+      clientId: client._id,
       token,
     });
   } catch (error) {

@@ -205,7 +205,7 @@ export default function OnboardingCompletePage() {
                   <div>
                     <h3 className="font-semibold text-slate-800 mb-1">New User Bonus</h3>
                     <p className="text-sm text-slate-600">
-                      Complete your first job to earn a 10 HBAR bonus and unlock premium features!
+                      Complete your first job to earn a 0.01 ETH bonus and unlock premium features!
                     </p>
                   </div>
                 </div>

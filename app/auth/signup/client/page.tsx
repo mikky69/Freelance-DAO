@@ -31,7 +31,7 @@ export default function ClientSignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-
+    
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       setError("Please fill in all fields")
       return
@@ -170,6 +170,7 @@ export default function ClientSignUpPage() {
                     <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       placeholder="Enter your full name"
                       value={formData.name}
@@ -186,6 +187,7 @@ export default function ClientSignUpPage() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       autoComplete="username"
@@ -203,6 +205,7 @@ export default function ClientSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="password"
+                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
                       autoComplete="new-password"
@@ -229,6 +232,7 @@ export default function ClientSignUpPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       autoComplete="new-password"

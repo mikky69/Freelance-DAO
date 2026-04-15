@@ -532,7 +532,7 @@ export default function ProfileCompletionSteps({ onComplete, userType }: Profile
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="hourlyRate">Hourly Rate (HBAR) *</Label>
+              <Label htmlFor="hourlyRate">Hourly Rate (ETH) *</Label>
               <Input
                 id="hourlyRate"
                 type="number"

@@ -146,6 +146,7 @@ export default function ClientSignInPage() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       autoComplete="username"
@@ -163,6 +164,7 @@ export default function ClientSignInPage() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       id="password"
+                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       autoComplete="current-password"
