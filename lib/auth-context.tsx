@@ -1,4 +1,3 @@
-// lib/auth-context.tsx
 "use client"
 
 import type React from "react"
@@ -28,7 +27,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  isLoading: boolean
+  isLoading: boolean         // true only during sign-in / sign-up / updateUser actions
+  isInitializing: boolean    // true only during the initial session check on mount
   isAuthenticated: boolean
   isWalletConnected: boolean
   signIn: (email: string, password: string, role: "freelancer" | "client" | "admin") => Promise<boolean>
@@ -43,18 +43,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
-const REQUEST_TIMEOUT = 10000 // 10 seconds
+const REQUEST_TIMEOUT = 10000
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)         // ← starts FALSE — only set during actions
+  const [isInitializing, setIsInitializing] = useState(true) // ← separate flag for mount session check
   const [pendingRole, setPendingRole] = useState<"freelancer" | "client" | "admin" | null>(null)
   const router = useRouter()
 
   const isAuthenticated = !!user
   const isWalletConnected = !!user?.walletAddress
 
-  // token helpers
   const setToken = (token: string | null) => {
     if (token && token !== "undefined" && token !== "null") {
       localStorage.setItem("freelancedao_token", token)
@@ -62,13 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("freelancedao_token")
     }
   }
+
   const getToken = () => {
     const token = localStorage.getItem("freelancedao_token")
     if (!token || token === "undefined" || token === "null") return null
     return token
   }
 
-  // fetch wrapper - will attach Authorization header automatically
   const authFetch = useCallback((url: string, options: RequestInit = {}) => {
     const token = getToken()
     const headers = {
@@ -80,68 +80,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const checkExistingSession = useCallback(async () => {
-    setIsLoading(true)
+    setIsInitializing(true) // use isInitializing — NOT isLoading
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
-    
+
     try {
       const token = getToken()
       if (!token) {
-        // fallback to old local storage user if present
         const savedUser = localStorage.getItem("freelancedao_user")
-        if (savedUser) setUser(JSON.parse(savedUser))
-        setIsLoading(false)
+        if (savedUser) {
+          try { setUser(JSON.parse(savedUser)) } catch {}
+        }
         return
       }
 
-      const res = await authFetch(`${API_URL}/api/auth/me`, { 
+      const res = await authFetch(`${API_URL}/api/auth/me`, {
         method: "GET",
-        signal: controller.signal 
+        signal: controller.signal,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       if (!res.ok) {
         setToken(null)
         setUser(null)
-        setIsLoading(false)
+        localStorage.removeItem("freelancedao_user")
         return
       }
+
       const userData = await res.json()
       setUser(userData)
       localStorage.setItem("freelancedao_user", JSON.stringify(userData))
     } catch (error) {
       clearTimeout(timeoutId)
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.warn("Session check timed out")
+      if (error instanceof Error && error.name === "AbortError") {
+        console.warn("Session check timed out — loading from local cache")
+        // Fall back to cached user so the UI isn't stuck
+        const savedUser = localStorage.getItem("freelancedao_user")
+        if (savedUser) {
+          try { setUser(JSON.parse(savedUser)) } catch {}
+        }
       } else {
         console.error("checkExistingSession error:", error)
       }
     } finally {
-      setIsLoading(false)
+      setIsInitializing(false)
     }
   }, [authFetch])
 
   useEffect(() => {
-    checkExistingSession();
+    checkExistingSession()
   }, [checkExistingSession])
 
-  // Set user role before or after login
-  const setUserRole = useCallback((role: "freelancer" | "client" | "admin") => {
-    setPendingRole(role)
-    localStorage.setItem("freelancedao_role", role)
-    
-    // Update existing user if present
-    if (user) {
-      const updatedUser = { ...user, role, accountType: role }
-      setUser(updatedUser)
-      localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
-    }
-  }, [user])
+  const setUserRole = useCallback(
+    (role: "freelancer" | "client" | "admin") => {
+      setPendingRole(role)
+      localStorage.setItem("freelancedao_role", role)
+      if (user) {
+        const updatedUser = { ...user, role, accountType: role }
+        setUser(updatedUser)
+        localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
+      }
+    },
+    [user]
+  )
 
-  // sign in (legacy support for existing email/password auth)
-  const signIn = async (email: string, password: string, role: "freelancer" | "client" | "admin"): Promise<boolean> => {
-    setIsLoading(true)
+  const signIn = async (
+    email: string,
+    password: string,
+    role: "freelancer" | "client" | "admin"
+  ): Promise<boolean> => {
+    setIsLoading(true) // action-scoped loading
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
@@ -149,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let endpoint = "/api/auth/login/freelancer"
       if (role === "client") endpoint = "/api/auth/login/client"
       if (role === "admin") endpoint = "/api/auth/login/admin"
-      
+
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,27 +171,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Login failed" }))
         toast.error(err.message || "Login failed")
-        setIsLoading(false)
         return false
       }
 
       const data = await res.json()
       if (!data.token) {
         toast.error("No token received from server")
-        setIsLoading(false)
         return false
       }
 
       setToken(data.token)
       localStorage.setItem("freelancedao_role", role)
 
-      // fetch profile
+      // Fetch full profile
       const meRes = await authFetch(`${API_URL}/api/auth/me`, { method: "GET" })
-      let userData: User | null = null
+      let userData: User
       if (meRes.ok) {
         userData = await meRes.json()
       } else {
-        // minimal fallback
         userData = {
           id: data.clientId || data.freelancerId || `user_${Date.now()}`,
           email,
@@ -196,22 +202,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData)
       localStorage.setItem("freelancedao_user", JSON.stringify(userData))
       toast.success(`Welcome back, ${userData.name}!`)
-      setIsLoading(false)
       return true
     } catch (error) {
       clearTimeout(timeoutId)
-      if (error instanceof Error && error.name === 'AbortError') {
-        toast.error("Request timeout. Check your connection and try again.")
+      if (error instanceof Error && error.name === "AbortError") {
+        toast.error("Request timed out. Check your connection and try again.")
       } else {
         console.error("signIn error", error)
         toast.error("Failed to sign in. Please try again.")
       }
-      setIsLoading(false)
       return false
+    } finally {
+      setIsLoading(false) // always reset
     }
   }
 
-  // sign up (legacy support for existing email/password auth)
   const signUp = async (
     email: string,
     password: string,
@@ -227,14 +232,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let endpoint = "/api/auth/register/freelancer"
       if (role === "client") endpoint = "/api/auth/register/client"
       if (role === "admin") endpoint = "/api/auth/register/admin"
-      
+
       const body: Record<string, string> = { email, password, fullname: name }
-      
-      // Add adminToken for admin registration if provided
-      if (role === "admin" && adminToken) {
-        body.adminToken = adminToken
-      }
-      
+      if (role === "admin" && adminToken) body.adminToken = adminToken
+
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -247,13 +248,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Signup failed" }))
         toast.error(err.message || "Signup failed")
-        setIsLoading(false)
         return false
       }
 
       const data = await res.json()
       localStorage.setItem("freelancedao_role", role)
-      
+
       if (data.token) {
         setToken(data.token)
         const meRes = await authFetch(`${API_URL}/api/auth/me`, { method: "GET" })
@@ -263,25 +263,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("freelancedao_user", JSON.stringify(userData))
         }
       } else {
-        // fallback: create a minimal local user
-        const userData = { id: `user_${Date.now()}`, email, name, isVerified: false, accountType: role, role } as User
+        const userData = {
+          id: `user_${Date.now()}`,
+          email,
+          name,
+          isVerified: false,
+          accountType: role,
+          role,
+        } as User
         setUser(userData)
         localStorage.setItem("freelancedao_user", JSON.stringify(userData))
       }
 
       toast.success("Account created successfully!")
-      setIsLoading(false)
       return true
     } catch (error) {
       clearTimeout(timeoutId)
-      if (error instanceof Error && error.name === 'AbortError') {
-        toast.error("Request timeout. Check your connection and try again.")
+      if (error instanceof Error && error.name === "AbortError") {
+        toast.error("Request timed out. Check your connection and try again.")
       } else {
         console.error("signUp error", error)
         toast.error("Failed to create account. Please try again.")
       }
-      setIsLoading(false)
       return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -297,15 +303,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/")
   }, [router])
 
-  const connectWallet = useCallback((address: string) => {
-    if (user) {
-      const updatedUser = { ...user, walletAddress: address }
-      setUser(updatedUser)
-      localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
-      localStorage.setItem("walletConnected", "true")
-      localStorage.setItem("walletAddress", address)
-    }
-  }, [user])
+  const connectWallet = useCallback(
+    (address: string) => {
+      if (user) {
+        const updatedUser = { ...user, walletAddress: address }
+        setUser(updatedUser)
+        localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
+        localStorage.setItem("walletConnected", "true")
+        localStorage.setItem("walletAddress", address)
+      }
+    },
+    [user]
+  )
 
   const disconnectWallet = useCallback(() => {
     if (user) {
@@ -319,20 +328,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false
-  
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
     try {
       setIsLoading(true)
-  
-      // Make API call to update profile in database
       const response = await authFetch(`${API_URL}/api/profile`, {
         method: "PUT",
         body: JSON.stringify(updates),
         signal: controller.signal,
       })
-  
+
       clearTimeout(timeoutId)
 
       if (!response.ok) {
@@ -340,19 +346,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         toast.error(error.message || "Failed to update profile")
         return false
       }
-  
+
       const result = await response.json()
-  
-      // Update local state with the response from server
       const updatedUser = { ...user, ...result.user }
       setUser(updatedUser)
       localStorage.setItem("freelancedao_user", JSON.stringify(updatedUser))
-  
       return true
     } catch (error) {
       clearTimeout(timeoutId)
-      if (error instanceof Error && error.name === 'AbortError') {
-        toast.error("Request timeout. Please try again.")
+      if (error instanceof Error && error.name === "AbortError") {
+        toast.error("Request timed out. Please try again.")
       } else {
         console.error("updateUser error:", error)
         toast.error("Failed to update profile. Please try again.")
@@ -368,6 +371,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
+        isInitializing,
         isAuthenticated,
         isWalletConnected,
         signIn,
