@@ -43,6 +43,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
+const REQUEST_TIMEOUT = 10000 // 10 seconds
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -80,6 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkExistingSession = useCallback(async () => {
     setIsLoading(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    
     try {
       const token = getToken()
       if (!token) {
@@ -90,7 +94,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const res = await authFetch(`${API_URL}/api/auth/me`, { method: "GET" })
+      const res = await authFetch(`${API_URL}/api/auth/me`, { 
+        method: "GET",
+        signal: controller.signal 
+      })
+      
+      clearTimeout(timeoutId)
+      
       if (!res.ok) {
         setToken(null)
         setUser(null)
@@ -101,7 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData)
       localStorage.setItem("freelancedao_user", JSON.stringify(userData))
     } catch (error) {
-      console.error("checkExistingSession error:", error)
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn("Session check timed out")
+      } else {
+        console.error("checkExistingSession error:", error)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -127,6 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // sign in (legacy support for existing email/password auth)
   const signIn = async (email: string, password: string, role: "freelancer" | "client" | "admin"): Promise<boolean> => {
     setIsLoading(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
     try {
       let endpoint = "/api/auth/login/freelancer"
       if (role === "client") endpoint = "/api/auth/login/client"
@@ -136,17 +154,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Login failed" }))
         toast.error(err.message || "Login failed")
+        setIsLoading(false)
         return false
       }
 
       const data = await res.json()
       if (!data.token) {
         toast.error("No token received from server")
+        setIsLoading(false)
         return false
       }
 
@@ -173,13 +196,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData)
       localStorage.setItem("freelancedao_user", JSON.stringify(userData))
       toast.success(`Welcome back, ${userData.name}!`)
+      setIsLoading(false)
       return true
     } catch (error) {
-      console.error("signIn error", error)
-      toast.error("Failed to sign in.")
-      return false
-    } finally {
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error("Request timeout. Check your connection and try again.")
+      } else {
+        console.error("signIn error", error)
+        toast.error("Failed to sign in. Please try again.")
+      }
       setIsLoading(false)
+      return false
     }
   }
 
@@ -192,6 +220,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     adminToken?: string
   ): Promise<boolean> => {
     setIsLoading(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
     try {
       let endpoint = "/api/auth/register/freelancer"
       if (role === "client") endpoint = "/api/auth/register/client"
@@ -208,11 +239,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Signup failed" }))
         toast.error(err.message || "Signup failed")
+        setIsLoading(false)
         return false
       }
 
@@ -235,13 +270,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       toast.success("Account created successfully!")
+      setIsLoading(false)
       return true
     } catch (error) {
-      console.error("signUp error", error)
-      toast.error("Failed to create account.")
-      return false
-    } finally {
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error("Request timeout. Check your connection and try again.")
+      } else {
+        console.error("signUp error", error)
+        toast.error("Failed to create account. Please try again.")
+      }
       setIsLoading(false)
+      return false
     }
   }
 
@@ -280,6 +320,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false
   
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
     try {
       setIsLoading(true)
   
@@ -287,8 +330,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authFetch(`${API_URL}/api/profile`, {
         method: "PUT",
         body: JSON.stringify(updates),
+        signal: controller.signal,
       })
   
+      clearTimeout(timeoutId)
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update profile" }))
         toast.error(error.message || "Failed to update profile")
@@ -304,8 +350,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
       return true
     } catch (error) {
-      console.error("updateUser error:", error)
-      toast.error("Failed to update profile. Please try again.")
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error("Request timeout. Please try again.")
+      } else {
+        console.error("updateUser error:", error)
+        toast.error("Failed to update profile. Please try again.")
+      }
       return false
     } finally {
       setIsLoading(false)
